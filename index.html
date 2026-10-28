@@ -4,18 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bolti & Értékesítői Teljesítmény Dashboard</title>
-    <!-- Tailwind CSS a modern, letisztult dizájnhoz -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SheetJS az Excel azonnali böngészős feldolgozásához -->
+    <!-- SheetJS (Excel kliensoldali olvasás) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- Supabase JS kliens a felhős perzisztenciához -->
+    <!-- Supabase Kliens -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8">
 
     <div class="max-w-6xl mx-auto space-y-6">
         
-        <!-- Fejléc és Jogosultság választó -->
+        <!-- Fejléc és Szerepkör választó -->
         <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
             <div>
                 <h1 class="text-2xl font-bold text-white flex items-center gap-2">
@@ -35,10 +35,10 @@
             </div>
         </header>
 
-        <!-- Feltöltési zóna (Csak jogosultaknak) -->
+        <!-- Feltöltési zóna -->
         <section id="uploadSection" class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
             <h2 class="text-lg font-semibold text-white mb-2">Havi CPR Export Feltöltése (Globális fájl)</h2>
-            <p class="text-sm text-slate-400 mb-4">Húzd be az exportált havi tranzakciós fájlt (pl. <code class="text-indigo-400">Tranzakciók - 202610.xlsx</code>). A rendszer a böngészőben feldolgozza és menti a felhőbe.</p>
+            <p class="text-sm text-slate-400 mb-4">Húzd be az exportált havi tranzakciós fájlt (pl. <code class="text-indigo-400">Tranzakciók - 202610.xlsx</code>). A böngésző helyben kiszűri a személyes adatokat (Lakossági és Flotta törölve, kizárólag a Soho cégek maradnak meg), majd menti a felhőbe.</p>
             
             <div onclick="document.getElementById('fileInput').click()" 
                  class="border-2 border-dashed border-indigo-500/50 hover:border-indigo-400 bg-indigo-950/20 hover:bg-indigo-950/40 rounded-xl p-8 text-center cursor-pointer transition">
@@ -56,12 +56,10 @@
                 <h2 class="text-lg font-semibold text-white">Értékesítési Adatok és Teljesítések</h2>
                 
                 <div class="flex flex-wrap items-center gap-3">
-                    <!-- Bolt szűrő -->
                     <select id="filterStore" onchange="renderData()" class="bg-slate-700 text-white text-sm border border-slate-600 rounded-lg px-3 py-2">
                         <option value="ALL">Összes Bolt</option>
                     </select>
 
-                    <!-- Értékesítő szűrő -->
                     <select id="filterSeller" onchange="renderData()" class="bg-slate-700 text-white text-sm border border-slate-600 rounded-lg px-3 py-2">
                         <option value="ALL">Összes Értékesítő</option>
                     </select>
@@ -119,12 +117,9 @@
 
     <script>
         // --- 1. SUPABASE KONFIGURÁCIÓ ---
-        // Cseréld ki a saját projekt URL-edre és Anon kulcsodra a Supabase Settings -> API menüből
-        // --- 1. SUPABASE KONFIGURÁCIÓ ---
         const SUPABASE_URL = "https://esbezhdyplpqumgrgmtv.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmV6aGR5cGxwcXVtZ3JnbXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyMDkyNTUsImV4cCI6MjEwODc4NTI1NX0.l4LH6uC0YRMLr4N-GlQqI_kEp6piV1zLTk2jLG4jBL0";
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
 
         let globalTransactions = [];
 
@@ -134,10 +129,6 @@
         });
 
         async function loadFromSupabase() {
-            if (!supabase) {
-                console.warn("Supabase kulcsok nincsenek még beállítva!");
-                return;
-            }
             const statusDiv = document.getElementById('uploadStatus');
             statusDiv.className = "mt-3 text-sm font-medium text-indigo-400";
             statusDiv.innerText = "Adatok betöltése a felhőből...";
@@ -161,7 +152,7 @@
             }
         }
 
-        // --- 3. EXCEL FÁJL FELDOLGOZÁSA (KLIENSOLDALON) ---
+        // --- 3. EXCEL FÁJL FELDOLGOZÁSA & ADATVÉDELEM (KLIENSOLDALON) ---
         function handleFileSelect(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -179,11 +170,11 @@
                     const sheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[sheetName];
 
-                    // A CPR exportnál a fejléc az 5. sorban van (0-index szerint a 4. sor)
+                    // Fejléc az 5. sorban (0-index szerint a 4.)
                     const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                     if (rows.length < 6) throw new Error("A fájl üres vagy túl kevés sort tartalmaz!");
 
-                    const headerRow = rows[4]; // fejléc sora
+                    const headerRow = rows[4];
                     const colMap = {};
                     headerRow.forEach((colName, idx) => {
                         if (colName) colMap[String(colName).trim()] = idx;
@@ -199,10 +190,33 @@
                             return parseFloat(String(val).replace(',', '.')) || 0;
                         };
 
+                        const szegmens = String(r[colMap['Szegmens']] || '').trim();
+                        const cegnev = String(r[colMap['Cégnév']] || '').trim();
+                        
+                        // KIZÁRÓLAG a Soho szegmens cégeinél tartjuk meg az azonosítókat.
+                        // A Flotta és a Lakossági adatai automatikusan null-ra állítódnak (törlődnek)!
+                        const isSohoCompany = (szegmens.toLowerCase() === 'soho') || (cegnev.length > 0 && szegmens.toLowerCase() !== 'flotta');
+
                         parsed.push({
                             honap: "2026 október",
                             bolt: String(r[colMap['Bolt']] || '').trim(),
                             ertekesito: String(r[colMap['Értékesítő']] || 'Ismeretlen').trim(),
+                            szerzodes_datuma: r[colMap['Szerződés dátuma']] ? new Date(r[colMap['Szerződés dátuma']]).toISOString().split('T')[0] : null,
+                            szegmens: szegmens || null,
+                            
+                            // Csak SOHO cégeknél marad meg, Flottánál és Lakosságinál azonnal null (eldobva):
+                            cegnev: isSohoCompany && cegnev ? cegnev : null,
+                            kapcsolattarto: isSohoCompany ? (String(r[colMap['Kapcsolattartó']] || '').trim() || null) : null,
+                            kapcsolattarto_tel: isSohoCompany ? (String(r[colMap['Kapcsolattartó telefonszám']] || '').trim() || null) : null,
+                            telefonszam: isSohoCompany ? (String(r[colMap['Telefonszám']] || '').trim() || null) : null,
+                            szerzodesszam: isSohoCompany ? (String(r[colMap['Szerződésszám']] || '').trim() || null) : null,
+                            sales_order: isSohoCompany ? (String(r[colMap['Sales Order szám / Számlaszám / Átvételi elism. szám']] || '').trim() || null) : null,
+                            bpi_mutato: isSohoCompany ? (String(r[colMap['BPI mutató']] || '').trim() || null) : null,
+                            imei: isSohoCompany ? (String(r[colMap['IMEI szám']] || '').trim() || null) : null,
+                            hordozando_szam: isSohoCompany ? (String(r[colMap['Hordozandó szám']] || '').trim() || null) : null,
+                            megjegyzes: isSohoCompany ? (String(r[colMap['Megjegyzés']] || '').trim() || null) : null,
+
+                            // Statisztikai és teljesítmény adatok:
                             acq_db: parseNum(r[colMap['ACQ']]),
                             huseg_db: parseNum(r[colMap['Hűség']]),
                             fix_db: parseNum(r[colMap['FIX']]),
@@ -215,21 +229,19 @@
                     populateFilters();
                     renderData();
 
-                    // Automatikus felhőbe mentés Supabase-be, ha be van állítva
-                    if (supabase) {
-                        statusDiv.innerText = `Feldolgozva (${parsed.length} tétel). Mentés a felhőbe...`;
-                        const { error } = await supabase.from('bolti_teljesitesek').insert(parsed);
-                        if (error) {
-                            statusDiv.className = "mt-3 text-sm font-medium text-amber-400";
-                            statusDiv.innerText = "Böngészőben kész, de a felhős mentéshez ellenőrizd az SQL jogosultságot: " + error.message;
-                        } else {
-                            statusDiv.className = "mt-3 text-sm font-medium text-emerald-400";
-                            statusDiv.innerText = `Sikeres mentés a felhőbe! (${parsed.length} tranzakció)`;
-                        }
-                    } else {
-                        statusDiv.className = "mt-3 text-sm font-medium text-amber-400";
-                        statusDiv.innerText = `Böngészőben feldolgozva (${parsed.length} tétel). A felhő mentéshez add meg a Supabase kulcsokat az index.html-ben!`;
+                    // Mentés a felhőbe (Supabase)
+                    statusDiv.innerText = `Feldolgozva (${parsed.length} tétel). Mentés a felhőbe...`;
+                    
+                    // Kötegelt feltöltés 500-as blokkokban a hálózati stabilitásért
+                    const chunkSize = 500;
+                    for (let c = 0; c < parsed.length; c += chunkSize) {
+                        const chunk = parsed.slice(c, c + chunkSize);
+                        const { error } = await supabase.from('bolti_teljesitesek').insert(chunk);
+                        if (error) throw error;
                     }
+
+                    statusDiv.className = "mt-3 text-sm font-medium text-emerald-400";
+                    statusDiv.innerText = `Sikeres mentés a felhőbe! (${parsed.length} tranzakció feltöltve)`;
 
                 } catch (err) {
                     statusDiv.className = "mt-3 text-sm font-medium text-rose-400";
@@ -239,7 +251,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // --- 4. SZŰRŐK ÉS MEGJELENÍTÉS ---
+        // --- 4. SZŰRŐK ÉS TÁBLÁZAT ---
         function populateFilters() {
             const stores = [...new Set(globalTransactions.map(t => t.bolt))].sort();
             const sellers = [...new Set(globalTransactions.map(t => t.ertekesito))].sort();
@@ -261,7 +273,7 @@
                 return storeOk && sellerOk;
             });
 
-            // Értékesítői szintű összesítés
+            // Értékesítői összesítés
             const summaryMap = {};
             filtered.forEach(t => {
                 const key = `${t.bolt}___${t.ertekesito}`;
@@ -277,7 +289,7 @@
 
             const summaryList = Object.values(summaryMap).sort((a,b) => b.pont - a.pont);
 
-            // KPI-ok frissítése
+            // KPI kártyák frissítése
             document.getElementById('kpiCount').innerText = `${filtered.length} db`;
             document.getElementById('kpiACQ').innerText = `${summaryList.reduce((acc, s) => acc + s.acq, 0)} db`;
             document.getElementById('kpiHusegFix').innerText = `${summaryList.reduce((acc, s) => acc + s.huseg + s.fix, 0)} db`;
@@ -313,7 +325,7 @@
                 uploadSection.classList.remove('hidden');
                 storeFilter.disabled = false;
             } else if (role === 'area_manager') {
-                uploadSection.classList.add('hidden'); // Nem tölthet fel, csak elemez
+                uploadSection.classList.add('hidden');
                 storeFilter.disabled = false;
             } else if (role === 'store_manager') {
                 uploadSection.classList.add('hidden');
