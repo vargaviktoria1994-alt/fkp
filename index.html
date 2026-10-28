@@ -33,7 +33,7 @@
 
         <section id="uploadSection" class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
             <h2 class="text-lg font-semibold text-white mb-2">Havi CPR Export Feltöltése</h2>
-            <p class="text-sm text-slate-400 mb-4">Húzd be az exportált havi tranzakciós fájlt (pl. <code class="text-indigo-400">Tranzakciók - 202610.xlsx</code>). A lakossági és flotta személyes adatok automatikusan törlődnek, kizárólag a Soho cégek adatai maradnak meg.</p>
+            <p class="text-sm text-slate-400 mb-4">Húzd be az exportált havi tranzakciós fájlt (pl. <code class="text-indigo-400">Tranzakciók - 202610.xlsx</code>). A lakossági és flotta adatok automatikusan törlődnek, kizárólag a Soho cégek adatai maradnak meg.</p>
             
             <div onclick="document.getElementById('fileInput').click()" 
                  class="border-2 border-dashed border-indigo-500/50 hover:border-indigo-400 bg-indigo-950/20 hover:bg-indigo-950/40 rounded-xl p-8 text-center cursor-pointer transition">
@@ -78,7 +78,7 @@
                     <p id="kpiHusegFix" class="text-2xl font-bold text-emerald-400 mt-1">0 db</p>
                 </div>
                 <div class="bg-slate-700/50 p-4 rounded-lg border border-slate-600">
-                    <span class="text-xs text-slate-400 uppercase font-semibold">Hivatalos Pontszám</span>
+                    <span class="text-xs text-slate-400 uppercase font-semibold">Pontszám</span>
                     <p id="kpiPoints" class="text-2xl font-bold text-amber-400 mt-1">0</p>
                 </div>
             </div>
@@ -118,27 +118,49 @@
             loadFromSupabase();
         });
 
+        // 1000-es limit feloldása lapozással (összes sor lekérése a Supabase-ből)
         async function loadFromSupabase() {
             const statusDiv = document.getElementById('uploadStatus');
             statusDiv.className = "mt-3 text-sm font-medium text-indigo-400";
             statusDiv.innerText = "Adatok betöltése a felhőből...";
 
-            const { data, error } = await supabaseClient
-                .from('bolti_teljesitesek')
-                .select('*')
-                .order('bolt', { ascending: true });
+            let allRows = [];
+            let from = 0;
+            const batchSize = 1000;
+            let hasMore = true;
 
-            if (error) {
+            try {
+                while (hasMore) {
+                    const { data, error } = await supabaseClient
+                        .from('bolti_teljesitesek')
+                        .select('*')
+                        .range(from, from + batchSize - 1);
+
+                    if (error) throw error;
+
+                    if (data && data.length > 0) {
+                        allRows = allRows.concat(data);
+                        from += batchSize;
+                        if (data.length < batchSize) {
+                            hasMore = false;
+                        }
+                    } else {
+                        hasMore = false;
+                    }
+                }
+
+                globalTransactions = allRows;
+                if (allRows.length > 0) {
+                    statusDiv.className = "mt-3 text-sm font-medium text-emerald-400";
+                    statusDiv.innerText = `Sikeresen betöltve ${allRows.length} db rekord a felhőből.`;
+                    populateFilters();
+                    renderData();
+                } else {
+                    statusDiv.innerText = "Még nincsenek feltöltött adatok az adatbázisban.";
+                }
+            } catch (err) {
                 statusDiv.className = "mt-3 text-sm font-medium text-rose-400";
-                statusDiv.innerText = "Nem sikerült betölteni az adatokat: " + error.message;
-            } else if (data && data.length > 0) {
-                globalTransactions = data;
-                statusDiv.className = "mt-3 text-sm font-medium text-emerald-400";
-                statusDiv.innerText = `Sikeresen betöltve ${data.length} db rekord a felhőből.`;
-                populateFilters();
-                renderData();
-            } else {
-                statusDiv.innerText = "Még nincsenek feltöltött adatok az adatbázisban.";
+                statusDiv.innerText = "Nem sikerült betölteni az adatokat: " + err.message;
             }
         }
 
@@ -187,7 +209,6 @@
                         const boltVal = String(r[colMap['Bolt']] || '').trim();
                         const ertekesitoVal = String(r[colMap['Értékesítő']] || '').trim();
 
-                        // Kiszűrjük az összegző és üres sorokat (Különbözet, üres bolt vagy nem valós bolt kód)
                         if (!boltVal || !ertekesitoVal || boltVal.toLowerCase().includes('különbözet') || ertekesitoVal.toLowerCase().includes('összesen')) {
                             continue;
                         }
@@ -210,7 +231,6 @@
                             }
                         }
 
-                        // A CPR-ben a hivatalos pontszám a 'Jutalék pont'. Ha üres, az 'Összpont'-ot vesszük figyelembe.
                         const jutalekPont = parseNum(r[colMap['Jutalék pont']]);
                         const osszPont = parseNum(r[colMap['Összpont']]);
                         const realPont = jutalekPont !== 0 ? jutalekPont : osszPont;
@@ -239,12 +259,11 @@
                         });
                     }
 
-                    globalTransactions = parsed;
-                    populateFilters();
-                    renderData();
+                    // Frissítés előtt töröljük az adott hónap régi adatait, hogy ne duplikálódjon
+                    statusDiv.innerText = `Feldolgozva (${parsed.length} tétel). Korábbi adatok frissítése a felhőben...`;
+                    await supabaseClient.from('bolti_teljesitesek').delete().eq('honap', '2026 október');
 
-                    statusDiv.innerText = `Feldolgozva (${parsed.length} tétel). Mentés a felhőbe...`;
-                    
+                    statusDiv.innerText = `Mentés a felhőbe...`;
                     const chunkSize = 500;
                     for (let c = 0; c < parsed.length; c += chunkSize) {
                         const chunk = parsed.slice(c, c + chunkSize);
@@ -252,8 +271,10 @@
                         if (error) throw error;
                     }
 
+                    // Teljes újraolvasás a felhőből a pontos megjelenítéshez
+                    await loadFromSupabase();
                     statusDiv.className = "mt-3 text-sm font-medium text-emerald-400";
-                    statusDiv.innerText = `Sikeres mentés a felhőbe! (${parsed.length} tranzakció feltöltve)`;
+                    statusDiv.innerText = `Sikeres mentés a felhőbe! (${parsed.length} tranzakció feltöltve és szinkronizálva)`;
 
                 } catch (err) {
                     statusDiv.className = "mt-3 text-sm font-medium text-rose-400";
