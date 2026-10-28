@@ -33,7 +33,7 @@
 
         <section id="uploadSection" class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
             <h2 class="text-lg font-semibold text-white mb-2">Havi CPR Export Feltöltése</h2>
-            <p class="text-sm text-slate-400 mb-4">Húzd be az exportált havi tranzakciós fájlt (pl. <code class="text-indigo-400">Tranzakciók - 202610.xlsx</code>). A lakossági és flotta adatok automatikusan törlődnek, kizárólag a Soho cégek adatai maradnak meg.</p>
+            <p class="text-sm text-slate-400 mb-4">Húzd be az exportált havi tranzakciós fájlt (pl. <code class="text-indigo-400">Tranzakciók - 202610.xlsx</code>). A lakossági és flotta személyes adatok automatikusan törlődnek, kizárólag a Soho cégek adatai maradnak meg.</p>
             
             <div onclick="document.getElementById('fileInput').click()" 
                  class="border-2 border-dashed border-indigo-500/50 hover:border-indigo-400 bg-indigo-950/20 hover:bg-indigo-950/40 rounded-xl p-8 text-center cursor-pointer transition">
@@ -78,7 +78,7 @@
                     <p id="kpiHusegFix" class="text-2xl font-bold text-emerald-400 mt-1">0 db</p>
                 </div>
                 <div class="bg-slate-700/50 p-4 rounded-lg border border-slate-600">
-                    <span class="text-xs text-slate-400 uppercase font-semibold">Összpont</span>
+                    <span class="text-xs text-slate-400 uppercase font-semibold">Hivatalos Pontszám</span>
                     <p id="kpiPoints" class="text-2xl font-bold text-amber-400 mt-1">0</p>
                 </div>
             </div>
@@ -93,7 +93,7 @@
                             <th class="p-3 text-center">ACQ</th>
                             <th class="p-3 text-center">Hűség</th>
                             <th class="p-3 text-center">FIX</th>
-                            <th class="p-3 text-right">Összpont</th>
+                            <th class="p-3 text-right">Pontszám</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody" class="divide-y divide-slate-700 text-slate-200">
@@ -162,7 +162,6 @@
                     const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                     if (rows.length < 6) throw new Error("A fájl üres vagy túl kevés sort tartalmaz!");
 
-                    // Dinamikus fejléc keresés: megkeressük azt a sort, ahol a 'Bolt' szerepel
                     let headerIndex = -1;
                     const colMap = {};
 
@@ -177,13 +176,21 @@
                     }
 
                     if (headerIndex === -1 || colMap['Bolt'] === undefined) {
-                        throw new Error("Nem található 'Bolt' fejléc a fájl első soraiban!");
+                        throw new Error("Nem található 'Bolt' fejléc a fájlban!");
                     }
 
                     const parsed = [];
                     for (let i = headerIndex + 1; i < rows.length; i++) {
                         const r = rows[i];
-                        if (!r || !r[colMap['Bolt']]) continue;
+                        if (!r) continue;
+
+                        const boltVal = String(r[colMap['Bolt']] || '').trim();
+                        const ertekesitoVal = String(r[colMap['Értékesítő']] || '').trim();
+
+                        // Kiszűrjük az összegző és üres sorokat (Különbözet, üres bolt vagy nem valós bolt kód)
+                        if (!boltVal || !ertekesitoVal || boltVal.toLowerCase().includes('különbözet') || ertekesitoVal.toLowerCase().includes('összesen')) {
+                            continue;
+                        }
 
                         const parseNum = (val) => {
                             if (!val) return 0;
@@ -192,8 +199,6 @@
 
                         const szegmens = String(r[colMap['Szegmens']] || '').trim();
                         const cegnev = String(r[colMap['Cégnév']] || '').trim();
-                        
-                        // Kizárólag a Soho cégek adatait tartjuk meg, minden más null (törölve)
                         const isSohoCompany = (szegmens.toLowerCase() === 'soho') || (cegnev.length > 0 && szegmens.toLowerCase() !== 'flotta');
 
                         let parsedDate = null;
@@ -205,10 +210,15 @@
                             }
                         }
 
+                        // A CPR-ben a hivatalos pontszám a 'Jutalék pont'. Ha üres, az 'Összpont'-ot vesszük figyelembe.
+                        const jutalekPont = parseNum(r[colMap['Jutalék pont']]);
+                        const osszPont = parseNum(r[colMap['Összpont']]);
+                        const realPont = jutalekPont !== 0 ? jutalekPont : osszPont;
+
                         parsed.push({
                             honap: "2026 október",
-                            bolt: String(r[colMap['Bolt']] || '').trim(),
-                            ertekesito: String(r[colMap['Értékesítő']] || 'Ismeretlen').trim(),
+                            bolt: boltVal,
+                            ertekesito: ertekesitoVal,
                             szerzodes_datuma: parsedDate,
                             szegmens: szegmens || null,
                             cegnev: isSohoCompany && cegnev ? cegnev : null,
@@ -225,7 +235,7 @@
                             huseg_db: parseNum(r[colMap['Hűség']]),
                             fix_db: parseNum(r[colMap['FIX']]),
                             acq_pont: parseNum(r[colMap['ACQ pont']]),
-                            osszpont: parseNum(r[colMap['Összpont']])
+                            osszpont: realPont
                         });
                     }
 
@@ -292,7 +302,7 @@
             document.getElementById('kpiCount').innerText = `${filtered.length} db`;
             document.getElementById('kpiACQ').innerText = `${summaryList.reduce((acc, s) => acc + s.acq, 0)} db`;
             document.getElementById('kpiHusegFix').innerText = `${summaryList.reduce((acc, s) => acc + s.huseg + s.fix, 0)} db`;
-            document.getElementById('kpiPoints').innerText = summaryList.reduce((acc, s) => acc + s.pont, 0).toFixed(1);
+            document.getElementById('kpiPoints').innerText = summaryList.reduce((acc, s) => acc + s.pont, 0).toFixed(2);
 
             const tbody = document.getElementById('tableBody');
             if (summaryList.length === 0) {
