@@ -907,6 +907,22 @@
                 return parseFloat(String(val).replace(',', '.')) || 0;
             };
 
+            
+            const parseExcelDate = (raw) => {
+                if (!raw) return null;
+                if (raw instanceof Date) {
+                    return !isNaN(raw.getTime()) ? raw.toISOString().split('T')[0] : null;
+                }
+                if (typeof raw === 'number') {
+                    // Excel serial date to JS Date
+                    const utc_days = Math.floor(raw - 25569);
+                    const date_info = new Date(utc_days * 86400 * 1000);
+                    return !isNaN(date_info.getTime()) ? date_info.toISOString().split('T')[0] : null;
+                }
+                const d = new Date(raw);
+                return !isNaN(d.getTime()) ? d.toISOString().split('T')[0] : null;
+            };
+
             let successCount = 0;
 
             for (let fIdx = 0; fIdx < files.length; fIdx++) {
@@ -916,7 +932,7 @@
 
                 try {
                     const data = await file.arrayBuffer();
-                    const workbook = XLSX.read(new Uint8Array(data), { type: 'array' });
+                    const workbook = XLSX.read(new Uint8Array(data), { type: 'array', cellDates: true });
                     const sheet = workbook.Sheets[workbook.SheetNames[0]];
                     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
@@ -963,12 +979,7 @@
                         const cegnev = String(r[colMap['Cégnév']] || '').trim();
                         const isSoho = (szegmens.toLowerCase() === 'soho') || (cegnev.length > 0 && szegmens.toLowerCase() !== 'flotta');
 
-                        let parsedDate = null;
-                        const rawDate = r[colMap['Szerződés dátuma']];
-                        if (rawDate) {
-                            const d = new Date(rawDate);
-                            if (!isNaN(d.getTime())) parsedDate = d.toISOString().split('T')[0];
-                        }
+                        const parsedDate = parseExcelDate(r[colMap['Szerződés dátuma']]);
 
                         const rowMonth = detectedMonth || (parsedDate ? parsedDate.substring(0, 7) : "Aktuális");
                         const realPont = parseNum(r[colMap['Jutalék pont']]);
@@ -1026,7 +1037,7 @@
             reader.onload = async function(evt) {
                 try {
                     const data = new Uint8Array(evt.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
+                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
                     const sheet = workbook.Sheets[workbook.SheetNames[0]];
                     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
