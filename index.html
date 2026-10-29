@@ -7,8 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Chart.js a vonaldiagramhoz -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8">
+<body class="bg-slate-900 text-slate-100 min-h-screen p-3 md:p-6">
 
     <!-- 1. JELSZÓVÉDŐ KÉPERNYŐ -->
     <div id="loginScreen" class="fixed inset-0 bg-slate-950 flex items-center justify-center p-4 z-50">
@@ -36,14 +38,14 @@
     </div>
 
     <!-- 2. FŐ ALKALMAZÁS -->
-    <div id="dashboardApp" class="hidden max-w-7xl mx-auto space-y-6">
+    <div id="dashboardApp" class="hidden max-w-[1550px] mx-auto space-y-6">
         
-        <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-lg">
+        <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-slate-800/90 p-5 rounded-xl border border-slate-700 shadow-lg">
             <div>
                 <h1 class="text-2xl font-bold text-white flex items-center gap-2">
                     <span>📊</span> Bolti & Értékesítői Dashboard
                 </h1>
-                <p class="text-xs text-slate-400 mt-1">CPR tranzakció-feldolgozó és súlyozott napi célszámító</p>
+                <p class="text-xs text-slate-400 mt-1">CPR tranzakció-feldolgozó és súlyozott target követő</p>
             </div>
             
             <div class="flex flex-wrap items-center gap-2">
@@ -66,108 +68,117 @@
 
         <!-- 1. FÜL: ÁTTEKINTÉS ÉS TARGETEK -->
         <main id="tabDashboard" class="space-y-6">
-            <section class="bg-slate-800/90 p-6 rounded-xl border border-indigo-500/30 shadow-lg space-y-5">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700 pb-3">
-                    <div>
-                        <h3 class="text-base font-bold text-indigo-400 flex items-center gap-2">
-                            <span>🎯</span> Súlyozott Napi Target Állapot
-                        </h3>
-                        <p class="text-xs text-slate-400 mt-0.5">Forgalom hétköznap / hétvégi súlyozása alapján számolt napi elvárások</p>
+
+            <!-- ÚJ KÉTTENGELYES TARGET MODUL: BALRA TÁBLÁZAT, JOBBRA VONALDIAGRAM -->
+            <section class="bg-slate-800/95 p-5 md:p-6 rounded-2xl border border-slate-700 shadow-xl">
+                
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700/80 pb-4 mb-5">
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl">🎯</span>
+                        <div>
+                            <h2 class="text-lg font-bold text-white">Havi Teljesítmény és Target Követés</h2>
+                            <p class="text-xs text-slate-400" id="monthSubtitle">Súlyozott haladás és havi záró előrejelzés</p>
+                        </div>
                     </div>
-                    <div class="text-xs text-slate-400 flex items-center gap-3">
-                        <span id="targetRemainingDaysLabel">Számítás folyamatban...</span>
-                        <span id="todayWeightStatus" class="text-indigo-400 font-semibold"></span>
+
+                    <!-- Üzlet és Hónap kiválasztása a Target Panelhez -->
+                    <div class="flex flex-wrap items-center gap-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-slate-400 font-semibold uppercase">Hónap:</span>
+                            <select id="targetViewMonth" onchange="updateTargetView()" class="bg-slate-900 text-white text-xs border border-slate-700 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-indigo-500 font-medium">
+                                <option value="ALL">Összes Hónap</option>
+                            </select>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-slate-400 font-semibold uppercase">Üzlet:</span>
+                            <select id="targetViewStore" onchange="updateTargetView()" class="bg-slate-900 text-indigo-300 font-bold text-xs border border-indigo-500/40 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="ALL">Összes Üzlet (Hálózat)</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-                    <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
-                        <span class="text-[11px] font-semibold text-sky-400 uppercase">ACQ Pont</span>
-                        <div class="flex justify-between items-baseline">
-                            <span id="c_acq_pont_pct" class="text-sm font-bold text-sky-400">0%</span>
-                            <span id="c_acq_pont_rem" class="text-xs text-slate-400">hátra: 0</span>
+                <!-- 2 Oszlopos Elrendezés: Bal oldal Táblázat, Jobb oldal Vonaldiagram -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                    
+                    <!-- BAL OLDAL: Havi Teljesítés és Target Táblázat -->
+                    <div class="lg:col-span-6 bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Kategóriák és Célok</h3>
+                                <span id="targetStatusBadge" class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-500/30">Havi Állapot</span>
+                            </div>
+
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse text-xs">
+                                    <thead>
+                                        <tr class="text-slate-400 border-b border-slate-700/80">
+                                            <th class="py-2.5 px-3">Metrika</th>
+                                            <th class="py-2.5 px-3 text-right">Target</th>
+                                            <th class="py-2.5 px-3 text-right">Tény</th>
+                                            <th class="py-2.5 px-3 text-right">Teljesülés</th>
+                                            <th class="py-2.5 px-3 text-right">Hátralévő</th>
+                                            <th class="py-2.5 px-3 text-right text-indigo-300 font-semibold">Mai Napi Cél</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="targetMetricTableBody" class="divide-y divide-slate-800/80 font-medium">
+                                        <!-- Dinamikusan generált sorok -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                        <div class="border-t border-slate-600/60 pt-1 mt-1">
-                            <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
-                            <span id="c_acq_pont_daily" class="text-base font-bold text-white">0</span>
+
+                        <div class="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-400 flex flex-wrap justify-between items-center gap-2">
+                            <span id="targetDayInfoText">31 napos hónap: még 3 nap van hátra</span>
+                            <span id="targetDayWeightBadge" class="text-amber-400 font-semibold">Mai súly: 1.00x</span>
                         </div>
                     </div>
 
-                    <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
-                        <span class="text-[11px] font-semibold text-teal-400 uppercase">Reti Pont</span>
-                        <div class="flex justify-between items-baseline">
-                            <span id="c_ret_pont_pct" class="text-sm font-bold text-teal-400">0%</span>
-                            <span id="c_ret_pont_rem" class="text-xs text-slate-400">hátra: 0</span>
+                    <!-- JOBB OLDAL: Vonaldiagram (Target vs Teljesítés Görbe) -->
+                    <div class="lg:col-span-6 bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col justify-between">
+                        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                            <div>
+                                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Kumulált Teljesülés vs. Target Görbe</h3>
+                                <p class="text-[11px] text-slate-400 mt-0.5">Naponkénti haladás a hónap során</p>
+                            </div>
+                            
+                            <!-- Metrika választó a grafikonhoz -->
+                            <div class="flex items-center gap-2">
+                                <span class="text-[11px] text-slate-400">Diagram:</span>
+                                <select id="chartMetricSelect" onchange="renderTargetChart()" class="bg-slate-800 text-white text-xs border border-slate-700 rounded-lg px-2.5 py-1 outline-none">
+                                    <option value="pont">Összpont</option>
+                                    <option value="acq_pont">ACQ Pont</option>
+                                    <option value="ret_pont">Reti Pont</option>
+                                    <option value="acq_db">ACQ db</option>
+                                    <option value="huseg_db">Hűség db</option>
+                                    <option value="fix_db">FIX db</option>
+                                    <option value="soho_db">SOHO db</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="border-t border-slate-600/60 pt-1 mt-1">
-                            <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
-                            <span id="c_ret_pont_daily" class="text-base font-bold text-white">0</span>
+
+                        <!-- Canvas Diagram -->
+                        <div class="relative w-full h-[280px] md:h-[300px]">
+                            <canvas id="targetLineChart"></canvas>
+                        </div>
+
+                        <div class="flex items-center justify-center gap-6 mt-3 pt-2 border-t border-slate-800 text-xs">
+                            <div class="flex items-center gap-2">
+                                <span class="inline-block w-4 h-1 bg-amber-400 rounded-full"></span>
+                                <span class="text-slate-300">Súlyozott Elvárt Target</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="inline-block w-4 h-1 bg-cyan-400 rounded-full"></span>
+                                <span class="text-white font-semibold">Tényleges Teljesítés</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
-                        <span class="text-[11px] font-semibold text-indigo-400 uppercase">ACQ db</span>
-                        <div class="flex justify-between items-baseline">
-                            <span id="c_acq_db_pct" class="text-sm font-bold text-indigo-400">0%</span>
-                            <span id="c_acq_db_rem" class="text-xs text-slate-400">hátra: 0</span>
-                        </div>
-                        <div class="border-t border-slate-600/60 pt-1 mt-1">
-                            <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
-                            <span id="c_acq_db_daily" class="text-base font-bold text-white">0 db</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
-                        <span class="text-[11px] font-semibold text-emerald-400 uppercase">Hűség db</span>
-                        <div class="flex justify-between items-baseline">
-                            <span id="c_huseg_db_pct" class="text-sm font-bold text-emerald-400">0%</span>
-                            <span id="c_huseg_db_rem" class="text-xs text-slate-400">hátra: 0</span>
-                        </div>
-                        <div class="border-t border-slate-600/60 pt-1 mt-1">
-                            <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
-                            <span id="c_huseg_db_daily" class="text-base font-bold text-white">0 db</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
-                        <span class="text-[11px] font-semibold text-purple-400 uppercase">FIX db</span>
-                        <div class="flex justify-between items-baseline">
-                            <span id="c_fix_db_pct" class="text-sm font-bold text-purple-400">0%</span>
-                            <span id="c_fix_db_rem" class="text-xs text-slate-400">hátra: 0</span>
-                        </div>
-                        <div class="border-t border-slate-600/60 pt-1 mt-1">
-                            <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
-                            <span id="c_fix_db_daily" class="text-base font-bold text-white">0 db</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
-                        <span class="text-[11px] font-semibold text-amber-400 uppercase">SOHO db</span>
-                        <div class="flex justify-between items-baseline">
-                            <span id="c_soho_db_pct" class="text-sm font-bold text-amber-400">0%</span>
-                            <span id="c_soho_db_rem" class="text-xs text-slate-400">hátra: 0</span>
-                        </div>
-                        <div class="border-t border-slate-600/60 pt-1 mt-1">
-                            <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
-                            <span id="c_soho_db_daily" class="text-base font-bold text-white">0 db</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
-                        <span class="text-[11px] font-semibold text-pink-400 uppercase">Tartozék Ft</span>
-                        <div class="flex justify-between items-baseline">
-                            <span id="c_tartozek_pct" class="text-sm font-bold text-pink-400">0%</span>
-                            <span id="c_tartozek_rem" class="text-xs text-slate-400">hátra: 0 Ft</span>
-                        </div>
-                        <div class="border-t border-slate-600/60 pt-1 mt-1">
-                            <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
-                            <span id="c_tartozek_daily" class="text-base font-bold text-white">0 Ft</span>
-                        </div>
-                    </div>
                 </div>
             </section>
 
-            <!-- Statisztikai kártyák és Szűrők -->
+            <!-- Statisztikai kártyák és Értékesítői Táblázat -->
             <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-700 pb-4">
                     <h2 class="text-lg font-semibold text-white">Értékesítési Eredmények</h2>
@@ -191,7 +202,7 @@
                     </div>
                 </div>
 
-                <!-- 9 db Részletes KPI Kártya (SOHO DB-vel bővítve) -->
+                <!-- 9 db Részletes KPI Kártya -->
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3">
                     <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
                         <span class="text-[11px] text-slate-400 uppercase font-semibold">Tranzakció</span>
@@ -231,7 +242,7 @@
                     </div>
                 </div>
 
-                <!-- Eredménytáblázat (SOHO oszloppal kiegészítve) -->
+                <!-- Eredménytáblázat -->
                 <div class="overflow-x-auto mt-4">
                     <table class="w-full text-left border-collapse text-xs md:text-sm">
                         <thead>
@@ -390,7 +401,7 @@
                 tabUp.classList.add('hidden');
                 btnDash.className = "px-4 py-2 rounded-lg text-xs font-semibold transition bg-indigo-600 text-white shadow";
                 btnUp.className = "px-4 py-2 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white";
-                calculateAllTargets();
+                updateTargetView();
             } else {
                 tabDash.classList.add('hidden');
                 tabUp.classList.remove('hidden');
@@ -406,6 +417,7 @@
 
         let globalTransactions = [];
         let globalTargets = [];
+        let targetChartInstance = null;
 
         window.addEventListener('DOMContentLoaded', () => {
             checkAuth();
@@ -413,7 +425,9 @@
 
         async function loadAllData() {
             await Promise.all([loadFromSupabase(), loadTargetsFromSupabase()]);
-            calculateAllTargets();
+            populateFilters();
+            updateTargetView();
+            renderData();
         }
 
         async function loadFromSupabase() {
@@ -438,10 +452,7 @@
                         hasMore = false;
                     }
                 }
-
                 globalTransactions = allRows;
-                populateFilters();
-                renderData();
             } catch (err) {
                 console.error("Hiba a tranzakciók betöltésekor:", err);
             }
@@ -459,6 +470,420 @@
             }
         }
 
+        function populateFilters() {
+            const months = [...new Set(globalTransactions.map(t => t.honap))].filter(Boolean).sort().reverse();
+            const stores = [...new Set(globalTransactions.map(t => t.bolt))].filter(Boolean).sort();
+            const sellers = [...new Set(globalTransactions.map(t => t.ertekesito))].filter(Boolean).sort();
+
+            const monthOptions = '<option value="ALL">Összes Hónap</option>' + months.map(m => `<option value="${m}">${m}</option>`).join('');
+            const storeOptions = '<option value="ALL">Összes Üzlet (Hálózat)</option>' + stores.map(s => `<option value="${s}">${s}</option>`).join('');
+
+            // Fő szűrők
+            const filterMonth = document.getElementById('filterMonth');
+            const filterStore = document.getElementById('filterStore');
+            const filterSeller = document.getElementById('filterSeller');
+            
+            filterMonth.innerHTML = monthOptions;
+            filterStore.innerHTML = storeOptions;
+            filterSeller.innerHTML = '<option value="ALL">Összes Értékesítő</option>' + sellers.map(s => `<option value="${s}">${s}</option>`).join('');
+
+            // Target modul szűrői
+            const targetViewMonth = document.getElementById('targetViewMonth');
+            const targetViewStore = document.getElementById('targetViewStore');
+            targetViewMonth.innerHTML = monthOptions;
+            targetViewStore.innerHTML = storeOptions;
+
+            // Admin feltöltő hónap
+            const targetUploadMonth = document.getElementById('targetUploadMonth');
+            if (targetUploadMonth && months.length > 0) {
+                targetUploadMonth.innerHTML = months.map(m => `<option value="${m}">${m}</option>`).join('');
+            }
+
+            // Alapértelmezett kiválasztás: a legfrissebb hónap
+            if (months.length > 0) {
+                filterMonth.value = months[0];
+                targetViewMonth.value = months[0];
+            }
+        }
+
+        // =========================================================================
+        // --- TARGET NÉZET FRISSÍTÉSE (BALRA TÁBLÁZAT, JOBBRA DIAGRAM) ---
+        // =========================================================================
+        function updateTargetView() {
+            const selectedMonth = document.getElementById('targetViewMonth').value;
+            const selectedStore = document.getElementById('targetViewStore').value;
+
+            // 1. Tényadatok szűrése az adott hónapra és üzletre
+            const filtered = globalTransactions.filter(t => {
+                const mOk = (selectedMonth === 'ALL' || t.honap === selectedMonth);
+                const sOk = (selectedStore === 'ALL' || t.bolt === selectedStore);
+                return mOk && sOk;
+            });
+
+            // Tények kinyerése
+            const actuals = {
+                acq_pont: filtered.reduce((acc, t) => acc + (t.acq_pont || 0), 0),
+                ret_pont: filtered.reduce((acc, t) => acc + (t.ret_pont || 0), 0),
+                pont: filtered.reduce((acc, t) => acc + (t.osszpont || 0), 0),
+                acq_db: filtered.reduce((acc, t) => acc + (t.acq_db || 0), 0),
+                huseg_db: filtered.reduce((acc, t) => acc + (t.huseg_db || 0), 0),
+                fix_db: filtered.reduce((acc, t) => acc + (t.fix_db || 0), 0),
+                soho_db: filtered.filter(t => t.szegmens && t.szegmens.toLowerCase() === 'soho').length,
+                tartozek_ft: 0
+            };
+
+            // 2. Releváns Targetek kinyerése
+            let relevantTargets = globalTargets.filter(t => selectedMonth === 'ALL' || t.honap === selectedMonth);
+            if (selectedStore !== 'ALL') {
+                relevantTargets = relevantTargets.filter(t => t.bolt === selectedStore);
+            }
+
+            const targets = {
+                acq_pont: relevantTargets.reduce((a, b) => a + (b.target_acq_pont || 0), 0),
+                ret_pont: relevantTargets.reduce((a, b) => a + (b.target_ret_pont || 0), 0),
+                pont: relevantTargets.reduce((a, b) => a + (b.target_pont || (b.target_acq_pont + b.target_ret_pont) || 0), 0),
+                acq_db: relevantTargets.reduce((a, b) => a + (b.target_acq_db || 0), 0),
+                huseg_db: relevantTargets.reduce((a, b) => a + (b.target_huseg_db || 0), 0),
+                fix_db: relevantTargets.reduce((a, b) => a + (b.target_fix_db || 0), 0),
+                soho_db: relevantTargets.reduce((a, b) => a + (b.target_soho_db || 0), 0),
+                tartozek_ft: relevantTargets.reduce((a, b) => a + (b.target_tartozek_ft || 0), 0)
+            };
+
+            // 3. Súlyozás a hátralévő napokra
+            const dowPoints = [0, 0, 0, 0, 0, 0, 0];
+            const domPoints = Array(32).fill(0);
+            let totalHistPoints = 0;
+
+            globalTransactions.forEach(t => {
+                if (t.szerzodes_datuma) {
+                    const d = new Date(t.szerzodes_datuma);
+                    const dow = d.getDay();
+                    const dom = d.getDate();
+                    const pts = (t.osszpont || 0);
+                    dowPoints[dow] += pts;
+                    domPoints[dom] += pts;
+                    totalHistPoints += pts;
+                }
+            });
+
+            const dowWeights = dowPoints.map(p => totalHistPoints > 0 ? (p / totalHistPoints) * 7 : 1.0);
+            const domWeights = domPoints.map(p => totalHistPoints > 0 ? (p / totalHistPoints) * 30.5 : 1.0);
+
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = today.getMonth();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const currentDay = today.getDate();
+            const remainingDaysCount = Math.max(1, daysInMonth - currentDay + 1);
+
+            function getDayWeight(dNum) {
+                const dow = new Date(year, month, dNum).getDay();
+                const dowW = dowWeights[dow] || 1.0;
+                const domW = domWeights[dNum] || 1.0;
+                return dowW * domW;
+            }
+
+            let remainingWeightsSum = 0;
+            for (let d = currentDay; d <= daysInMonth; d++) {
+                remainingWeightsSum += getDayWeight(d);
+            }
+
+            const todayWeight = getDayWeight(currentDay);
+            const dayNames = ['Vasárnap', 'Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat'];
+            const todayDow = today.getDay();
+
+            document.getElementById('targetDayInfoText').innerText = `${daysInMonth} napos hónap: még ${remainingDaysCount} nap van hátra.`;
+            document.getElementById('targetDayWeightBadge').innerText = `Ma: ${dayNames[todayDow]} (${todayWeight.toFixed(2)}x súly)`;
+            document.getElementById('monthSubtitle').innerText = `${selectedMonth} • ${selectedStore === 'ALL' ? 'Összes Üzlet' : selectedStore}`;
+
+            // 4. BAL OLDALI TÁBLÁZAT KIRAJZOLÁSA
+            const metricRows = [
+                { key: 'pont', label: 'Összpont', isInt: false, color: 'text-amber-400' },
+                { key: 'acq_pont', label: 'ACQ Pont', isInt: false, color: 'text-sky-400' },
+                { key: 'ret_pont', label: 'Reti Pont', isInt: false, color: 'text-teal-400' },
+                { key: 'acq_db', label: 'ACQ db', isInt: true, color: 'text-indigo-400' },
+                { key: 'huseg_db', label: 'Hűség db', isInt: true, color: 'text-emerald-400' },
+                { key: 'fix_db', label: 'FIX db', isInt: true, color: 'text-purple-400' },
+                { key: 'soho_db', label: 'SOHO db', isInt: true, color: 'text-amber-300' },
+                { key: 'tartozek_ft', label: 'Tartozék (Ft)', isInt: true, isCurrency: true, color: 'text-pink-400' }
+            ];
+
+            const tbody = document.getElementById('targetMetricTableBody');
+            tbody.innerHTML = metricRows.map(m => {
+                const targetVal = targets[m.key] || 0;
+                const actualVal = actuals[m.key] || 0;
+                const remVal = Math.max(0, targetVal - actualVal);
+                const pct = targetVal > 0 ? (actualVal / targetVal) * 100 : 0;
+                const dailyWeighted = remainingWeightsSum > 0 ? (remVal * (todayWeight / remainingWeightsSum)) : (remVal / remainingDaysCount);
+
+                let badgeColor = "bg-rose-950/60 text-rose-300 border-rose-800";
+                if (pct >= 100) badgeColor = "bg-emerald-950/60 text-emerald-300 border-emerald-800";
+                else if (pct >= 80) badgeColor = "bg-indigo-950/60 text-indigo-300 border-indigo-800";
+                else if (pct >= 60) badgeColor = "bg-amber-950/60 text-amber-300 border-amber-800";
+
+                const formatVal = (v) => {
+                    if (m.isCurrency) return Math.round(v).toLocaleString('hu-HU') + ' Ft';
+                    if (m.isInt) return Math.round(v) + ' db';
+                    return v.toFixed(1);
+                };
+
+                return `
+                    <tr class="hover:bg-slate-800/40 transition">
+                        <td class="py-2.5 px-3 font-semibold ${m.color}">${m.label}</td>
+                        <td class="py-2.5 px-3 text-right text-slate-300">${formatVal(targetVal)}</td>
+                        <td class="py-2.5 px-3 text-right text-white font-bold">${formatVal(actualVal)}</td>
+                        <td class="py-2.5 px-3 text-right">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeColor}">
+                                ${pct.toFixed(1)}%
+                            </span>
+                        </td>
+                        <td class="py-2.5 px-3 text-right text-slate-400">${formatVal(remVal)}</td>
+                        <td class="py-2.5 px-3 text-right font-bold text-white">${formatVal(dailyWeighted)}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            // 5. JOBB OLDALI DIAGRAM KIRAJZOLÁSA
+            renderTargetChart();
+        }
+
+        // --- JOBB OLDALI VONALDIAGRAM (TARGET VS TELJESÍTÉS) ---
+        function renderTargetChart() {
+            const selectedMonth = document.getElementById('targetViewMonth').value;
+            const selectedStore = document.getElementById('targetViewStore').value;
+            const metricKey = document.getElementById('chartMetricSelect').value;
+
+            const filtered = globalTransactions.filter(t => {
+                const mOk = (selectedMonth === 'ALL' || t.honap === selectedMonth);
+                const sOk = (selectedStore === 'ALL' || t.bolt === selectedStore);
+                return mOk && sOk;
+            });
+
+            // Target lekérése
+            let relevantTargets = globalTargets.filter(t => selectedMonth === 'ALL' || t.honap === selectedMonth);
+            if (selectedStore !== 'ALL') {
+                relevantTargets = relevantTargets.filter(t => t.bolt === selectedStore);
+            }
+
+            let totalTarget = 0;
+            if (metricKey === 'pont') {
+                totalTarget = relevantTargets.reduce((a, b) => a + (b.target_pont || (b.target_acq_pont + b.target_ret_pont) || 0), 0);
+            } else if (metricKey === 'acq_pont') {
+                totalTarget = relevantTargets.reduce((a, b) => a + (b.target_acq_pont || 0), 0);
+            } else if (metricKey === 'ret_pont') {
+                totalTarget = relevantTargets.reduce((a, b) => a + (b.target_ret_pont || 0), 0);
+            } else if (metricKey === 'acq_db') {
+                totalTarget = relevantTargets.reduce((a, b) => a + (b.target_acq_db || 0), 0);
+            } else if (metricKey === 'huseg_db') {
+                totalTarget = relevantTargets.reduce((a, b) => a + (b.target_huseg_db || 0), 0);
+            } else if (metricKey === 'fix_db') {
+                totalTarget = relevantTargets.reduce((a, b) => a + (b.target_fix_db || 0), 0);
+            } else if (metricKey === 'soho_db') {
+                totalTarget = relevantTargets.reduce((a, b) => a + (b.target_soho_db || 0), 0);
+            }
+
+            // Hónap napjai (1-től 31-ig)
+            const daysInMonth = 31;
+            const labels = [];
+            for (let d = 1; d <= daysInMonth; d++) {
+                labels.push(`${d}. nap`);
+            }
+
+            // Napi tények összesítése napokra (1..31)
+            const dailyActualMap = Array(daysInMonth + 1).fill(0);
+            filtered.forEach(t => {
+                if (t.szerzodes_datuma) {
+                    const d = new Date(t.szerzodes_datuma).getDate();
+                    if (d >= 1 && d <= daysInMonth) {
+                        let val = 0;
+                        if (metricKey === 'pont') val = (t.osszpont || 0);
+                        else if (metricKey === 'acq_pont') val = (t.acq_pont || 0);
+                        else if (metricKey === 'ret_pont') val = (t.ret_pont || 0);
+                        else if (metricKey === 'acq_db') val = (t.acq_db || 0);
+                        else if (metricKey === 'huseg_db') val = (t.huseg_db || 0);
+                        else if (metricKey === 'fix_db') val = (t.fix_db || 0);
+                        else if (metricKey === 'soho_db') val = (t.szegmens && t.szegmens.toLowerCase() === 'soho') ? 1 : 0;
+
+                        dailyActualMap[d] += val;
+                    }
+                }
+            });
+
+            // Tény kumulált görbe készítése
+            const todayDate = new Date().getDate();
+            const actualCumulative = [];
+            let cumActual = 0;
+            for (let d = 1; d <= daysInMonth; d++) {
+                // Csak az eddig eltelt napokig rajzolunk tényvonalat
+                if (d <= todayDate) {
+                    cumActual += dailyActualMap[d];
+                    actualCumulative.push(Number(cumActual.toFixed(1)));
+                } else {
+                    actualCumulative.push(null);
+                }
+            }
+
+            // Súlyozott kumulált target görbe
+            // Egyszerű lineáris/súlyozott növekedési pálya 1-től 31-ig, ami a hónap végére eléri a totalTarget-et
+            const targetCumulative = [];
+            for (let d = 1; d <= daysInMonth; d++) {
+                const targetDayVal = (totalTarget / daysInMonth) * d;
+                targetCumulative.push(Number(targetDayVal.toFixed(1)));
+            }
+
+            // Chart.js példány újrarajzolása
+            const ctx = document.getElementById('targetLineChart').getContext('2d');
+            if (targetChartInstance) {
+                targetChartInstance.destroy();
+            }
+
+            targetChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Target Görbe',
+                            data: targetCumulative,
+                            borderColor: '#fbbf24', // sárga
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            fill: false,
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Tényleges Teljesítés',
+                            data: actualCumulative,
+                            borderColor: '#22d3ee', // ciánkék
+                            backgroundColor: 'rgba(34, 211, 238, 0.1)',
+                            borderWidth: 3,
+                            pointRadius: 2,
+                            pointBackgroundColor: '#22d3ee',
+                            pointHoverRadius: 6,
+                            fill: true,
+                            tension: 0.2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            titleColor: '#e2e8f0',
+                            bodyColor: '#e2e8f0',
+                            borderColor: '#475569',
+                            borderWidth: 1,
+                            padding: 10
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(51, 65, 85, 0.3)' },
+                            ticks: { color: '#94a3b8', font: { size: 10 }, maxTicksLimit: 12 }
+                        },
+                        y: {
+                            grid: { color: 'rgba(51, 65, 85, 0.3)' },
+                            ticks: { color: '#94a3b8', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- SZŰRŐK ÉS TÁBLÁZAT KEZELÉSE ---
+        function onFilterChange() {
+            renderData();
+        }
+
+        function renderData() {
+            const selectedMonth = document.getElementById('filterMonth').value;
+            const selectedStore = document.getElementById('filterStore').value;
+            const selectedSeller = document.getElementById('filterSeller').value;
+
+            const filtered = globalTransactions.filter(t => {
+                const monthOk = (selectedMonth === 'ALL' || t.honap === selectedMonth);
+                const storeOk = (selectedStore === 'ALL' || t.bolt === selectedStore);
+                const sellerOk = (selectedSeller === 'ALL' || t.ertekesito === selectedSeller);
+                return monthOk && storeOk && sellerOk;
+            });
+
+            const summaryMap = {};
+            filtered.forEach(t => {
+                const key = `${t.honap}___${t.bolt}___${t.ertekesito}`;
+                if (!summaryMap[key]) {
+                    summaryMap[key] = { 
+                        honap: t.honap, 
+                        bolt: t.bolt, 
+                        ertekesito: t.ertekesito, 
+                        count: 0, 
+                        acq: 0, 
+                        acq_hs: 0, 
+                        acq_tablet: 0, 
+                        huseg: 0, 
+                        fix: 0, 
+                        soho: 0,
+                        acq_pont: 0, 
+                        ret_pont: 0, 
+                        pont: 0 
+                    };
+                }
+                summaryMap[key].count += 1;
+                summaryMap[key].acq += (t.acq_db || 0);
+                summaryMap[key].acq_hs += (t.acq_hs || 0);
+                summaryMap[key].acq_tablet += (t.acq_tablet || 0);
+                summaryMap[key].huseg += (t.huseg_db || 0);
+                summaryMap[key].fix += (t.fix_db || 0);
+                if (t.szegmens && t.szegmens.toLowerCase() === 'soho') {
+                    summaryMap[key].soho += 1;
+                }
+                summaryMap[key].acq_pont += (t.acq_pont || 0);
+                summaryMap[key].ret_pont += (t.ret_pont || 0);
+                summaryMap[key].pont += (t.osszpont || 0);
+            });
+
+            const summaryList = Object.values(summaryMap).sort((a,b) => b.pont - a.pont);
+
+            document.getElementById('kpiCount').innerText = `${filtered.length} db`;
+            document.getElementById('kpiACQ').innerText = `${summaryList.reduce((acc, s) => acc + s.acq, 0)} db`;
+            document.getElementById('kpiACQHS').innerText = `${summaryList.reduce((acc, s) => acc + s.acq_hs, 0)} db`;
+            document.getElementById('kpiACQTab').innerText = `${summaryList.reduce((acc, s) => acc + s.acq_tablet, 0)} db`;
+            document.getElementById('kpiHuseg').innerText = `${summaryList.reduce((acc, s) => acc + s.huseg, 0)} db`;
+            document.getElementById('kpiFix').innerText = `${summaryList.reduce((acc, s) => acc + s.fix, 0)} db`;
+            document.getElementById('kpiSoho').innerText = `${summaryList.reduce((acc, s) => acc + s.soho, 0)} db`;
+            document.getElementById('kpiACQPont').innerText = summaryList.reduce((acc, s) => acc + s.acq_pont, 0).toFixed(1);
+            document.getElementById('kpiRETPont').innerText = summaryList.reduce((acc, s) => acc + s.ret_pont, 0).toFixed(1);
+
+            const tbody = document.getElementById('tableBody');
+            if (summaryList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="13" class="p-4 text-center text-slate-400">Nincs a szűrésnek megfelelő adat.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = summaryList.map(s => `
+                <tr class="hover:bg-slate-700/30 transition">
+                    <td class="p-3 text-xs text-slate-400">${s.honap}</td>
+                    <td class="p-3"><span class="px-2 py-1 bg-slate-700 text-xs font-semibold rounded">${s.bolt}</span></td>
+                    <td class="p-3 font-medium text-white">${s.ertekesito}</td>
+                    <td class="p-3 text-center text-slate-300">${s.count}</td>
+                    <td class="p-3 text-center font-bold text-indigo-400">${s.acq}</td>
+                    <td class="p-3 text-center text-sky-400 font-medium">${s.acq_hs}</td>
+                    <td class="p-3 text-center text-teal-400 font-medium">${s.acq_tablet}</td>
+                    <td class="p-3 text-center text-emerald-400 font-medium">${s.huseg}</td>
+                    <td class="p-3 text-center text-purple-400 font-medium">${s.fix}</td>
+                    <td class="p-3 text-center text-amber-400 font-bold">${s.soho}</td>
+                    <td class="p-3 text-right text-sky-300 font-medium">${s.acq_pont.toFixed(1)}</td>
+                    <td class="p-3 text-right text-teal-300 font-medium">${s.ret_pont.toFixed(1)}</td>
+                    <td class="p-3 text-right font-bold text-amber-400">${s.pont.toFixed(2)}</td>
+                </tr>
+            `).join('');
+        }
+
+        // --- FELTÖLTÉSEK ÉS ADMIN LOGIKA ---
         function handleDropFiles(e) {
             if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                 processFileList(Array.from(e.dataTransfer.files));
@@ -659,7 +1084,7 @@
                     }
 
                     await loadTargetsFromSupabase();
-                    calculateAllTargets();
+                    updateTargetView();
                     alert(`Sikeresen rögzítve ${targetPayloads.length} bolt targetje!`);
                 } catch (err) {
                     alert("Hiba a target Excel feldolgozásakor: " + err.message);
@@ -719,7 +1144,7 @@
             }
 
             await loadTargetsFromSupabase();
-            calculateAllTargets();
+            updateTargetView();
             document.getElementById('targetPasteArea').value = '';
             alert(`Sikeresen elmentve ${targetPayloads.length} bolt targetje!`);
         }
@@ -746,243 +1171,6 @@
                     <td class="p-2.5 text-right font-mono text-pink-300">${(t.target_tartozek_ft || 0).toLocaleString('hu-HU')} Ft</td>
                 </tr>
             `).join('');
-        }
-
-        function onFilterChange() {
-            renderData();
-        }
-
-        function calculateAllTargets() {
-            const selectedMonth = document.getElementById('filterMonth').value;
-            const selectedStore = document.getElementById('filterStore').value;
-            const selectedSeller = document.getElementById('filterSeller').value;
-
-            const filtered = globalTransactions.filter(t => {
-                const mOk = (selectedMonth === 'ALL' || t.honap === selectedMonth);
-                const sOk = (selectedStore === 'ALL' || t.bolt === selectedStore);
-                const eOk = (selectedSeller === 'ALL' || t.ertekesito === selectedSeller);
-                return mOk && sOk && eOk;
-            });
-
-            const actuals = {
-                acq_pont: filtered.reduce((acc, t) => acc + (t.acq_pont || 0), 0),
-                ret_pont: filtered.reduce((acc, t) => acc + (t.ret_pont || 0), 0),
-                acq_db: filtered.reduce((acc, t) => acc + (t.acq_db || 0), 0),
-                huseg_db: filtered.reduce((acc, t) => acc + (t.huseg_db || 0), 0),
-                fix_db: filtered.reduce((acc, t) => acc + (t.fix_db || 0), 0),
-                soho_db: filtered.filter(t => t.szegmens && t.szegmens.toLowerCase() === 'soho').length,
-                tartozek_ft: 0
-            };
-
-            let relevantTargets = globalTargets.filter(t => selectedMonth === 'ALL' || t.honap === selectedMonth);
-            if (selectedStore !== 'ALL') {
-                relevantTargets = relevantTargets.filter(t => t.bolt === selectedStore);
-            }
-
-            const targets = {
-                acq_pont: relevantTargets.reduce((a, b) => a + (b.target_acq_pont || 0), 0),
-                ret_pont: relevantTargets.reduce((a, b) => a + (b.target_ret_pont || 0), 0),
-                acq_db: relevantTargets.reduce((a, b) => a + (b.target_acq_db || 0), 0),
-                huseg_db: relevantTargets.reduce((a, b) => a + (b.target_huseg_db || 0), 0),
-                fix_db: relevantTargets.reduce((a, b) => a + (b.target_fix_db || 0), 0),
-                soho_db: relevantTargets.reduce((a, b) => a + (b.target_soho_db || 0), 0),
-                tartozek_ft: relevantTargets.reduce((a, b) => a + (b.target_tartozek_ft || 0), 0)
-            };
-
-            const dowPoints = [0, 0, 0, 0, 0, 0, 0];
-            const domPoints = Array(32).fill(0);
-
-            let totalHistPoints = 0;
-            globalTransactions.forEach(t => {
-                if (t.szerzodes_datuma) {
-                    const d = new Date(t.szerzodes_datuma);
-                    const dow = d.getDay();
-                    const dom = d.getDate();
-                    const pts = (t.osszpont || 0);
-
-                    dowPoints[dow] += pts;
-                    domPoints[dom] += pts;
-                    totalHistPoints += pts;
-                }
-            });
-
-            const dowWeights = dowPoints.map(p => totalHistPoints > 0 ? (p / totalHistPoints) * 7 : 1.0);
-            const domWeights = domPoints.map(p => totalHistPoints > 0 ? (p / totalHistPoints) * 30.5 : 1.0);
-
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = today.getMonth();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const currentDay = today.getDate();
-            const remainingDaysCount = Math.max(1, daysInMonth - currentDay + 1);
-
-            function getDayWeight(dNum) {
-                const dow = new Date(year, month, dNum).getDay();
-                const dowW = dowWeights[dow] || 1.0;
-                const domW = domWeights[dNum] || 1.0;
-                return dowW * domW;
-            }
-
-            let remainingWeightsSum = 0;
-            for (let d = currentDay; d <= daysInMonth; d++) {
-                remainingWeightsSum += getDayWeight(d);
-            }
-
-            const todayWeight = getDayWeight(currentDay);
-            const todayDow = today.getDay();
-            const dayNames = ['Vasárnap', 'Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat'];
-
-            const isPaydayWindow = currentDay >= 5 && currentDay <= 12;
-            const paydayBadge = isPaydayWindow ? " 💰 [Fizetésnap / Nyugdíj időszak]" : "";
-
-            document.getElementById('targetRemainingDaysLabel').innerText = `${daysInMonth} napos hónap: még ${remainingDaysCount} nap van hátra`;
-            document.getElementById('todayWeightStatus').innerText = `Ma: ${dayNames[todayDow]}, ${currentDay}-e (${todayWeight.toFixed(2)}x forgalmi súly)${paydayBadge}`;
-
-            function updateMetricUI(key, isInt = false, isCurrency = false) {
-                const target = targets[key];
-                const actual = actuals[key];
-                const rem = Math.max(0, target - actual);
-                const pct = target > 0 ? Math.min(999, (actual / target) * 100) : 0;
-
-                const dailyWeighted = remainingWeightsSum > 0 
-                    ? (rem * (todayWeight / remainingWeightsSum)) 
-                    : (rem / remainingDaysCount);
-
-                document.getElementById(`c_${key}_pct`).innerText = `${pct.toFixed(1)}%`;
-                
-                if (isCurrency) {
-                    document.getElementById(`c_${key}_rem`).innerText = `hátra: ${Math.round(rem).toLocaleString('hu-HU')} Ft`;
-                    document.getElementById(`c_${key}_daily`).innerText = `${Math.ceil(dailyWeighted).toLocaleString('hu-HU')} Ft`;
-                } else if (isInt) {
-                    document.getElementById(`c_${key}_rem`).innerText = `hátra: ${Math.round(rem)}`;
-                    document.getElementById(`c_${key}_daily`).innerText = `${Math.ceil(dailyWeighted)} db`;
-                } else {
-                    document.getElementById(`c_${key}_rem`).innerText = `hátra: ${rem.toFixed(1)}`;
-                    document.getElementById(`c_${key}_daily`).innerText = dailyWeighted.toFixed(1);
-                }
-            }
-
-            updateMetricUI('acq_pont');
-            updateMetricUI('ret_pont');
-            updateMetricUI('acq_db', true);
-            updateMetricUI('huseg_db', true);
-            updateMetricUI('fix_db', true);
-            updateMetricUI('soho_db', true);
-            updateMetricUI('tartozek', false, true);
-        }
-
-        function populateFilters() {
-            const months = [...new Set(globalTransactions.map(t => t.honap))].filter(Boolean).sort().reverse();
-            const stores = [...new Set(globalTransactions.map(t => t.bolt))].filter(Boolean).sort();
-            const sellers = [...new Set(globalTransactions.map(t => t.ertekesito))].filter(Boolean).sort();
-
-            const monthSelect = document.getElementById('filterMonth');
-            const targetUploadMonth = document.getElementById('targetUploadMonth');
-            const currentSelectedMonth = monthSelect.value;
-            
-            const monthOptions = '<option value="ALL">Összes Hónap</option>' + months.map(m => `<option value="${m}">${m}</option>`).join('');
-            monthSelect.innerHTML = monthOptions;
-            if (targetUploadMonth && months.length > 0) {
-                targetUploadMonth.innerHTML = months.map(m => `<option value="${m}">${m}</option>`).join('');
-            }
-
-            if (months.length > 0 && currentSelectedMonth === 'ALL') {
-                monthSelect.value = months[0];
-            } else if (months.includes(currentSelectedMonth)) {
-                monthSelect.value = currentSelectedMonth;
-            }
-
-            const storeSelect = document.getElementById('filterStore');
-            storeSelect.innerHTML = '<option value="ALL">Összes Bolt</option>' + stores.map(s => `<option value="${s}">${s}</option>`).join('');
-
-            const sellerSelect = document.getElementById('filterSeller');
-            sellerSelect.innerHTML = '<option value="ALL">Összes Értékesítő</option>' + sellers.map(s => `<option value="${s}">${s}</option>`).join('');
-        }
-
-        function renderData() {
-            const selectedMonth = document.getElementById('filterMonth').value;
-            const selectedStore = document.getElementById('filterStore').value;
-            const selectedSeller = document.getElementById('filterSeller').value;
-
-            const filtered = globalTransactions.filter(t => {
-                const monthOk = (selectedMonth === 'ALL' || t.honap === selectedMonth);
-                const storeOk = (selectedStore === 'ALL' || t.bolt === selectedStore);
-                const sellerOk = (selectedSeller === 'ALL' || t.ertekesito === selectedSeller);
-                return monthOk && storeOk && sellerOk;
-            });
-
-            const summaryMap = {};
-            filtered.forEach(t => {
-                const key = `${t.honap}___${t.bolt}___${t.ertekesito}`;
-                if (!summaryMap[key]) {
-                    summaryMap[key] = { 
-                        honap: t.honap, 
-                        bolt: t.bolt, 
-                        ertekesito: t.ertekesito, 
-                        count: 0, 
-                        acq: 0, 
-                        acq_hs: 0, 
-                        acq_tablet: 0, 
-                        huseg: 0, 
-                        fix: 0, 
-                        soho: 0,
-                        acq_pont: 0,
-                        ret_pont: 0, 
-                        pont: 0 
-                    };
-                }
-                summaryMap[key].count += 1;
-                summaryMap[key].acq += (t.acq_db || 0);
-                summaryMap[key].acq_hs += (t.acq_hs || 0);
-                summaryMap[key].acq_tablet += (t.acq_tablet || 0);
-                summaryMap[key].huseg += (t.huseg_db || 0);
-                summaryMap[key].fix += (t.fix_db || 0);
-                if (t.szegmens && t.szegmens.toLowerCase() === 'soho') {
-                    summaryMap[key].soho += 1;
-                }
-                summaryMap[key].acq_pont += (t.acq_pont || 0);
-                summaryMap[key].ret_pont += (t.ret_pont || 0);
-                summaryMap[key].pont += (t.osszpont || 0);
-            });
-
-            const summaryList = Object.values(summaryMap).sort((a,b) => b.pont - a.pont);
-
-            document.getElementById('kpiCount').innerText = `${filtered.length} db`;
-            document.getElementById('kpiACQ').innerText = `${summaryList.reduce((acc, s) => acc + s.acq, 0)} db`;
-            document.getElementById('kpiACQHS').innerText = `${summaryList.reduce((acc, s) => acc + s.acq_hs, 0)} db`;
-            document.getElementById('kpiACQTab').innerText = `${summaryList.reduce((acc, s) => acc + s.acq_tablet, 0)} db`;
-            document.getElementById('kpiHuseg').innerText = `${summaryList.reduce((acc, s) => acc + s.huseg, 0)} db`;
-            document.getElementById('kpiFix').innerText = `${summaryList.reduce((acc, s) => acc + s.fix, 0)} db`;
-            document.getElementById('kpiSoho').innerText = `${summaryList.reduce((acc, s) => acc + s.soho, 0)} db`;
-            document.getElementById('kpiACQPont').innerText = summaryList.reduce((acc, s) => acc + s.acq_pont, 0).toFixed(1);
-            document.getElementById('kpiRETPont').innerText = summaryList.reduce((acc, s) => acc + s.ret_pont, 0).toFixed(1);
-
-            const tbody = document.getElementById('tableBody');
-            if (summaryList.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="13" class="p-4 text-center text-slate-400">Nincs a szűrésnek megfelelő adat.</td></tr>';
-                calculateAllTargets();
-                return;
-            }
-
-            tbody.innerHTML = summaryList.map(s => `
-                <tr class="hover:bg-slate-700/30 transition">
-                    <td class="p-3 text-xs text-slate-400">${s.honap}</td>
-                    <td class="p-3"><span class="px-2 py-1 bg-slate-700 text-xs font-semibold rounded">${s.bolt}</span></td>
-                    <td class="p-3 font-medium text-white">${s.ertekesito}</td>
-                    <td class="p-3 text-center text-slate-300">${s.count}</td>
-                    <td class="p-3 text-center font-bold text-indigo-400">${s.acq}</td>
-                    <td class="p-3 text-center text-sky-400 font-medium">${s.acq_hs}</td>
-                    <td class="p-3 text-center text-teal-400 font-medium">${s.acq_tablet}</td>
-                    <td class="p-3 text-center text-emerald-400 font-medium">${s.huseg}</td>
-                    <td class="p-3 text-center text-purple-400 font-medium">${s.fix}</td>
-                    <td class="p-3 text-center text-amber-400 font-bold">${s.soho}</td>
-                    <td class="p-3 text-right text-sky-300 font-medium">${s.acq_pont.toFixed(1)}</td>
-                    <td class="p-3 text-right text-teal-300 font-medium">${s.ret_pont.toFixed(1)}</td>
-                    <td class="p-3 text-right font-bold text-amber-400">${s.pont.toFixed(2)}</td>
-                </tr>
-            `).join('');
-
-            calculateAllTargets();
         }
     </script>
 </body>
