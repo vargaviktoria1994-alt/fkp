@@ -139,7 +139,7 @@
                     <div class="lg:col-span-6 bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col justify-between">
                         <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
                             <div>
-                                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Kumulált Teljesülés vs. Target Görbe</h3>
+                                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Napi Teljesítés vs. Napi Target</h3>
                                 <p class="text-[11px] text-slate-400 mt-0.5">Naponkénti haladás a hónap során</p>
                             </div>
                             
@@ -166,11 +166,11 @@
                         <div class="flex items-center justify-center gap-6 mt-3 pt-2 border-t border-slate-800 text-xs">
                             <div class="flex items-center gap-2">
                                 <span class="inline-block w-4 h-1 bg-amber-400 rounded-full"></span>
-                                <span class="text-slate-300">Súlyozott Elvárt Target</span>
+                                <span class="text-slate-300">Súlyozott Napi Target</span>
                             </div>
                             <div class="flex items-center gap-2">
                                 <span class="inline-block w-4 h-1 bg-cyan-400 rounded-full"></span>
-                                <span class="text-white font-semibold">Tényleges Teljesítés</span>
+                                <span class="text-white font-semibold">Napi Tényleges Teljesítés</span>
                             </div>
                         </div>
                     </div>
@@ -647,7 +647,7 @@
             renderTargetChart();
         }
 
-        // --- JOBB OLDALI VONALDIAGRAM (TARGET VS TELJESÍTÉS) ---
+                // --- JOBB OLDALI VONALDIAGRAM (NAPI TARGET VS NAPI TELJESÍTÉS) ---
         function renderTargetChart() {
             const selectedMonth = document.getElementById('targetViewMonth').value;
             const selectedStore = document.getElementById('targetViewStore').value;
@@ -682,14 +682,57 @@
                 totalTarget = relevantTargets.reduce((a, b) => a + (b.target_soho_db || 0), 0);
             }
 
-            // Hónap napjai (1-től 31-ig)
             const daysInMonth = 31;
             const labels = [];
             for (let d = 1; d <= daysInMonth; d++) {
-                labels.push(`${d}. nap`);
+                labels.push(`${d}.`);
             }
 
-            // Napi tények összesítése napokra (1..31)
+            // Súlyozási ritmus kinyerése a napokhoz
+            const dowPoints = [0, 0, 0, 0, 0, 0, 0];
+            const domPoints = Array(32).fill(0);
+            let totalHistPoints = 0;
+
+            globalTransactions.forEach(t => {
+                if (t.szerzodes_datuma) {
+                    const d = new Date(t.szerzodes_datuma);
+                    const dow = d.getDay();
+                    const dom = d.getDate();
+                    const pts = (t.osszpont || 0);
+                    dowPoints[dow] += pts;
+                    domPoints[dom] += pts;
+                    totalHistPoints += pts;
+                }
+            });
+
+            const dowWeights = dowPoints.map(p => totalHistPoints > 0 ? (p / totalHistPoints) * 7 : 1.0);
+            const domWeights = domPoints.map(p => totalHistPoints > 0 ? (p / totalHistPoints) * 30.5 : 1.0);
+
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth();
+
+            function getDayWeight(dNum) {
+                const dow = new Date(year, month, dNum).getDay();
+                const dowW = dowWeights[dow] || 1.0;
+                const domW = domWeights[dNum] || 1.0;
+                return dowW * domW;
+            }
+
+            let totalMonthWeights = 0;
+            for (let d = 1; d <= daysInMonth; d++) {
+                totalMonthWeights += getDayWeight(d);
+            }
+
+            // 1. Súlyozott NAPI target értékek minden napra (1..31)
+            const dailyTargetValues = [];
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dayW = getDayWeight(d);
+                const dailyT = totalMonthWeights > 0 ? (totalTarget * (dayW / totalMonthWeights)) : (totalTarget / daysInMonth);
+                dailyTargetValues.push(Number(dailyT.toFixed(1)));
+            }
+
+            // 2. NAPI tények összesítése naponként (1..31)
             const dailyActualMap = Array(daysInMonth + 1).fill(0);
             filtered.forEach(t => {
                 if (t.szerzodes_datuma) {
@@ -709,29 +752,17 @@
                 }
             });
 
-            // Tény kumulált görbe készítése
-            const todayDate = new Date().getDate();
-            const actualCumulative = [];
-            let cumActual = 0;
+            // Csak az eddig eltelt napokig rajzolunk tényvonalat
+            const todayDate = now.getDate();
+            const dailyActualValues = [];
             for (let d = 1; d <= daysInMonth; d++) {
-                // Csak az eddig eltelt napokig rajzolunk tényvonalat
                 if (d <= todayDate) {
-                    cumActual += dailyActualMap[d];
-                    actualCumulative.push(Number(cumActual.toFixed(1)));
+                    dailyActualValues.push(Number(dailyActualMap[d].toFixed(1)));
                 } else {
-                    actualCumulative.push(null);
+                    dailyActualValues.push(null);
                 }
             }
 
-            // Súlyozott kumulált target görbe
-            // Egyszerű lineáris/súlyozott növekedési pálya 1-től 31-ig, ami a hónap végére eléri a totalTarget-et
-            const targetCumulative = [];
-            for (let d = 1; d <= daysInMonth; d++) {
-                const targetDayVal = (totalTarget / daysInMonth) * d;
-                targetCumulative.push(Number(targetDayVal.toFixed(1)));
-            }
-
-            // Chart.js példány újrarajzolása
             const ctx = document.getElementById('targetLineChart').getContext('2d');
             if (targetChartInstance) {
                 targetChartInstance.destroy();
@@ -743,23 +774,24 @@
                     labels: labels,
                     datasets: [
                         {
-                            label: 'Target Görbe',
-                            data: targetCumulative,
-                            borderColor: '#fbbf24', // sárga
+                            label: 'Napi Súlyozott Target',
+                            data: dailyTargetValues,
+                            borderColor: '#fbbf24', // sárga szaggatott
                             borderWidth: 2,
                             borderDash: [5, 5],
-                            pointRadius: 0,
-                            pointHoverRadius: 4,
+                            pointRadius: 2,
+                            pointBackgroundColor: '#fbbf24',
+                            pointHoverRadius: 5,
                             fill: false,
-                            tension: 0.1
+                            tension: 0.3
                         },
                         {
-                            label: 'Tényleges Teljesítés',
-                            data: actualCumulative,
-                            borderColor: '#22d3ee', // ciánkék
-                            backgroundColor: 'rgba(34, 211, 238, 0.1)',
-                            borderWidth: 3,
-                            pointRadius: 2,
+                            label: 'Napi Tényleges Teljesítés',
+                            data: dailyActualValues,
+                            borderColor: '#22d3ee', // ciánkék folytonos
+                            backgroundColor: 'rgba(34, 211, 238, 0.15)',
+                            borderWidth: 2.5,
+                            pointRadius: 3,
                             pointBackgroundColor: '#22d3ee',
                             pointHoverRadius: 6,
                             fill: true,
@@ -770,13 +802,17 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
                     plugins: {
                         legend: { display: false },
                         tooltip: {
-                            backgroundColor: '#1e293b',
+                            backgroundColor: '#0f172a',
                             titleColor: '#e2e8f0',
                             bodyColor: '#e2e8f0',
-                            borderColor: '#475569',
+                            borderColor: '#334155',
                             borderWidth: 1,
                             padding: 10
                         }
@@ -784,9 +820,10 @@
                     scales: {
                         x: {
                             grid: { color: 'rgba(51, 65, 85, 0.3)' },
-                            ticks: { color: '#94a3b8', font: { size: 10 }, maxTicksLimit: 12 }
+                            ticks: { color: '#94a3b8', font: { size: 10 }, maxTicksLimit: 16 }
                         },
                         y: {
+                            beginAtZero: true,
                             grid: { color: 'rgba(51, 65, 85, 0.3)' },
                             ticks: { color: '#94a3b8', font: { size: 10 } }
                         }
