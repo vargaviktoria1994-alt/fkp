@@ -48,7 +48,6 @@
             </div>
             
             <div class="flex flex-wrap items-center gap-2">
-                <!-- Navigációs Fülek (Tabs) -->
                 <nav class="flex bg-slate-900/70 p-1 rounded-xl border border-slate-700/60">
                     <button id="tabBtnDashboard" onclick="switchTab('dashboard')" 
                             class="px-4 py-2 rounded-lg text-xs font-semibold transition bg-indigo-600 text-white shadow">
@@ -56,7 +55,7 @@
                     </button>
                     <button id="tabBtnUpload" onclick="switchTab('upload')" 
                             class="px-4 py-2 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white">
-                        📤 Adatfeltöltés & Beállítások
+                        📤 Adatfeltöltés & Target Admin
                     </button>
                 </nav>
 
@@ -84,22 +83,11 @@
                     </div>
                 </div>
 
-                <!-- 6 Metrika Napi Súlyozott Kártyája -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+                <!-- 7 Fő Target Metrika Kártyája -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+                    <!-- ACQ Pont -->
                     <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
-                        <span class="text-[11px] font-semibold text-slate-400 uppercase">Összpont</span>
-                        <div class="flex justify-between items-baseline">
-                            <span id="c_pont_pct" class="text-sm font-bold text-amber-400">0%</span>
-                            <span id="c_pont_rem" class="text-xs text-slate-400">hátra: 0</span>
-                        </div>
-                        <div class="border-t border-slate-600/60 pt-1 mt-1">
-                            <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
-                            <span id="c_pont_daily" class="text-base font-bold text-white">0</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
-                        <span class="text-[11px] font-semibold text-slate-400 uppercase">ACQ Pont</span>
+                        <span class="text-[11px] font-semibold text-sky-400 uppercase">ACQ Pont</span>
                         <div class="flex justify-between items-baseline">
                             <span id="c_acq_pont_pct" class="text-sm font-bold text-sky-400">0%</span>
                             <span id="c_acq_pont_rem" class="text-xs text-slate-400">hátra: 0</span>
@@ -110,8 +98,9 @@
                         </div>
                     </div>
 
+                    <!-- Reti Pont -->
                     <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
-                        <span class="text-[11px] font-semibold text-slate-400 uppercase">RET Pont</span>
+                        <span class="text-[11px] font-semibold text-teal-400 uppercase">Reti Pont</span>
                         <div class="flex justify-between items-baseline">
                             <span id="c_ret_pont_pct" class="text-sm font-bold text-teal-400">0%</span>
                             <span id="c_ret_pont_rem" class="text-xs text-slate-400">hátra: 0</span>
@@ -122,8 +111,9 @@
                         </div>
                     </div>
 
+                    <!-- ACQ db -->
                     <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
-                        <span class="text-[11px] font-semibold text-slate-400 uppercase">ACQ db</span>
+                        <span class="text-[11px] font-semibold text-indigo-400 uppercase">ACQ db</span>
                         <div class="flex justify-between items-baseline">
                             <span id="c_acq_db_pct" class="text-sm font-bold text-indigo-400">0%</span>
                             <span id="c_acq_db_rem" class="text-xs text-slate-400">hátra: 0</span>
@@ -134,8 +124,9 @@
                         </div>
                     </div>
 
+                    <!-- Hűség db -->
                     <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
-                        <span class="text-[11px] font-semibold text-slate-400 uppercase">Hűség db</span>
+                        <span class="text-[11px] font-semibold text-emerald-400 uppercase">Hűség db</span>
                         <div class="flex justify-between items-baseline">
                             <span id="c_huseg_db_pct" class="text-sm font-bold text-emerald-400">0%</span>
                             <span id="c_huseg_db_rem" class="text-xs text-slate-400">hátra: 0</span>
@@ -146,8 +137,9 @@
                         </div>
                     </div>
 
+                    <!-- FIX db -->
                     <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
-                        <span class="text-[11px] font-semibold text-slate-400 uppercase">FIX db</span>
+                        <span class="text-[11px] font-semibold text-purple-400 uppercase">FIX db</span>
                         <div class="flex justify-between items-baseline">
                             <span id="c_fix_db_pct" class="text-sm font-bold text-purple-400">0%</span>
                             <span id="c_fix_db_rem" class="text-xs text-slate-400">hátra: 0</span>
@@ -155,6 +147,32 @@
                         <div class="border-t border-slate-600/60 pt-1 mt-1">
                             <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
                             <span id="c_fix_db_daily" class="text-base font-bold text-white">0 db</span>
+                        </div>
+                    </div>
+
+                    <!-- SOHO db -->
+                    <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
+                        <span class="text-[11px] font-semibold text-amber-400 uppercase">SOHO db</span>
+                        <div class="flex justify-between items-baseline">
+                            <span id="c_soho_db_pct" class="text-sm font-bold text-amber-400">0%</span>
+                            <span id="c_soho_db_rem" class="text-xs text-slate-400">hátra: 0</span>
+                        </div>
+                        <div class="border-t border-slate-600/60 pt-1 mt-1">
+                            <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
+                            <span id="c_soho_db_daily" class="text-base font-bold text-white">0 db</span>
+                        </div>
+                    </div>
+
+                    <!-- Tartozék Ft -->
+                    <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
+                        <span class="text-[11px] font-semibold text-pink-400 uppercase">Tartozék Ft</span>
+                        <div class="flex justify-between items-baseline">
+                            <span id="c_tartozek_pct" class="text-sm font-bold text-pink-400">0%</span>
+                            <span id="c_tartozek_rem" class="text-xs text-slate-400">hátra: 0 Ft</span>
+                        </div>
+                        <div class="border-t border-slate-600/60 pt-1 mt-1">
+                            <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
+                            <span id="c_tartozek_daily" class="text-base font-bold text-white">0 Ft</span>
                         </div>
                     </div>
                 </div>
@@ -258,11 +276,11 @@
                     <h2 class="text-lg font-semibold text-white flex items-center gap-2">
                         <span>📤</span> CPR Havi Export Feltöltése
                     </h2>
-                    <p class="text-xs text-slate-400 mt-1">Húzd be a havi tranzakciós fájlt (pl. <code class="text-indigo-400">Tranzakciók - 202610.xlsx</code>). A rendszer észleli a hónapot és felülírja a felhőben az előző napi változatot.</p>
+                    <p class="text-xs text-slate-400 mt-1">Húzd be a havi tranzakciós fájlt (pl. <code class="text-indigo-400">Tranzakciók - 202610.xlsx</code>). A rendszer észleli a hónapot és felülírja a korábbi változatot.</p>
                 </div>
 
                 <div onclick="document.getElementById('fileInput').click()" 
-                     class="border-2 border-dashed border-indigo-500/50 hover:border-indigo-400 bg-indigo-950/20 hover:bg-indigo-950/40 rounded-xl p-10 text-center cursor-pointer transition">
+                     class="border-2 border-dashed border-indigo-500/50 hover:border-indigo-400 bg-indigo-950/20 hover:bg-indigo-950/40 rounded-xl p-8 text-center cursor-pointer transition">
                     <div class="text-4xl mb-3">📁</div>
                     <span id="uploadLabel" class="text-sm text-slate-300 font-medium">Kattints ide vagy húzd ide a CPR Excel fájlt...</span>
                     <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileSelect(event)">
@@ -275,60 +293,60 @@
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700 pb-3">
                     <div>
                         <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-                            <span>🎯</span> Havi Targetek Rögzítése
+                            <span>🎯</span> Bolti Havi Targetek Feltöltése
                         </h2>
-                        <p class="text-xs text-slate-400 mt-1">Állítsd be a havi elvárásokat kézzel boltonként, vagy tölts fel egy target Excelt.</p>
+                        <p class="text-xs text-slate-400 mt-1">Tölts fel egy Target Excelt, vagy másold be a Google Táblázatból közvetlenül</p>
                     </div>
 
                     <div class="flex items-center gap-2">
-                        <button onclick="document.getElementById('targetFileInput').click()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-3 py-2 rounded-lg border border-slate-600 transition flex items-center gap-1.5">
-                            <span>📥</span> Target Excel Fájl
+                        <button onclick="document.getElementById('targetFileInput').click()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs px-4 py-2 rounded-lg transition shadow flex items-center gap-1.5">
+                            <span>📥</span> Target Excel Fájl Feltöltése
                         </button>
                         <input type="file" id="targetFileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleTargetExcelUpload(event)">
-
-                        <button onclick="saveCurrentTargetsToSupabase()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs px-4 py-2 rounded-lg transition shadow flex items-center gap-1.5">
-                            <span>💾</span> Mentés a Felhőbe
-                        </button>
                     </div>
                 </div>
 
-                <!-- Célkiválasztás (Hónap és Bolt) -->
-                <div class="flex flex-wrap items-center gap-3 bg-slate-900/40 p-3 rounded-lg border border-slate-700/50">
-                    <span class="text-xs font-semibold text-slate-400">Target Cél:</span>
-                    <select id="targetFormMonth" onchange="syncTargetInputsFromAdmin()" class="bg-slate-800 text-white text-xs border border-slate-700 rounded-lg px-3 py-1.5 outline-none">
+                <!-- Cél Hónap Választó a Targetekhez -->
+                <div class="flex items-center gap-3 bg-slate-900/40 p-3 rounded-lg border border-slate-700/50">
+                    <span class="text-xs font-semibold text-slate-300">Cél Hónap a feltöltéshez:</span>
+                    <select id="targetUploadMonth" class="bg-slate-800 text-white text-xs border border-slate-700 rounded-lg px-3 py-1.5 outline-none">
                         <option value="2026 október">2026 október</option>
                     </select>
-                    <select id="targetFormStore" onchange="syncTargetInputsFromAdmin()" class="bg-slate-800 text-white text-xs border border-slate-700 rounded-lg px-3 py-1.5 outline-none">
-                        <option value="ALL">Összes Bolt (Globális)</option>
-                    </select>
                 </div>
 
-                <!-- Beviteli Mezők -->
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                    <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/60">
-                        <label class="text-[11px] uppercase font-bold text-amber-400">Összpont Target</label>
-                        <input type="number" id="t_pont" class="w-full mt-1 bg-slate-800 text-white text-sm font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:ring-1 focus:ring-amber-400 outline-none" value="0">
-                    </div>
-                    <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/60">
-                        <label class="text-[11px] uppercase font-bold text-sky-400">ACQ Pont Target</label>
-                        <input type="number" id="t_acq_pont" class="w-full mt-1 bg-slate-800 text-white text-sm font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:ring-1 focus:ring-sky-400 outline-none" value="0">
-                    </div>
-                    <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/60">
-                        <label class="text-[11px] uppercase font-bold text-teal-400">RET Pont Target</label>
-                        <input type="number" id="t_ret_pont" class="w-full mt-1 bg-slate-800 text-white text-sm font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:ring-1 focus:ring-teal-400 outline-none" value="0">
-                    </div>
-                    <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/60">
-                        <label class="text-[11px] uppercase font-bold text-indigo-400">ACQ db Target</label>
-                        <input type="number" id="t_acq_db" class="w-full mt-1 bg-slate-800 text-white text-sm font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:ring-1 focus:ring-indigo-400 outline-none" value="0">
-                    </div>
-                    <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/60">
-                        <label class="text-[11px] uppercase font-bold text-emerald-400">Hűség db Target</label>
-                        <input type="number" id="t_huseg_db" class="w-full mt-1 bg-slate-800 text-white text-sm font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:ring-1 focus:ring-emerald-400 outline-none" value="0">
-                    </div>
-                    <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/60">
-                        <label class="text-[11px] uppercase font-bold text-purple-400">FIX db Target</label>
-                        <input type="number" id="t_fix_db" class="w-full mt-1 bg-slate-800 text-white text-sm font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:ring-1 focus:ring-purple-400 outline-none" value="0">
-                    </div>
+                <!-- Gyors Beillesztő Doboz (Paste from Sheets) -->
+                <div class="space-y-2">
+                    <label class="text-xs font-semibold text-slate-300 flex items-center gap-1">
+                        <span>📋</span> Vagy másold be ide a táblázat soraidat (Ctrl+C & Ctrl+V):
+                    </label>
+                    <textarea id="targetPasteArea" rows="4" placeholder="FPK002	192	108	81	18	1500	3800	500000&#10;FPK007	217	139	67	38	1550	4350	1000000&#10;FPK012	452	291	172	88	3200	10200	1200000"
+                              class="w-full bg-slate-900 text-slate-200 text-xs font-mono p-3 rounded-xl border border-slate-700 outline-none focus:ring-1 focus:ring-indigo-500"></textarea>
+                    <button onclick="processPastedTargets()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
+                        Beillesztett Sorok Feldolgozása & Mentése
+                    </button>
+                </div>
+
+                <!-- Mentett Bolti Targetek Előnézete -->
+                <div class="overflow-x-auto mt-4">
+                    <h3 class="text-xs font-semibold text-slate-400 mb-2 uppercase">Aktuálisan Rögzített Bolti Targetek:</h3>
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-900/80 text-slate-400 border-b border-slate-700">
+                                <th class="p-2.5">Hónap</th>
+                                <th class="p-2.5">Bolt</th>
+                                <th class="p-2.5 text-center">ACQ</th>
+                                <th class="p-2.5 text-center">Hűség</th>
+                                <th class="p-2.5 text-center">FIX</th>
+                                <th class="p-2.5 text-center">SOHO</th>
+                                <th class="p-2.5 text-center">ACQ Pont</th>
+                                <th class="p-2.5 text-center">Reti Pont</th>
+                                <th class="p-2.5 text-right">Tartozék (Ft)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="targetTableBody" class="divide-y divide-slate-800 text-slate-300 font-medium">
+                            <tr><td colspan="9" class="p-4 text-center text-slate-500">Még nincsenek feltöltött bolti targetek.</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </section>
         </main>
@@ -336,7 +354,6 @@
     </div>
 
     <script>
-        // --- JELSZÓVÉDELEM ---
         const DASHBOARD_PASSWORD = "fpk2026";
 
         function checkAuth() {
@@ -371,7 +388,6 @@
             location.reload();
         }
 
-        // --- TAB VÁLTÓ LOGIKA ---
         function switchTab(tabName) {
             const tabDash = document.getElementById('tabDashboard');
             const tabUp = document.getElementById('tabUpload');
@@ -389,7 +405,7 @@
                 tabUp.classList.remove('hidden');
                 btnDash.className = "px-4 py-2 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white";
                 btnUp.className = "px-4 py-2 rounded-lg text-xs font-semibold transition bg-indigo-600 text-white shadow";
-                syncTargetAdminDropdowns();
+                renderTargetAdminTable();
             }
         }
 
@@ -407,17 +423,10 @@
 
         async function loadAllData() {
             await Promise.all([loadFromSupabase(), loadTargetsFromSupabase()]);
-            syncTargetAdminDropdowns();
             calculateAllTargets();
         }
 
         async function loadFromSupabase() {
-            const statusDiv = document.getElementById('uploadStatus');
-            if (statusDiv) {
-                statusDiv.className = "text-sm font-medium text-indigo-400";
-                statusDiv.innerText = "Tranzakciók betöltése...";
-            }
-
             let allRows = [];
             let from = 0;
             const batchSize = 1000;
@@ -431,7 +440,6 @@
                         .range(from, from + batchSize - 1);
 
                     if (error) throw error;
-
                     if (data && data.length > 0) {
                         allRows = allRows.concat(data);
                         from += batchSize;
@@ -442,33 +450,187 @@
                 }
 
                 globalTransactions = allRows;
-                if (allRows.length > 0) {
-                    if (statusDiv) {
-                        statusDiv.className = "text-sm font-medium text-emerald-400";
-                        statusDiv.innerText = `Sikeresen betöltve ${allRows.length} db rekord.`;
-                    }
-                    populateFilters();
-                    renderData();
-                }
+                populateFilters();
+                renderData();
             } catch (err) {
-                if (statusDiv) {
-                    statusDiv.className = "text-sm font-medium text-rose-400";
-                    statusDiv.innerText = "Hiba a tranzakciók betöltésekor: " + err.message;
-                }
+                console.error("Hiba:", err);
             }
         }
 
         async function loadTargetsFromSupabase() {
             try {
-                const { data, error } = await supabaseClient.from('havi_targetek').select('*');
+                const { data, error } = await supabaseClient.from('havi_targetek').select('*').order('bolt', { ascending: true });
                 if (!error && data) {
                     globalTargets = data;
+                    renderTargetAdminTable();
                 }
             } catch (e) {
                 console.warn("Targetek hiba:", e);
             }
         }
 
+        // --- TARGET EXCEL FELTÖLTÉSE (KÉPEN LÁTHATÓ FORMÁTUMHOZ) ---
+        function handleTargetExcelUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(evt) {
+                try {
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+                    if (rows.length < 2) throw new Error("A fájl túl kevés sort tartalmaz!");
+
+                    // Fejléc keresése (ahol szerepel 'ACQ' vagy 'Hűség' vagy 'SOHO')
+                    let headerIndex = -1;
+                    const colMap = {};
+                    for (let r = 0; r < Math.min(6, rows.length); r++) {
+                        if (rows[r] && rows[r].some(cell => String(cell).trim() === 'ACQ' || String(cell).trim() === 'Hűség')) {
+                            headerIndex = r;
+                            rows[r].forEach((colName, idx) => {
+                                if (colName) colMap[String(colName).trim().toLowerCase()] = idx;
+                            });
+                            break;
+                        }
+                    }
+
+                    if (headerIndex === -1) throw new Error("Nem sikerült beazonosítani a fejléceket (ACQ, Hűség, FIX stb.)!");
+
+                    const targetMonth = document.getElementById('targetUploadMonth').value;
+                    const cleanNum = (val) => parseFloat(String(val || 0).replace(/\s+/g, '').replace(',', '.')) || 0;
+
+                    const targetPayloads = [];
+                    for (let i = headerIndex + 1; i < rows.length; i++) {
+                        const r = rows[i];
+                        if (!r || !r[0]) continue;
+
+                        const bolt = String(r[0]).trim(); // Első oszlop a bolt kódja (pl. FPK002)
+                        if (!bolt || bolt.toLowerCase().includes('összesen')) continue;
+
+                        const acq = cleanNum(r[colMap['acq']]);
+                        const huseg = cleanNum(r[colMap['hűség']] || r[colMap['huseg']]);
+                        const fix = cleanNum(r[colMap['fix']]);
+                        const soho = cleanNum(r[colMap['soho']]);
+                        const acq_pont = cleanNum(r[colMap['acq pont']]);
+                        const ret_pont = cleanNum(r[colMap['reti pont']] || r[colMap['ret pont']] || r[colMap['retipont']]);
+                        const tartozek = cleanNum(r[colMap['tartozék']] || r[colMap['tartozek']]);
+
+                        targetPayloads.push({
+                            honap: targetMonth,
+                            bolt: bolt,
+                            target_acq_db: acq,
+                            target_huseg_db: huseg,
+                            target_fix_db: fix,
+                            target_soho_db: soho,
+                            target_acq_pont: acq_pont,
+                            target_ret_pont: ret_pont,
+                            target_pont: acq_pont + ret_pont,
+                            target_tartozek_ft: tartozek
+                        });
+                    }
+
+                    for (const t of targetPayloads) {
+                        await supabaseClient.from('havi_targetek').upsert(t, { onConflict: 'honap,bolt' });
+                    }
+
+                    await loadTargetsFromSupabase();
+                    calculateAllTargets();
+                    alert(`Sikeresen rögzítve ${targetPayloads.length} bolt targetje a(z) ${targetMonth} hónapra!`);
+
+                } catch (err) {
+                    alert("Hiba a target Excel feldolgozásakor: " + err.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // --- BEILLESZTETT TÁBLÁZAT FELDOLGOZÁSA (GOOGLE SHEETS / EXCEL MÁSOLÁS) ---
+        async function processPastedTargets() {
+            const rawText = document.getElementById('targetPasteArea').value.trim();
+            if (!rawText) {
+                alert("Kérlek illeszd be a táblázat sorait!");
+                return;
+            }
+
+            const targetMonth = document.getElementById('targetUploadMonth').value;
+            const lines = rawText.split('\n');
+            const targetPayloads = [];
+
+            const cleanNum = (val) => parseFloat(String(val || 0).replace(/\s+/g, '').replace(',', '.')) || 0;
+
+            lines.forEach(line => {
+                const parts = line.split('\t').map(p => p.trim());
+                if (parts.length >= 7) {
+                    // Ha az első sor a fejléc lenne, átugorjuk
+                    if (parts[0].toLowerCase().includes('bolt') || parts[1].toLowerCase().includes('acq')) return;
+
+                    const bolt = parts[0];
+                    const acq = cleanNum(parts[1]);
+                    const huseg = cleanNum(parts[2]);
+                    const fix = cleanNum(parts[3]);
+                    const soho = cleanNum(parts[4]);
+                    const acq_pont = cleanNum(parts[5]);
+                    const ret_pont = cleanNum(parts[6]);
+                    const tartozek = parts[7] ? cleanNum(parts[7]) : 0;
+
+                    targetPayloads.push({
+                        honap: targetMonth,
+                        bolt: bolt,
+                        target_acq_db: acq,
+                        target_huseg_db: huseg,
+                        target_fix_db: fix,
+                        target_soho_db: soho,
+                        target_acq_pont: acq_pont,
+                        target_ret_pont: ret_pont,
+                        target_pont: acq_pont + ret_pont,
+                        target_tartozek_ft: tartozek
+                    });
+                }
+            });
+
+            if (targetPayloads.length === 0) {
+                alert("Nem sikerült értelmezni a beillesztett sorokat. Győződj meg róla, hogy a másolt adatok oszlopai Tabulátorral elválasztottak!");
+                return;
+            }
+
+            for (const t of targetPayloads) {
+                await supabaseClient.from('havi_targetek').upsert(t, { onConflict: 'honap,bolt' });
+            }
+
+            await loadTargetsFromSupabase();
+            calculateAllTargets();
+            document.getElementById('targetPasteArea').value = '';
+            alert(`Sikeresen elmentve ${targetPayloads.length} bolt targetje!`);
+        }
+
+        function renderTargetAdminTable() {
+            const tbody = document.getElementById('targetTableBody');
+            if (!tbody) return;
+
+            if (globalTargets.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-slate-500">Még nincsenek feltöltött bolti targetek.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = globalTargets.map(t => `
+                <tr class="hover:bg-slate-700/20 transition">
+                    <td class="p-2.5 text-slate-400 font-normal">${t.honap}</td>
+                    <td class="p-2.5"><span class="px-2 py-0.5 bg-slate-800 text-indigo-400 font-bold rounded">${t.bolt}</span></td>
+                    <td class="p-2.5 text-center text-indigo-300">${t.target_acq_db || 0}</td>
+                    <td class="p-2.5 text-center text-emerald-300">${t.target_huseg_db || 0}</td>
+                    <td class="p-2.5 text-center text-purple-300">${t.target_fix_db || 0}</td>
+                    <td class="p-2.5 text-center text-amber-300">${t.target_soho_db || 0}</td>
+                    <td class="p-2.5 text-center text-sky-400">${t.target_acq_pont || 0}</td>
+                    <td class="p-2.5 text-center text-teal-400">${t.target_ret_pont || 0}</td>
+                    <td class="p-2.5 text-right font-mono text-pink-300">${(t.target_tartozek_ft || 0).toLocaleString('hu-HU')} Ft</td>
+                </tr>
+            `).join('');
+        }
+
+        // --- CPR EXPORT FÁJL FELDOLGOZÁSA ---
         function handleFileSelect(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -591,108 +753,11 @@
             reader.readAsArrayBuffer(file);
         }
 
-        function handleTargetExcelUpload(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = async function(evt) {
-                try {
-                    const data = new Uint8Array(evt.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const json = XLSX.utils.sheet_to_json(sheet);
-
-                    const targetPayloads = json.map(r => ({
-                        honap: String(r['Hónap'] || r['honap'] || document.getElementById('targetFormMonth').value),
-                        bolt: String(r['Bolt'] || r['bolt'] || 'ALL'),
-                        target_pont: parseFloat(r['Target_Pont'] || r['target_pont'] || 0),
-                        target_acq_pont: parseFloat(r['Target_ACQ_Pont'] || r['target_acq_pont'] || 0),
-                        target_ret_pont: parseFloat(r['Target_RET_Pont'] || r['target_ret_pont'] || 0),
-                        target_acq_db: parseFloat(r['Target_ACQ_db'] || r['target_acq_db'] || 0),
-                        target_huseg_db: parseFloat(r['Target_Huseg_db'] || r['target_huseg_db'] || 0),
-                        target_fix_db: parseFloat(r['Target_FIX_db'] || r['target_fix_db'] || 0)
-                    }));
-
-                    for (const t of targetPayloads) {
-                        await supabaseClient.from('havi_targetek').upsert(t, { onConflict: 'honap,bolt' });
-                    }
-
-                    await loadTargetsFromSupabase();
-                    syncTargetInputsFromAdmin();
-                    alert("A targetek sikeresen feltöltve és rögzítve!");
-                } catch (err) {
-                    alert("Hiba a target fájl feldolgozásakor: " + err.message);
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
-        async function saveCurrentTargetsToSupabase() {
-            const selMonth = document.getElementById('targetFormMonth').value;
-            const selStore = document.getElementById('targetFormStore').value;
-
-            const targetPayload = {
-                honap: selMonth,
-                bolt: selStore,
-                target_pont: parseFloat(document.getElementById('t_pont').value) || 0,
-                target_acq_pont: parseFloat(document.getElementById('t_acq_pont').value) || 0,
-                target_ret_pont: parseFloat(document.getElementById('t_ret_pont').value) || 0,
-                target_acq_db: parseFloat(document.getElementById('t_acq_db').value) || 0,
-                target_huseg_db: parseFloat(document.getElementById('t_huseg_db').value) || 0,
-                target_fix_db: parseFloat(document.getElementById('t_fix_db').value) || 0
-            };
-
-            const { error } = await supabaseClient.from('havi_targetek').upsert(targetPayload, { onConflict: 'honap,bolt' });
-            if (error) {
-                alert("Hiba a mentéskor: " + error.message);
-            } else {
-                await loadTargetsFromSupabase();
-                alert(`Targetek mentve a felhőbe! [${selMonth} - ${selStore}]`);
-            }
-        }
-
-        function syncTargetAdminDropdowns() {
-            const months = [...new Set(globalTransactions.map(t => t.honap))].filter(Boolean).sort().reverse();
-            const stores = [...new Set(globalTransactions.map(t => t.bolt))].filter(Boolean).sort();
-
-            const mSel = document.getElementById('targetFormMonth');
-            const sSel = document.getElementById('targetFormStore');
-
-            if (months.length > 0) {
-                mSel.innerHTML = months.map(m => `<option value="${m}">${m}</option>`).join('');
-            }
-            sSel.innerHTML = '<option value="ALL">Összes Bolt (Globális)</option>' + stores.map(s => `<option value="${s}">${s}</option>`).join('');
-
-            syncTargetInputsFromAdmin();
-        }
-
-        function syncTargetInputsFromAdmin() {
-            const selMonth = document.getElementById('targetFormMonth').value;
-            const selStore = document.getElementById('targetFormStore').value;
-
-            const existing = globalTargets.find(t => t.honap === selMonth && t.bolt === selStore);
-            if (existing) {
-                document.getElementById('t_pont').value = existing.target_pont;
-                document.getElementById('t_acq_pont').value = existing.target_acq_pont;
-                document.getElementById('t_ret_pont').value = existing.target_ret_pont;
-                document.getElementById('t_acq_db').value = existing.target_acq_db;
-                document.getElementById('t_huseg_db').value = existing.target_huseg_db;
-                document.getElementById('t_fix_db').value = existing.target_fix_db;
-            } else {
-                document.getElementById('t_pont').value = 0;
-                document.getElementById('t_acq_pont').value = 0;
-                document.getElementById('t_ret_pont').value = 0;
-                document.getElementById('t_acq_db').value = 0;
-                document.getElementById('t_huseg_db').value = 0;
-                document.getElementById('t_fix_db').value = 0;
-            }
-        }
-
         function onFilterChange() {
             renderData();
         }
 
+        // --- SÚLYOZOTT NAPI TARGET KALKULÁCIÓ ---
         function calculateAllTargets() {
             const selectedMonth = document.getElementById('filterMonth').value;
             const selectedStore = document.getElementById('filterStore').value;
@@ -705,30 +770,34 @@
                 return mOk && sOk && eOk;
             });
 
+            // Tényadatok összesítése
             const actuals = {
-                pont: filtered.reduce((acc, t) => acc + (t.osszpont || 0), 0),
                 acq_pont: filtered.reduce((acc, t) => acc + (t.acq_pont || 0), 0),
                 ret_pont: filtered.reduce((acc, t) => acc + (t.ret_pont || 0), 0),
                 acq_db: filtered.reduce((acc, t) => acc + (t.acq_db || 0), 0),
                 huseg_db: filtered.reduce((acc, t) => acc + (t.huseg_db || 0), 0),
-                fix_db: filtered.reduce((acc, t) => acc + (t.fix_db || 0), 0)
+                fix_db: filtered.reduce((acc, t) => acc + (t.fix_db || 0), 0),
+                soho_db: filtered.filter(t => t.szegmens && t.szegmens.toLowerCase() === 'soho').length,
+                tartozek_ft: 0
             };
 
-            // Adott hónap/bolthoz tartozó célok kinyerése a tárolt targetekből
-            const matchedTarget = globalTargets.find(t => 
-                (selectedMonth === 'ALL' || t.honap === selectedMonth) && 
-                (selectedStore === 'ALL' ? t.bolt === 'ALL' : t.bolt === selectedStore)
-            );
+            // Releváns targetek összegezése (ha Összes Bolt van, összeadjuk a boltok targetjét)
+            let relevantTargets = globalTargets.filter(t => selectedMonth === 'ALL' || t.honap === selectedMonth);
+            if (selectedStore !== 'ALL') {
+                relevantTargets = relevantTargets.filter(t => t.bolt === selectedStore);
+            }
 
             const targets = {
-                pont: matchedTarget ? matchedTarget.target_pont : (parseFloat(document.getElementById('t_pont').value) || 0),
-                acq_pont: matchedTarget ? matchedTarget.target_acq_pont : (parseFloat(document.getElementById('t_acq_pont').value) || 0),
-                ret_pont: matchedTarget ? matchedTarget.target_ret_pont : (parseFloat(document.getElementById('t_ret_pont').value) || 0),
-                acq_db: matchedTarget ? matchedTarget.target_acq_db : (parseFloat(document.getElementById('t_acq_db').value) || 0),
-                huseg_db: matchedTarget ? matchedTarget.target_huseg_db : (parseFloat(document.getElementById('t_huseg_db').value) || 0),
-                fix_db: matchedTarget ? matchedTarget.target_fix_db : (parseFloat(document.getElementById('t_fix_db').value) || 0)
+                acq_pont: relevantTargets.reduce((a, b) => a + (b.target_acq_pont || 0), 0),
+                ret_pont: relevantTargets.reduce((a, b) => a + (b.target_ret_pont || 0), 0),
+                acq_db: relevantTargets.reduce((a, b) => a + (b.target_acq_db || 0), 0),
+                huseg_db: relevantTargets.reduce((a, b) => a + (b.target_huseg_db || 0), 0),
+                fix_db: relevantTargets.reduce((a, b) => a + (b.target_fix_db || 0), 0),
+                soho_db: relevantTargets.reduce((a, b) => a + (b.target_soho_db || 0), 0),
+                tartozek_ft: relevantTargets.reduce((a, b) => a + (b.target_tartozek_ft || 0), 0)
             };
 
+            // Hét napjainak forgalmi aránya a CPR adatokból
             const weekdayPoints = [0, 0, 0, 0, 0, 0, 0];
             globalTransactions.forEach(t => {
                 if (t.szerzodes_datuma) {
@@ -760,7 +829,7 @@
             document.getElementById('targetRemainingDaysLabel').innerText = `${daysInMonth} napos hónap: még ${remainingDaysCount} nap van hátra`;
             document.getElementById('todayWeightStatus').innerText = `Ma: ${dayNames[todayDow]} (${todayWeight.toFixed(2)}x súly)`;
 
-            function updateMetricUI(key, isInt = false) {
+            function updateMetricUI(key, isInt = false, isCurrency = false) {
                 const target = targets[key];
                 const actual = actuals[key];
                 const rem = Math.max(0, target - actual);
@@ -771,16 +840,26 @@
                     : (rem / remainingDaysCount);
 
                 document.getElementById(`c_${key}_pct`).innerText = `${pct.toFixed(1)}%`;
-                document.getElementById(`c_${key}_rem`).innerText = `hátra: ${isInt ? Math.round(rem) : rem.toFixed(1)}`;
-                document.getElementById(`c_${key}_daily`).innerText = isInt ? `${Math.ceil(dailyWeighted)} db` : dailyWeighted.toFixed(1);
+                
+                if (isCurrency) {
+                    document.getElementById(`c_${key}_rem`).innerText = `hátra: ${Math.round(rem).toLocaleString('hu-HU')} Ft`;
+                    document.getElementById(`c_${key}_daily`).innerText = `${Math.ceil(dailyWeighted).toLocaleString('hu-HU')} Ft`;
+                } else if (isInt) {
+                    document.getElementById(`c_${key}_rem`).innerText = `hátra: ${Math.round(rem)}`;
+                    document.getElementById(`c_${key}_daily`).innerText = `${Math.ceil(dailyWeighted)} db`;
+                } else {
+                    document.getElementById(`c_${key}_rem`).innerText = `hátra: ${rem.toFixed(1)}`;
+                    document.getElementById(`c_${key}_daily`).innerText = dailyWeighted.toFixed(1);
+                }
             }
 
-            updateMetricUI('pont');
             updateMetricUI('acq_pont');
             updateMetricUI('ret_pont');
             updateMetricUI('acq_db', true);
             updateMetricUI('huseg_db', true);
             updateMetricUI('fix_db', true);
+            updateMetricUI('soho_db', true);
+            updateMetricUI('tartozek', false, true);
         }
 
         function populateFilters() {
@@ -789,8 +868,15 @@
             const sellers = [...new Set(globalTransactions.map(t => t.ertekesito))].filter(Boolean).sort();
 
             const monthSelect = document.getElementById('filterMonth');
+            const targetUploadMonth = document.getElementById('targetUploadMonth');
             const currentSelectedMonth = monthSelect.value;
-            monthSelect.innerHTML = '<option value="ALL">Összes Hónap</option>' + months.map(m => `<option value="${m}">${m}</option>`).join('');
+            
+            const monthOptions = '<option value="ALL">Összes Hónap</option>' + months.map(m => `<option value="${m}">${m}</option>`).join('');
+            monthSelect.innerHTML = monthOptions;
+            if (targetUploadMonth && months.length > 0) {
+                targetUploadMonth.innerHTML = months.map(m => `<option value="${m}">${m}</option>`).join('');
+            }
+
             if (months.length > 0 && currentSelectedMonth === 'ALL') {
                 monthSelect.value = months[0];
             } else if (months.includes(currentSelectedMonth)) {
