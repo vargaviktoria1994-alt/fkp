@@ -528,7 +528,7 @@
                 acq_db: filtered.reduce((acc, t) => acc + (t.acq_db || 0), 0),
                 huseg_db: filtered.reduce((acc, t) => acc + (t.huseg_db || 0), 0),
                 fix_db: filtered.reduce((acc, t) => acc + (t.fix_db || 0), 0),
-                soho_db: filtered.filter(t => t.szegmens && t.szegmens.toLowerCase() === 'soho').length,
+                soho_db: filtered.filter(t => (t.szegmens && t.szegmens.toLowerCase() === 'soho') && (t.acq_db > 0)).reduce((acc, t) => acc + (t.acq_db || 1), 0),
                 tartozek_ft: 0
             };
 
@@ -745,7 +745,7 @@
                         else if (metricKey === 'acq_db') val = (t.acq_db || 0);
                         else if (metricKey === 'huseg_db') val = (t.huseg_db || 0);
                         else if (metricKey === 'fix_db') val = (t.fix_db || 0);
-                        else if (metricKey === 'soho_db') val = (t.szegmens && t.szegmens.toLowerCase() === 'soho') ? 1 : 0;
+                        else if (metricKey === 'soho_db') val = (t.szegmens && t.szegmens.toLowerCase() === 'soho' && t.acq_db > 0) ? (t.acq_db || 1) : 0;
 
                         dailyActualMap[d] += val;
                     }
@@ -875,8 +875,8 @@
                 summaryMap[key].acq_tablet += (t.acq_tablet || 0);
                 summaryMap[key].huseg += (t.huseg_db || 0);
                 summaryMap[key].fix += (t.fix_db || 0);
-                if (t.szegmens && t.szegmens.toLowerCase() === 'soho') {
-                    summaryMap[key].soho += 1;
+                if (t.szegmens && t.szegmens.toLowerCase() === 'soho' && t.acq_db > 0) {
+                    summaryMap[key].soho += (t.acq_db || 1);
                 }
                 summaryMap[key].acq_pont += (t.acq_pont || 0);
                 summaryMap[key].ret_pont += (t.ret_pont || 0);
@@ -948,18 +948,36 @@
             const parseExcelDate = (raw) => {
                 if (!raw) return null;
                 if (raw instanceof Date) {
-                    return !isNaN(raw.getTime()) ? raw.toISOString().split('T')[0] : null;
+                    if (!isNaN(raw.getTime())) {
+                        const y = raw.getFullYear();
+                        const m = String(raw.getMonth() + 1).padStart(2, '0');
+                        const d = String(raw.getDate()).padStart(2, '0');
+                        return `${y}-${m}-${d}`;
+                    }
+                    return null;
                 }
                 if (typeof raw === 'number') {
-                    // Excel serial date to JS Date
+                    // Excel serial number (pl. 46310 -> 2026-10-xx)
                     const utc_days = Math.floor(raw - 25569);
-                    const date_info = new Date(utc_days * 86400 * 1000);
-                    return !isNaN(date_info.getTime()) ? date_info.toISOString().split('T')[0] : null;
+                    const dObj = new Date(utc_days * 86400 * 1000);
+                    if (!isNaN(dObj.getTime())) {
+                        const y = dObj.getUTCFullYear();
+                        const m = String(dObj.getUTCMonth() + 1).padStart(2, '0');
+                        const d = String(dObj.getUTCDate()).padStart(2, '0');
+                        return `${y}-${m}-${d}`;
+                    }
                 }
-                const d = new Date(raw);
-                return !isNaN(d.getTime()) ? d.toISOString().split('T')[0] : null;
+                const s = String(raw).trim();
+                // Formátumok: 2026.10.25 vagy 2026-10-25 vagy 2026/10/25
+                const m = s.match(/(\d{4})[.\/-](\d{1,2})[.\/-](\d{1,2})/);
+                if (m) {
+                    const y = m[1];
+                    const mo = m[2].padStart(2, '0');
+                    const da = m[3].padStart(2, '0');
+                    return `${y}-${mo}-${da}`;
+                }
+                return null;
             };
-
             let successCount = 0;
 
             for (let fIdx = 0; fIdx < files.length; fIdx++) {
