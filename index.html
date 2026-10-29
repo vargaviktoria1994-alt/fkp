@@ -560,7 +560,7 @@
                 if (t.szerzodes_datuma) {
                     const d = new Date(t.szerzodes_datuma);
                     const dow = d.getDay();
-                    const dom = d.getDate();
+                    const dom = parseInt(String(t.szerzodes_datuma).split('-')[2] || String(t.szerzodes_datuma).split('.')[2] || 0, 10);
                     const pts = (t.osszpont || 0);
                     dowPoints[dow] += pts;
                     domPoints[dom] += pts;
@@ -593,7 +593,7 @@
             const dailyActualMap = Array(daysInMonth + 1).fill(0);
             filtered.forEach(t => {
                 if (t.szerzodes_datuma) {
-                    const d = new Date(t.szerzodes_datuma).getDate();
+                    const d = parseInt(String(t.szerzodes_datuma).split('-')[2] || String(t.szerzodes_datuma).split('.')[2] || 0, 10);
                     if (d >= 1 && d <= daysInMonth) {
                         let val = 0;
                         if (metricKey === 'pont') val = (t.osszpont || 0);
@@ -859,37 +859,36 @@
             
             const parseExcelDate = (raw) => {
                 if (!raw) return null;
+                // Ha Date objektum: szigorúan a helyi év, hó, nap
                 if (raw instanceof Date) {
-                    if (!isNaN(raw.getTime())) {
-                        const y = raw.getFullYear();
-                        const m = String(raw.getMonth() + 1).padStart(2, '0');
-                        const d = String(raw.getDate()).padStart(2, '0');
-                        return `${y}-${m}-${d}`;
-                    }
-                    return null;
+                    if (isNaN(raw.getTime())) return null;
+                    const y = raw.getFullYear();
+                    const m = String(raw.getMonth() + 1).padStart(2, '0');
+                    const d = String(raw.getDate()).padStart(2, '0');
+                    return `${y}-${m}-${d}`;
                 }
+                // Ha Excel napsorszám (pl. 46310):
                 if (typeof raw === 'number') {
-                    // Excel serial number (pl. 46310 -> 2026-10-xx)
-                    const utc_days = Math.floor(raw - 25569);
-                    const dObj = new Date(utc_days * 86400 * 1000);
-                    if (!isNaN(dObj.getTime())) {
-                        const y = dObj.getUTCFullYear();
-                        const m = String(dObj.getUTCMonth() + 1).padStart(2, '0');
-                        const d = String(dObj.getUTCDate()).padStart(2, '0');
-                        return `${y}-${m}-${d}`;
-                    }
+                    // Excel epoch: 1899-12-30. Tört napokat levágjuk, csak a tiszta naptári nap számít!
+                    const wholeDays = Math.floor(raw);
+                    const epoch = new Date(Date.UTC(1899, 11, 30));
+                    epoch.setUTCDate(epoch.getUTCDate() + wholeDays);
+                    const y = epoch.getUTCFullYear();
+                    const m = String(epoch.getUTCMonth() + 1).padStart(2, '0');
+                    const d = String(epoch.getUTCDate()).padStart(2, '0');
+                    return `${y}-${m}-${d}`;
                 }
                 const s = String(raw).trim();
-                // Formátumok: 2026.10.25 vagy 2026-10-25 vagy 2026/10/25
-                const m = s.match(/(\d{4})[.\/-](\d{1,2})[.\/-](\d{1,2})/);
-                if (m) {
-                    const y = m[1];
-                    const mo = m[2].padStart(2, '0');
-                    const da = m[3].padStart(2, '0');
+                const match = s.match(/(\d{4})[.\/-](\d{1,2})[.\/-](\d{1,2})/);
+                if (match) {
+                    const y = match[1];
+                    const mo = match[2].padStart(2, '0');
+                    const da = match[3].padStart(2, '0');
                     return `${y}-${mo}-${da}`;
                 }
                 return null;
             };
+
             let successCount = 0;
 
             for (let fIdx = 0; fIdx < files.length; fIdx++) {
