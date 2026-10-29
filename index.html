@@ -276,7 +276,7 @@
                      class="border-2 border-dashed border-indigo-500/50 hover:border-indigo-400 bg-indigo-950/20 hover:bg-indigo-950/40 rounded-xl p-8 text-center cursor-pointer transition">
                     <div class="text-4xl mb-3">📁</div>
                     <span id="uploadLabel" class="text-sm text-slate-300 font-medium">Kattints ide vagy húzd ide a CPR Excel fájlt...</span>
-                    <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileSelect(event)">
+                    <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" multiple class="hidden" onchange="handleFileSelect(event)">
                 </div>
                 <div id="uploadStatus" class="text-sm font-medium"></div>
             </section>
@@ -532,6 +532,214 @@
                 }
             };
             reader.readAsArrayBuffer(file);
+        }
+
+        async function processPastedTargets() {
+            const rawText = document.getElementById('targetPasteArea').value.trim();
+            if (!rawText) {
+                alert("Kérlek illeszd be a táblázat sorait!");
+                return;
+            }
+
+            const targetMonth = document.getElementById('targetUploadMonth').value;
+            const lines = rawText.split('\n');
+            const targetPayloads = [];
+
+            const cleanNum = (val) => parseFloat(String(val || 0).replace(/\s+/g, '').replace(',', '.')) || 0;
+
+            lines.forEach(line => {
+                const parts = line.split('\t').map(p => p.trim());
+                if (parts.length >= 7) {
+                    if (parts[0].toLowerCase().includes('bolt') || parts[1].toLowerCase().includes('acq')) return;
+
+                    const bolt = parts[0];
+                    const acq = cleanNum(parts[1]);
+                    const huseg = cleanNum(parts[2]);
+                    const fix = cleanNum(parts[3]);
+                    const soho = cleanNum(parts[4]);
+                    const acq_pont = cleanNum(parts[5]);
+                    const ret_pont = cleanNum(parts[6]);
+                    const tartozek = parts[7] ? cleanNum(parts[7]) : 0;
+
+                    targetPayloads.push({
+                        honap: targetMonth,
+                        bolt: bolt,
+                        target_acq_db: acq,
+                        target_huseg_db: huseg,
+                        target_fix_db: fix,
+                        target_soho_db: soho,
+                        target_acq_pont: acq_pont,
+                        target_ret_pont: ret_pont,
+                        target_pont: acq_pont + ret_pont,
+                        target_tartozek_ft: tartozek
+                    });
+                }
+            });
+
+            if (targetPayloads.length === 0) {
+                alert("Nem sikerült értelmezni a beillesztett sorokat.");
+                return;
+            }
+
+            for (const t of targetPayloads) {
+                await supabaseClient.from('havi_targetek').upsert(t, { onConflict: 'honap,bolt' });
+            }
+
+            await loadTargetsFromSupabase();
+            calculateAllTargets();
+            document.getElementById('targetPasteArea').value = '';
+            alert(`Sikeresen elmentve ${targetPayloads.length} bolt targetje!`);
+        }
+
+        function renderTargetAdminTable() {
+            const tbody = document.getElementById('targetTableBody');
+            if (!tbody) return;
+
+            if (globalTargets.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-slate-500">Még nincsenek feltöltött bolti targetek.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = globalTargets.map(t => `
+                <tr class="hover:bg-slate-700/20 transition">
+                    <td class="p-2.5 text-slate-400 font-normal">${t.honap}</td>
+                    <td class="p-2.5"><span class="px-2 py-0.5 bg-slate-800 text-indigo-400 font-bold rounded">${t.bolt}</span></td>
+                    <td class="p-2.5 text-center text-indigo-300">${t.target_acq_db || 0}</td>
+                    <td class="p-2.5 text-center text-emerald-300">${t.target_huseg_db || 0}</td>
+                    <td class="p-2.5 text-center text-purple-300">${t.target_fix_db || 0}</td>
+                    <td class="p-2.5 text-center text-amber-300">${t.target_soho_db || 0}</td>
+                    <td class="p-2.5 text-center text-sky-400">${t.target_acq_pont || 0}</td>
+                    <td class="p-2.5 text-center text-teal-400">${t.target_ret_pont || 0}</td>
+                    <td class="p-2.5 text-right font-mono text-pink-300">${(t.target_tartozek_ft || 0).toLocaleString('hu-HU')} Ft</td>
+                </tr>
+            `).join('');
+        }
+
+        async function handleFileSelect(e) {
+            const files = Array.from(e.target.files);
+            if (!files || files.length === 0) return;
+
+            const statusDiv = document.getElementById('uploadStatus');
+            const uploadLabel = document.getElementById('uploadLabel');
+            uploadLabel.innerText = `${files.length} db fájl kiválasztva`;
+
+            const parseNum = (val) => {
+                if (!val) return 0;
+                return parseFloat(String(val).replace(',', '.')) || 0;
+            };
+
+            let successCount = 0;
+
+            for (let fIdx = 0; fIdx < files.length; fIdx++) {
+                const file = files[fIdx];
+                statusDiv.className = "text-sm font-medium text-indigo-400";
+                statusDiv.innerText = `[${fIdx + 1}/${files.length}] Feldolgozás: ${file.name}...`;
+
+                try {
+                    const data = await file.arrayBuffer();
+                    const workbook = XLSX.read(new Uint8Array(data), { type: 'array' });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+                    if (rows.length < 6) continue;
+
+                    let headerIndex = -1;
+                    const colMap = {};
+                    for (let r = 0; r < Math.min(15, rows.length); r++) {
+                        if (rows[r] && rows[r].some(cell => String(cell).trim() === 'Bolt')) {
+                            headerIndex = r;
+                            rows[r].forEach((colName, idx) => {
+                                if (colName) colMap[String(colName).trim()] = idx;
+                            });
+                            break;
+                        }
+                    }
+
+                    if (headerIndex === -1 || colMap['Bolt'] === undefined) {
+                        console.warn("Nem található Bolt fejléc:", file.name);
+                        continue;
+                    }
+
+                    let detectedMonth = null;
+                    for (let r = 0; r < headerIndex; r++) {
+                        if (rows[r]) {
+                            const foundIdx = rows[r].findIndex(cell => String(cell || '').toLowerCase().includes('hónap'));
+                            if (foundIdx !== -1 && rows[r][foundIdx + 2]) {
+                                detectedMonth = String(rows[r][foundIdx + 2]).trim();
+                                break;
+                            }
+                        }
+                    }
+
+                    const parsed = [];
+                    for (let i = headerIndex + 1; i < rows.length; i++) {
+                        const r = rows[i];
+                        if (!r) continue;
+
+                        const boltVal = String(r[colMap['Bolt']] || '').trim();
+                        const ertekesitoVal = String(r[colMap['Értékesítő']] || '').trim();
+
+                        if (!boltVal || !ertekesitoVal || boltVal.toLowerCase().includes('különbözet') || ertekesitoVal.toLowerCase().includes('összesen')) {
+                            continue;
+                        }
+
+                        const szegmens = String(r[colMap['Szegmens']] || '').trim();
+                        const cegnev = String(r[colMap['Cégnév']] || '').trim();
+                        const isSoho = (szegmens.toLowerCase() === 'soho') || (cegnev.length > 0 && szegmens.toLowerCase() !== 'flotta');
+
+                        let parsedDate = null;
+                        const rawDate = r[colMap['Szerződés dátuma']];
+                        if (rawDate) {
+                            const d = new Date(rawDate);
+                            if (!isNaN(d.getTime())) parsedDate = d.toISOString().split('T')[0];
+                        }
+
+                        const rowMonth = detectedMonth || (parsedDate ? parsedDate.substring(0, 7) : "Aktuális");
+                        const realPont = parseNum(r[colMap['Jutalék pont']]);
+                        const acqPont = parseNum(r[colMap['ACQ pont']]);
+                        const retPont = Math.max(0, realPont - acqPont);
+
+                        parsed.push({
+                            honap: rowMonth,
+                            bolt: boltVal,
+                            ertekesito: ertekesitoVal,
+                            szerzodes_datuma: parsedDate,
+                            szegmens: szegmens || null,
+                            cegnev: isSoho && cegnev ? cegnev : null,
+                            kapcsolattarto: isSoho ? (String(r[colMap['Kapcsolattartó']] || '').trim() || null) : null,
+                            telefonszam: isSoho ? (String(r[colMap['Telefonszám']] || '').trim() || null) : null,
+                            acq_db: parseNum(r[colMap['ACQ']]),
+                            acq_hs: parseNum(r[colMap['ACQ Készülék']] || r[colMap['ACQ HS']] || r[colMap['Készüléket vásárolt']]),
+                            acq_tablet: parseNum(r[colMap['ACQ Tablet']] || r[colMap['Táblagépet vásárolt']]),
+                            huseg_db: parseNum(r[colMap['Hűség']]),
+                            fix_db: parseNum(r[colMap['FIX']]),
+                            acq_pont: acqPont,
+                            ret_pont: retPont,
+                            osszpont: realPont
+                        });
+                    }
+
+                    if (parsed.length > 0) {
+                        const targetMonth = parsed[0].honap;
+                        statusDiv.innerText = `[${fIdx + 1}/${files.length}] Adatbázis szinkronizálása (${targetMonth})...`;
+                        await supabaseClient.from('bolti_teljesitesek').delete().eq('honap', targetMonth);
+
+                        const chunkSize = 500;
+                        for (let c = 0; c < parsed.length; c += chunkSize) {
+                            const chunk = parsed.slice(c, c + chunkSize);
+                            const { error } = await supabaseClient.from('bolti_teljesitesek').insert(chunk);
+                            if (error) throw error;
+                        }
+                        successCount++;
+                    }
+                } catch (err) {
+                    console.error("Hiba a fájl feltöltésekor:", file.name, err);
+                }
+            }
+
+            statusDiv.className = "text-sm font-medium text-emerald-400";
+            statusDiv.innerText = `Kész! Mind a ${successCount} db fájl feldolgozva és elmentve a felhőbe.`;
+            await loadAllData();
         }
 
         async function processPastedTargets() {
