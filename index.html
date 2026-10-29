@@ -10,7 +10,7 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8">
 
-    <!-- 1. JELSZÓVÉDŐ KÉPERNYŐ (Alapértelmezett belépő felület) -->
+    <!-- 1. JELSZÓVÉDŐ KÉPERNYŐ -->
     <div id="loginScreen" class="fixed inset-0 bg-slate-950 flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl max-w-sm w-full text-center shadow-2xl space-y-5">
             <div class="w-16 h-16 bg-indigo-950/60 border border-indigo-500/40 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-inner">
@@ -18,7 +18,7 @@
             </div>
             <div>
                 <h2 class="text-xl font-bold text-white">Belépés a Dashboardra</h2>
-                <p class="text-xs text-slate-400 mt-1">A statisztikák eléréséhez add meg a jelszót</p>
+                <p class="text-xs text-slate-400 mt-1">Add meg a jelszót a statisztikák eléréséhez</p>
             </div>
             
             <form onsubmit="handleLogin(event)" class="space-y-4">
@@ -35,263 +35,309 @@
         </div>
     </div>
 
-    <!-- 2. DASHBOARD FELÜLET (Csak sikeres belépés után jelenik meg) -->
+    <!-- 2. FŐ ALKALMAZÁS -->
     <div id="dashboardApp" class="hidden max-w-7xl mx-auto space-y-6">
         
-        <!-- Fejléc -->
-        <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
+        <!-- Felső Menüsáv és Tab Váltó -->
+        <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-lg">
             <div>
                 <h1 class="text-2xl font-bold text-white flex items-center gap-2">
                     <span>📊</span> Bolti & Értékesítői Dashboard
                 </h1>
-                <p class="text-sm text-slate-400 mt-1">CPR tranzakció-feldolgozó és súlyozott napi target tervező</p>
+                <p class="text-xs text-slate-400 mt-1">CPR tranzakció-feldolgozó és súlyozott napi célszámító</p>
             </div>
             
-            <div class="flex items-center gap-3">
-                <button onclick="logout()" class="bg-slate-700 hover:bg-rose-950/40 hover:text-rose-400 border border-slate-600 text-slate-300 text-xs font-semibold px-4 py-2 rounded-lg transition flex items-center gap-2">
-                    <span>🚪</span> Kijelentkezés
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- Navigációs Fülek (Tabs) -->
+                <nav class="flex bg-slate-900/70 p-1 rounded-xl border border-slate-700/60">
+                    <button id="tabBtnDashboard" onclick="switchTab('dashboard')" 
+                            class="px-4 py-2 rounded-lg text-xs font-semibold transition bg-indigo-600 text-white shadow">
+                        📈 Áttekintés & Targetek
+                    </button>
+                    <button id="tabBtnUpload" onclick="switchTab('upload')" 
+                            class="px-4 py-2 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white">
+                        📤 Adatfeltöltés & Beállítások
+                    </button>
+                </nav>
+
+                <button onclick="logout()" class="bg-slate-700 hover:bg-rose-950/40 hover:text-rose-400 border border-slate-600 text-slate-300 text-xs font-semibold px-3 py-2 rounded-lg transition ml-2">
+                    🚪 Kilépés
                 </button>
             </div>
         </header>
 
-        <!-- CPR Fájl Feltöltési zóna -->
-        <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
-            <h2 class="text-lg font-semibold text-white mb-2">CPR Export Feltöltése</h2>
-            <p class="text-sm text-slate-400 mb-4">Húzd be a tranzakciós fájlt. A rendszer felismeri a hónapot, és <strong>kizárólag az adott hónap adatait írja felül</strong> a Supabase-ben.</p>
+        <!-- ==================== 1. FÜL: ÁTTEKINTÉS ÉS TARGETEK ==================== -->
+        <main id="tabDashboard" class="space-y-6">
             
-            <div onclick="document.getElementById('fileInput').click()" 
-                 class="border-2 border-dashed border-indigo-500/50 hover:border-indigo-400 bg-indigo-950/20 hover:bg-indigo-950/40 rounded-xl p-8 text-center cursor-pointer transition">
-                <div class="text-3xl mb-2">📁</div>
-                <span id="uploadLabel" class="text-sm text-slate-300 font-medium">Kattints ide vagy húzd ide a fájlt...</span>
-                <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileSelect(event)">
-            </div>
-            <div id="uploadStatus" class="mt-3 text-sm font-medium"></div>
-        </section>
-
-        <!-- Havi Target Menedzser & Súlyozott Tervező Modul -->
-        <section class="bg-slate-800/90 p-6 rounded-xl border border-indigo-500/30 shadow-lg space-y-6">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700 pb-4">
-                <div>
-                    <h3 class="text-lg font-bold text-indigo-400 flex items-center gap-2">
-                        <span>🎯</span> Havi Targetek & Súlyozott Napi Elvárás
-                    </h3>
-                    <p class="text-xs text-slate-400 mt-1">Targetek rögzítése és a hétköznap/hétvége ritmus szerinti napi leosztás</p>
-                </div>
-                
-                <div class="flex flex-wrap items-center gap-2">
-                    <button onclick="document.getElementById('targetFileInput').click()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-3 py-2 rounded-lg border border-slate-600 transition flex items-center gap-1.5">
-                        <span>📥</span> Target Excel Feltöltése
-                    </button>
-                    <input type="file" id="targetFileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleTargetExcelUpload(event)">
-
-                    <button onclick="saveCurrentTargetsToSupabase()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs px-4 py-2 rounded-lg transition shadow flex items-center gap-1.5">
-                        <span>💾</span> Targetek Mentése
-                    </button>
-                </div>
-            </div>
-
-            <!-- Target Beviteli Mezők -->
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 bg-slate-900/50 p-4 rounded-xl border border-slate-700/60">
-                <div>
-                    <label class="text-[11px] uppercase font-bold text-amber-400">Összpont Target</label>
-                    <input type="number" id="t_pont" oninput="calculateAllTargets()" class="w-full mt-1 bg-slate-800 text-white text-sm font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:ring-1 focus:ring-amber-400 outline-none" value="0">
-                </div>
-                <div>
-                    <label class="text-[11px] uppercase font-bold text-sky-400">ACQ Pont Target</label>
-                    <input type="number" id="t_acq_pont" oninput="calculateAllTargets()" class="w-full mt-1 bg-slate-800 text-white text-sm font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:ring-1 focus:ring-sky-400 outline-none" value="0">
-                </div>
-                <div>
-                    <label class="text-[11px] uppercase font-bold text-teal-400">RET Pont Target</label>
-                    <input type="number" id="t_ret_pont" oninput="calculateAllTargets()" class="w-full mt-1 bg-slate-800 text-white text-sm font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:ring-1 focus:ring-teal-400 outline-none" value="0">
-                </div>
-                <div>
-                    <label class="text-[11px] uppercase font-bold text-indigo-400">ACQ db Target</label>
-                    <input type="number" id="t_acq_db" oninput="calculateAllTargets()" class="w-full mt-1 bg-slate-800 text-white text-sm font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:ring-1 focus:ring-indigo-400 outline-none" value="0">
-                </div>
-                <div>
-                    <label class="text-[11px] uppercase font-bold text-emerald-400">Hűség db Target</label>
-                    <input type="number" id="t_huseg_db" oninput="calculateAllTargets()" class="w-full mt-1 bg-slate-800 text-white text-sm font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:ring-1 focus:ring-emerald-400 outline-none" value="0">
-                </div>
-                <div>
-                    <label class="text-[11px] uppercase font-bold text-purple-400">FIX db Target</label>
-                    <input type="number" id="t_fix_db" oninput="calculateAllTargets()" class="w-full mt-1 bg-slate-800 text-white text-sm font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:ring-1 focus:ring-purple-400 outline-none" value="0">
-                </div>
-            </div>
-
-            <!-- Súlyozott Napi Eredmények Kártyák -->
-            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
-                    <span class="text-[11px] font-semibold text-slate-400 uppercase">Összpont Telj.</span>
-                    <div class="flex justify-between items-baseline">
-                        <span id="c_pont_pct" class="text-sm font-bold text-amber-400">0%</span>
-                        <span id="c_pont_rem" class="text-xs text-slate-400">hátra: 0</span>
+            <!-- Súlyozott Napi Target Modul -->
+            <section class="bg-slate-800/90 p-6 rounded-xl border border-indigo-500/30 shadow-lg space-y-5">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700 pb-3">
+                    <div>
+                        <h3 class="text-base font-bold text-indigo-400 flex items-center gap-2">
+                            <span>🎯</span> Súlyozott Napi Target Állapot
+                        </h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Forgalom hétköznap / hétvégi súlyozása alapján számolt napi elvárások</p>
                     </div>
-                    <div class="border-t border-slate-600/60 pt-1 mt-1">
-                        <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
-                        <span id="c_pont_daily" class="text-base font-bold text-white">0</span>
+                    <div class="text-xs text-slate-400 flex items-center gap-3">
+                        <span id="targetRemainingDaysLabel">Számítás folyamatban...</span>
+                        <span id="todayWeightStatus" class="text-indigo-400 font-semibold"></span>
                     </div>
                 </div>
 
-                <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
-                    <span class="text-[11px] font-semibold text-slate-400 uppercase">ACQ Pont Telj.</span>
-                    <div class="flex justify-between items-baseline">
-                        <span id="c_acq_pont_pct" class="text-sm font-bold text-sky-400">0%</span>
-                        <span id="c_acq_pont_rem" class="text-xs text-slate-400">hátra: 0</span>
+                <!-- 6 Metrika Napi Súlyozott Kártyája -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+                    <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
+                        <span class="text-[11px] font-semibold text-slate-400 uppercase">Összpont</span>
+                        <div class="flex justify-between items-baseline">
+                            <span id="c_pont_pct" class="text-sm font-bold text-amber-400">0%</span>
+                            <span id="c_pont_rem" class="text-xs text-slate-400">hátra: 0</span>
+                        </div>
+                        <div class="border-t border-slate-600/60 pt-1 mt-1">
+                            <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
+                            <span id="c_pont_daily" class="text-base font-bold text-white">0</span>
+                        </div>
                     </div>
-                    <div class="border-t border-slate-600/60 pt-1 mt-1">
-                        <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
-                        <span id="c_acq_pont_daily" class="text-base font-bold text-white">0</span>
+
+                    <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
+                        <span class="text-[11px] font-semibold text-slate-400 uppercase">ACQ Pont</span>
+                        <div class="flex justify-between items-baseline">
+                            <span id="c_acq_pont_pct" class="text-sm font-bold text-sky-400">0%</span>
+                            <span id="c_acq_pont_rem" class="text-xs text-slate-400">hátra: 0</span>
+                        </div>
+                        <div class="border-t border-slate-600/60 pt-1 mt-1">
+                            <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
+                            <span id="c_acq_pont_daily" class="text-base font-bold text-white">0</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
+                        <span class="text-[11px] font-semibold text-slate-400 uppercase">RET Pont</span>
+                        <div class="flex justify-between items-baseline">
+                            <span id="c_ret_pont_pct" class="text-sm font-bold text-teal-400">0%</span>
+                            <span id="c_ret_pont_rem" class="text-xs text-slate-400">hátra: 0</span>
+                        </div>
+                        <div class="border-t border-slate-600/60 pt-1 mt-1">
+                            <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
+                            <span id="c_ret_pont_daily" class="text-base font-bold text-white">0</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
+                        <span class="text-[11px] font-semibold text-slate-400 uppercase">ACQ db</span>
+                        <div class="flex justify-between items-baseline">
+                            <span id="c_acq_db_pct" class="text-sm font-bold text-indigo-400">0%</span>
+                            <span id="c_acq_db_rem" class="text-xs text-slate-400">hátra: 0</span>
+                        </div>
+                        <div class="border-t border-slate-600/60 pt-1 mt-1">
+                            <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
+                            <span id="c_acq_db_daily" class="text-base font-bold text-white">0 db</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
+                        <span class="text-[11px] font-semibold text-slate-400 uppercase">Hűség db</span>
+                        <div class="flex justify-between items-baseline">
+                            <span id="c_huseg_db_pct" class="text-sm font-bold text-emerald-400">0%</span>
+                            <span id="c_huseg_db_rem" class="text-xs text-slate-400">hátra: 0</span>
+                        </div>
+                        <div class="border-t border-slate-600/60 pt-1 mt-1">
+                            <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
+                            <span id="c_huseg_db_daily" class="text-base font-bold text-white">0 db</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
+                        <span class="text-[11px] font-semibold text-slate-400 uppercase">FIX db</span>
+                        <div class="flex justify-between items-baseline">
+                            <span id="c_fix_db_pct" class="text-sm font-bold text-purple-400">0%</span>
+                            <span id="c_fix_db_rem" class="text-xs text-slate-400">hátra: 0</span>
+                        </div>
+                        <div class="border-t border-slate-600/60 pt-1 mt-1">
+                            <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
+                            <span id="c_fix_db_daily" class="text-base font-bold text-white">0 db</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Statisztikai kártyák és Szűrők -->
+            <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-700 pb-4">
+                    <h2 class="text-lg font-semibold text-white">Értékesítési Eredmények</h2>
+                    
+                    <div class="flex flex-wrap items-center gap-3">
+                        <select id="filterMonth" onchange="onFilterChange()" class="bg-slate-700 text-white text-sm border border-slate-600 rounded-lg px-3 py-2">
+                            <option value="ALL">Összes Hónap</option>
+                        </select>
+
+                        <select id="filterStore" onchange="onFilterChange()" class="bg-slate-700 text-white text-sm border border-slate-600 rounded-lg px-3 py-2">
+                            <option value="ALL">Összes Bolt</option>
+                        </select>
+
+                        <select id="filterSeller" onchange="renderData()" class="bg-slate-700 text-white text-sm border border-slate-600 rounded-lg px-3 py-2">
+                            <option value="ALL">Összes Értékesítő</option>
+                        </select>
+
+                        <button onclick="loadAllData()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm px-4 py-2 rounded-lg transition flex items-center gap-2">
+                            <span>🔄</span> Frissítés
+                        </button>
                     </div>
                 </div>
 
-                <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
-                    <span class="text-[11px] font-semibold text-slate-400 uppercase">RET Pont Telj.</span>
-                    <div class="flex justify-between items-baseline">
-                        <span id="c_ret_pont_pct" class="text-sm font-bold text-teal-400">0%</span>
-                        <span id="c_ret_pont_rem" class="text-xs text-slate-400">hátra: 0</span>
+                <!-- Fő KPI Kártyák -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
+                        <span class="text-[11px] text-slate-400 uppercase font-semibold">Tranzakció</span>
+                        <p id="kpiCount" class="text-xl font-bold text-white mt-1">0 db</p>
                     </div>
-                    <div class="border-t border-slate-600/60 pt-1 mt-1">
-                        <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
-                        <span id="c_ret_pont_daily" class="text-base font-bold text-white">0</span>
+                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
+                        <span class="text-[11px] text-slate-400 uppercase font-semibold">ACQ db</span>
+                        <p id="kpiACQ" class="text-xl font-bold text-indigo-400 mt-1">0 db</p>
+                    </div>
+                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
+                        <span class="text-[11px] text-slate-400 uppercase font-semibold">ACQ HS</span>
+                        <p id="kpiACQHS" class="text-xl font-bold text-sky-400 mt-1">0 db</p>
+                    </div>
+                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
+                        <span class="text-[11px] text-slate-400 uppercase font-semibold">ACQ Tab</span>
+                        <p id="kpiACQTab" class="text-xl font-bold text-teal-400 mt-1">0 db</p>
+                    </div>
+                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
+                        <span class="text-[11px] text-slate-400 uppercase font-semibold">Hűség db</span>
+                        <p id="kpiHuseg" class="text-xl font-bold text-emerald-400 mt-1">0 db</p>
+                    </div>
+                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
+                        <span class="text-[11px] text-slate-400 uppercase font-semibold">FIX db</span>
+                        <p id="kpiFix" class="text-xl font-bold text-purple-400 mt-1">0 db</p>
+                    </div>
+                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
+                        <span class="text-[11px] text-slate-400 uppercase font-semibold">ACQ Pont</span>
+                        <p id="kpiACQPont" class="text-xl font-bold text-sky-400 mt-1">0</p>
+                    </div>
+                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
+                        <span class="text-[11px] text-slate-400 uppercase font-semibold">RET Pont</span>
+                        <p id="kpiRETPont" class="text-xl font-bold text-teal-400 mt-1">0</p>
+                    </div>
+                </div>
+
+                <!-- Eredménytáblázat -->
+                <div class="overflow-x-auto mt-4">
+                    <table class="w-full text-left border-collapse text-xs md:text-sm">
+                        <thead>
+                            <tr class="bg-slate-700/50 text-slate-300 border-b border-slate-600 whitespace-nowrap">
+                                <th class="p-3">Hónap</th>
+                                <th class="p-3">Bolt</th>
+                                <th class="p-3">Értékesítő</th>
+                                <th class="p-3 text-center">Tranz.</th>
+                                <th class="p-3 text-center">ACQ</th>
+                                <th class="p-3 text-center">ACQ HS</th>
+                                <th class="p-3 text-center">ACQ Tab</th>
+                                <th class="p-3 text-center">Hűség</th>
+                                <th class="p-3 text-center">FIX</th>
+                                <th class="p-3 text-right">ACQ Pont</th>
+                                <th class="p-3 text-right">RET Pont</th>
+                                <th class="p-3 text-right">Összpont</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody" class="divide-y divide-slate-700 text-slate-200">
+                            <tr>
+                                <td colspan="12" class="p-4 text-center text-slate-400">Nincs adat betöltve.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <!-- ==================== 2. FÜL: KÜLÖN FELTÖLTÉS & TARGET ADMIN ==================== -->
+        <main id="tabUpload" class="hidden space-y-6">
+            
+            <!-- CPR Tranzakció Feltöltő Box -->
+            <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-4">
+                <div class="border-b border-slate-700 pb-3">
+                    <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+                        <span>📤</span> CPR Havi Export Feltöltése
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Húzd be a havi tranzakciós fájlt (pl. <code class="text-indigo-400">Tranzakciók - 202610.xlsx</code>). A rendszer észleli a hónapot és felülírja a felhőben az előző napi változatot.</p>
+                </div>
+
+                <div onclick="document.getElementById('fileInput').click()" 
+                     class="border-2 border-dashed border-indigo-500/50 hover:border-indigo-400 bg-indigo-950/20 hover:bg-indigo-950/40 rounded-xl p-10 text-center cursor-pointer transition">
+                    <div class="text-4xl mb-3">📁</div>
+                    <span id="uploadLabel" class="text-sm text-slate-300 font-medium">Kattints ide vagy húzd ide a CPR Excel fájlt...</span>
+                    <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileSelect(event)">
+                </div>
+                <div id="uploadStatus" class="text-sm font-medium"></div>
+            </section>
+
+            <!-- Havi Target Beállító & Excel Feltöltő Box -->
+            <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-5">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700 pb-3">
+                    <div>
+                        <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+                            <span>🎯</span> Havi Targetek Rögzítése
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Állítsd be a havi elvárásokat kézzel boltonként, vagy tölts fel egy target Excelt.</p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button onclick="document.getElementById('targetFileInput').click()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-3 py-2 rounded-lg border border-slate-600 transition flex items-center gap-1.5">
+                            <span>📥</span> Target Excel Fájl
+                        </button>
+                        <input type="file" id="targetFileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleTargetExcelUpload(event)">
+
+                        <button onclick="saveCurrentTargetsToSupabase()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs px-4 py-2 rounded-lg transition shadow flex items-center gap-1.5">
+                            <span>💾</span> Mentés a Felhőbe
+                        </button>
                     </div>
                 </div>
 
-                <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
-                    <span class="text-[11px] font-semibold text-slate-400 uppercase">ACQ db Telj.</span>
-                    <div class="flex justify-between items-baseline">
-                        <span id="c_acq_db_pct" class="text-sm font-bold text-indigo-400">0%</span>
-                        <span id="c_acq_db_rem" class="text-xs text-slate-400">hátra: 0</span>
-                    </div>
-                    <div class="border-t border-slate-600/60 pt-1 mt-1">
-                        <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
-                        <span id="c_acq_db_daily" class="text-base font-bold text-white">0 db</span>
-                    </div>
-                </div>
-
-                <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
-                    <span class="text-[11px] font-semibold text-slate-400 uppercase">Hűség db Telj.</span>
-                    <div class="flex justify-between items-baseline">
-                        <span id="c_huseg_db_pct" class="text-sm font-bold text-emerald-400">0%</span>
-                        <span id="c_huseg_db_rem" class="text-xs text-slate-400">hátra: 0</span>
-                    </div>
-                    <div class="border-t border-slate-600/60 pt-1 mt-1">
-                        <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
-                        <span id="c_huseg_db_daily" class="text-base font-bold text-white">0 db</span>
-                    </div>
-                </div>
-
-                <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
-                    <span class="text-[11px] font-semibold text-slate-400 uppercase">FIX db Telj.</span>
-                    <div class="flex justify-between items-baseline">
-                        <span id="c_fix_db_pct" class="text-sm font-bold text-purple-400">0%</span>
-                        <span id="c_fix_db_rem" class="text-xs text-slate-400">hátra: 0</span>
-                    </div>
-                    <div class="border-t border-slate-600/60 pt-1 mt-1">
-                        <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
-                        <span id="c_fix_db_daily" class="text-base font-bold text-white">0 db</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex justify-between items-center text-xs text-slate-400 pt-1">
-                <span id="targetRemainingDaysLabel">Számítás folyamatban...</span>
-                <span id="todayWeightStatus" class="text-indigo-400 font-medium"></span>
-            </div>
-        </section>
-
-        <!-- Statisztikai kártyák és Szűrők -->
-        <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-4">
-            <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-700 pb-4">
-                <h2 class="text-lg font-semibold text-white">Értékesítési Eredmények</h2>
-                
-                <div class="flex flex-wrap items-center gap-3">
-                    <select id="filterMonth" onchange="onFilterChange()" class="bg-slate-700 text-white text-sm border border-slate-600 rounded-lg px-3 py-2">
-                        <option value="ALL">Összes Hónap</option>
+                <!-- Célkiválasztás (Hónap és Bolt) -->
+                <div class="flex flex-wrap items-center gap-3 bg-slate-900/40 p-3 rounded-lg border border-slate-700/50">
+                    <span class="text-xs font-semibold text-slate-400">Target Cél:</span>
+                    <select id="targetFormMonth" onchange="syncTargetInputsFromAdmin()" class="bg-slate-800 text-white text-xs border border-slate-700 rounded-lg px-3 py-1.5 outline-none">
+                        <option value="2026 október">2026 október</option>
                     </select>
-
-                    <select id="filterStore" onchange="onFilterChange()" class="bg-slate-700 text-white text-sm border border-slate-600 rounded-lg px-3 py-2">
-                        <option value="ALL">Összes Bolt</option>
+                    <select id="targetFormStore" onchange="syncTargetInputsFromAdmin()" class="bg-slate-800 text-white text-xs border border-slate-700 rounded-lg px-3 py-1.5 outline-none">
+                        <option value="ALL">Összes Bolt (Globális)</option>
                     </select>
+                </div>
 
-                    <select id="filterSeller" onchange="renderData()" class="bg-slate-700 text-white text-sm border border-slate-600 rounded-lg px-3 py-2">
-                        <option value="ALL">Összes Értékesítő</option>
-                    </select>
-
-                    <button onclick="loadAllData()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm px-4 py-2 rounded-lg transition flex items-center gap-2">
-                        <span>🔄</span> Frissítés
-                    </button>
+                <!-- Beviteli Mezők -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                    <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/60">
+                        <label class="text-[11px] uppercase font-bold text-amber-400">Összpont Target</label>
+                        <input type="number" id="t_pont" class="w-full mt-1 bg-slate-800 text-white text-sm font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:ring-1 focus:ring-amber-400 outline-none" value="0">
+                    </div>
+                    <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/60">
+                        <label class="text-[11px] uppercase font-bold text-sky-400">ACQ Pont Target</label>
+                        <input type="number" id="t_acq_pont" class="w-full mt-1 bg-slate-800 text-white text-sm font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:ring-1 focus:ring-sky-400 outline-none" value="0">
+                    </div>
+                    <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/60">
+                        <label class="text-[11px] uppercase font-bold text-teal-400">RET Pont Target</label>
+                        <input type="number" id="t_ret_pont" class="w-full mt-1 bg-slate-800 text-white text-sm font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:ring-1 focus:ring-teal-400 outline-none" value="0">
+                    </div>
+                    <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/60">
+                        <label class="text-[11px] uppercase font-bold text-indigo-400">ACQ db Target</label>
+                        <input type="number" id="t_acq_db" class="w-full mt-1 bg-slate-800 text-white text-sm font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:ring-1 focus:ring-indigo-400 outline-none" value="0">
+                    </div>
+                    <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/60">
+                        <label class="text-[11px] uppercase font-bold text-emerald-400">Hűség db Target</label>
+                        <input type="number" id="t_huseg_db" class="w-full mt-1 bg-slate-800 text-white text-sm font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:ring-1 focus:ring-emerald-400 outline-none" value="0">
+                    </div>
+                    <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/60">
+                        <label class="text-[11px] uppercase font-bold text-purple-400">FIX db Target</label>
+                        <input type="number" id="t_fix_db" class="w-full mt-1 bg-slate-800 text-white text-sm font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:ring-1 focus:ring-purple-400 outline-none" value="0">
+                    </div>
                 </div>
-            </div>
-
-            <!-- Fő KPI Kártyák -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-                <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
-                    <span class="text-[11px] text-slate-400 uppercase font-semibold">Tranzakció</span>
-                    <p id="kpiCount" class="text-xl font-bold text-white mt-1">0 db</p>
-                </div>
-                <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
-                    <span class="text-[11px] text-slate-400 uppercase font-semibold">ACQ db</span>
-                    <p id="kpiACQ" class="text-xl font-bold text-indigo-400 mt-1">0 db</p>
-                </div>
-                <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
-                    <span class="text-[11px] text-slate-400 uppercase font-semibold">ACQ HS</span>
-                    <p id="kpiACQHS" class="text-xl font-bold text-sky-400 mt-1">0 db</p>
-                </div>
-                <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
-                    <span class="text-[11px] text-slate-400 uppercase font-semibold">ACQ Tab</span>
-                    <p id="kpiACQTab" class="text-xl font-bold text-teal-400 mt-1">0 db</p>
-                </div>
-                <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
-                    <span class="text-[11px] text-slate-400 uppercase font-semibold">Hűség db</span>
-                    <p id="kpiHuseg" class="text-xl font-bold text-emerald-400 mt-1">0 db</p>
-                </div>
-                <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
-                    <span class="text-[11px] text-slate-400 uppercase font-semibold">FIX db</span>
-                    <p id="kpiFix" class="text-xl font-bold text-purple-400 mt-1">0 db</p>
-                </div>
-                <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
-                    <span class="text-[11px] text-slate-400 uppercase font-semibold">ACQ Pont</span>
-                    <p id="kpiACQPont" class="text-xl font-bold text-sky-400 mt-1">0</p>
-                </div>
-                <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
-                    <span class="text-[11px] text-slate-400 uppercase font-semibold">RET Pont</span>
-                    <p id="kpiRETPont" class="text-xl font-bold text-teal-400 mt-1">0</p>
-                </div>
-            </div>
-
-            <!-- Eredménytáblázat -->
-            <div class="overflow-x-auto mt-4">
-                <table class="w-full text-left border-collapse text-xs md:text-sm">
-                    <thead>
-                        <tr class="bg-slate-700/50 text-slate-300 border-b border-slate-600 whitespace-nowrap">
-                            <th class="p-3">Hónap</th>
-                            <th class="p-3">Bolt</th>
-                            <th class="p-3">Értékesítő</th>
-                            <th class="p-3 text-center">Tranz.</th>
-                            <th class="p-3 text-center">ACQ</th>
-                            <th class="p-3 text-center">ACQ HS</th>
-                            <th class="p-3 text-center">ACQ Tab</th>
-                            <th class="p-3 text-center">Hűség</th>
-                            <th class="p-3 text-center">FIX</th>
-                            <th class="p-3 text-right">ACQ Pont</th>
-                            <th class="p-3 text-right">RET Pont</th>
-                            <th class="p-3 text-right">Összpont</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody" class="divide-y divide-slate-700 text-slate-200">
-                        <tr>
-                            <td colspan="12" class="p-4 text-center text-slate-400">Nincs adat betöltve.</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
+            </section>
+        </main>
 
     </div>
 
     <script>
-        // --- JELSZÓVÉDELEM BEÁLLÍTÁSA ---
-        const DASHBOARD_PASSWORD = "fpk2026"; // <-- Itt írhatod át a jelszót bármikor
+        // --- JELSZÓVÉDELEM ---
+        const DASHBOARD_PASSWORD = "fpk2026";
 
         function checkAuth() {
             if (sessionStorage.getItem('dashboard_authenticated') === 'true') {
@@ -325,6 +371,28 @@
             location.reload();
         }
 
+        // --- TAB VÁLTÓ LOGIKA ---
+        function switchTab(tabName) {
+            const tabDash = document.getElementById('tabDashboard');
+            const tabUp = document.getElementById('tabUpload');
+            const btnDash = document.getElementById('tabBtnDashboard');
+            const btnUp = document.getElementById('tabBtnUpload');
+
+            if (tabName === 'dashboard') {
+                tabDash.classList.remove('hidden');
+                tabUp.classList.add('hidden');
+                btnDash.className = "px-4 py-2 rounded-lg text-xs font-semibold transition bg-indigo-600 text-white shadow";
+                btnUp.className = "px-4 py-2 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white";
+                calculateAllTargets();
+            } else {
+                tabDash.classList.add('hidden');
+                tabUp.classList.remove('hidden');
+                btnDash.className = "px-4 py-2 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white";
+                btnUp.className = "px-4 py-2 rounded-lg text-xs font-semibold transition bg-indigo-600 text-white shadow";
+                syncTargetAdminDropdowns();
+            }
+        }
+
         // --- SUPABASE KONFIGURÁCIÓ ---
         const SUPABASE_URL = "https://esbezhdyplpqumgrgmtv.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmV6aGR5cGxwcXVtZ3JnbXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyMDkyNTUsImV4cCI6MjEwODc4NTI1NX0.l4LH6uC0YRMLr4N-GlQqI_kEp6piV1zLTk2jLG4jBL0";
@@ -339,14 +407,16 @@
 
         async function loadAllData() {
             await Promise.all([loadFromSupabase(), loadTargetsFromSupabase()]);
-            syncTargetInputsWithSelection();
+            syncTargetAdminDropdowns();
             calculateAllTargets();
         }
 
         async function loadFromSupabase() {
             const statusDiv = document.getElementById('uploadStatus');
-            statusDiv.className = "mt-3 text-sm font-medium text-indigo-400";
-            statusDiv.innerText = "Tranzakciók betöltése a felhőből...";
+            if (statusDiv) {
+                statusDiv.className = "text-sm font-medium text-indigo-400";
+                statusDiv.innerText = "Tranzakciók betöltése...";
+            }
 
             let allRows = [];
             let from = 0;
@@ -373,16 +443,18 @@
 
                 globalTransactions = allRows;
                 if (allRows.length > 0) {
-                    statusDiv.className = "mt-3 text-sm font-medium text-emerald-400";
-                    statusDiv.innerText = `Sikeresen betöltve ${allRows.length} db tranzakció.`;
+                    if (statusDiv) {
+                        statusDiv.className = "text-sm font-medium text-emerald-400";
+                        statusDiv.innerText = `Sikeresen betöltve ${allRows.length} db rekord.`;
+                    }
                     populateFilters();
                     renderData();
-                } else {
-                    statusDiv.innerText = "Még nincsenek tranzakciók az adatbázisban.";
                 }
             } catch (err) {
-                statusDiv.className = "mt-3 text-sm font-medium text-rose-400";
-                statusDiv.innerText = "Hiba a tranzakciók betöltésekor: " + err.message;
+                if (statusDiv) {
+                    statusDiv.className = "text-sm font-medium text-rose-400";
+                    statusDiv.innerText = "Hiba a tranzakciók betöltésekor: " + err.message;
+                }
             }
         }
 
@@ -393,7 +465,7 @@
                     globalTargets = data;
                 }
             } catch (e) {
-                console.warn("Targetek betöltése figyelmeztetés:", e);
+                console.warn("Targetek hiba:", e);
             }
         }
 
@@ -403,7 +475,7 @@
 
             document.getElementById('uploadLabel').innerText = `Kiválasztva: ${file.name}`;
             const statusDiv = document.getElementById('uploadStatus');
-            statusDiv.className = "mt-3 text-sm font-medium text-indigo-400";
+            statusDiv.className = "text-sm font-medium text-indigo-400";
             statusDiv.innerText = "Fájl feldolgozása a böngészőben...";
 
             const reader = new FileReader();
@@ -508,11 +580,11 @@
                     }
 
                     await loadAllData();
-                    statusDiv.className = "mt-3 text-sm font-medium text-emerald-400";
+                    statusDiv.className = "text-sm font-medium text-emerald-400";
                     statusDiv.innerText = `Sikeres mentés! [${targetMonth}]: ${parsed.length} tranzakció frissítve.`;
 
                 } catch (err) {
-                    statusDiv.className = "mt-3 text-sm font-medium text-rose-400";
+                    statusDiv.className = "text-sm font-medium text-rose-400";
                     statusDiv.innerText = "Hiba a feldolgozás során: " + err.message;
                 }
             };
@@ -532,8 +604,8 @@
                     const json = XLSX.utils.sheet_to_json(sheet);
 
                     const targetPayloads = json.map(r => ({
-                        honap: String(r['Hónap'] || r['honap'] || document.getElementById('filterMonth').value),
-                        bolt: String(r['Bolt'] || r['bolt'] || 'ÖSSZES'),
+                        honap: String(r['Hónap'] || r['honap'] || document.getElementById('targetFormMonth').value),
+                        bolt: String(r['Bolt'] || r['bolt'] || 'ALL'),
                         target_pont: parseFloat(r['Target_Pont'] || r['target_pont'] || 0),
                         target_acq_pont: parseFloat(r['Target_ACQ_Pont'] || r['target_acq_pont'] || 0),
                         target_ret_pont: parseFloat(r['Target_RET_Pont'] || r['target_ret_pont'] || 0),
@@ -547,8 +619,7 @@
                     }
 
                     await loadTargetsFromSupabase();
-                    syncTargetInputsWithSelection();
-                    calculateAllTargets();
+                    syncTargetInputsFromAdmin();
                     alert("A targetek sikeresen feltöltve és rögzítve!");
                 } catch (err) {
                     alert("Hiba a target fájl feldolgozásakor: " + err.message);
@@ -558,13 +629,8 @@
         }
 
         async function saveCurrentTargetsToSupabase() {
-            const selMonth = document.getElementById('filterMonth').value;
-            const selStore = document.getElementById('filterStore').value;
-
-            if (selMonth === 'ALL') {
-                alert("Kérlek válassz ki egy konkrét hónapot a target mentéséhez!");
-                return;
-            }
+            const selMonth = document.getElementById('targetFormMonth').value;
+            const selStore = document.getElementById('targetFormStore').value;
 
             const targetPayload = {
                 honap: selMonth,
@@ -582,18 +648,28 @@
                 alert("Hiba a mentéskor: " + error.message);
             } else {
                 await loadTargetsFromSupabase();
-                alert(`Targetek elmentve a felhőbe! [${selMonth} - ${selStore}]`);
+                alert(`Targetek mentve a felhőbe! [${selMonth} - ${selStore}]`);
             }
         }
 
-        function onFilterChange() {
-            syncTargetInputsWithSelection();
-            renderData();
+        function syncTargetAdminDropdowns() {
+            const months = [...new Set(globalTransactions.map(t => t.honap))].filter(Boolean).sort().reverse();
+            const stores = [...new Set(globalTransactions.map(t => t.bolt))].filter(Boolean).sort();
+
+            const mSel = document.getElementById('targetFormMonth');
+            const sSel = document.getElementById('targetFormStore');
+
+            if (months.length > 0) {
+                mSel.innerHTML = months.map(m => `<option value="${m}">${m}</option>`).join('');
+            }
+            sSel.innerHTML = '<option value="ALL">Összes Bolt (Globális)</option>' + stores.map(s => `<option value="${s}">${s}</option>`).join('');
+
+            syncTargetInputsFromAdmin();
         }
 
-        function syncTargetInputsWithSelection() {
-            const selMonth = document.getElementById('filterMonth').value;
-            const selStore = document.getElementById('filterStore').value;
+        function syncTargetInputsFromAdmin() {
+            const selMonth = document.getElementById('targetFormMonth').value;
+            const selStore = document.getElementById('targetFormStore').value;
 
             const existing = globalTargets.find(t => t.honap === selMonth && t.bolt === selStore);
             if (existing) {
@@ -604,7 +680,6 @@
                 document.getElementById('t_huseg_db').value = existing.target_huseg_db;
                 document.getElementById('t_fix_db').value = existing.target_fix_db;
             } else {
-                // Ha még nincs rögzítve adott hónap/boltra, nullázzuk
                 document.getElementById('t_pont').value = 0;
                 document.getElementById('t_acq_pont').value = 0;
                 document.getElementById('t_ret_pont').value = 0;
@@ -612,6 +687,10 @@
                 document.getElementById('t_huseg_db').value = 0;
                 document.getElementById('t_fix_db').value = 0;
             }
+        }
+
+        function onFilterChange() {
+            renderData();
         }
 
         function calculateAllTargets() {
@@ -635,13 +714,19 @@
                 fix_db: filtered.reduce((acc, t) => acc + (t.fix_db || 0), 0)
             };
 
+            // Adott hónap/bolthoz tartozó célok kinyerése a tárolt targetekből
+            const matchedTarget = globalTargets.find(t => 
+                (selectedMonth === 'ALL' || t.honap === selectedMonth) && 
+                (selectedStore === 'ALL' ? t.bolt === 'ALL' : t.bolt === selectedStore)
+            );
+
             const targets = {
-                pont: parseFloat(document.getElementById('t_pont').value) || 0,
-                acq_pont: parseFloat(document.getElementById('t_acq_pont').value) || 0,
-                ret_pont: parseFloat(document.getElementById('t_ret_pont').value) || 0,
-                acq_db: parseFloat(document.getElementById('t_acq_db').value) || 0,
-                huseg_db: parseFloat(document.getElementById('t_huseg_db').value) || 0,
-                fix_db: parseFloat(document.getElementById('t_fix_db').value) || 0
+                pont: matchedTarget ? matchedTarget.target_pont : (parseFloat(document.getElementById('t_pont').value) || 0),
+                acq_pont: matchedTarget ? matchedTarget.target_acq_pont : (parseFloat(document.getElementById('t_acq_pont').value) || 0),
+                ret_pont: matchedTarget ? matchedTarget.target_ret_pont : (parseFloat(document.getElementById('t_ret_pont').value) || 0),
+                acq_db: matchedTarget ? matchedTarget.target_acq_db : (parseFloat(document.getElementById('t_acq_db').value) || 0),
+                huseg_db: matchedTarget ? matchedTarget.target_huseg_db : (parseFloat(document.getElementById('t_huseg_db').value) || 0),
+                fix_db: matchedTarget ? matchedTarget.target_fix_db : (parseFloat(document.getElementById('t_fix_db').value) || 0)
             };
 
             const weekdayPoints = [0, 0, 0, 0, 0, 0, 0];
@@ -672,8 +757,8 @@
             const todayWeight = dayWeights[todayDow];
             const dayNames = ['Vasárnap', 'Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat'];
 
-            document.getElementById('targetRemainingDaysLabel').innerText = `${daysInMonth} napos hónap: még ${remainingDaysCount} nap van hátra.`;
-            document.getElementById('todayWeightStatus').innerText = `Ma: ${dayNames[todayDow]} (Forgalmi súly: ${todayWeight.toFixed(2)}x)`;
+            document.getElementById('targetRemainingDaysLabel').innerText = `${daysInMonth} napos hónap: még ${remainingDaysCount} nap van hátra`;
+            document.getElementById('todayWeightStatus').innerText = `Ma: ${dayNames[todayDow]} (${todayWeight.toFixed(2)}x súly)`;
 
             function updateMetricUI(key, isInt = false) {
                 const target = targets[key];
