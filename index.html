@@ -3,14 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bolti & Értékesítői Teljesítmény Dashboard</title>
+    <title>Bolti Teljesítmény Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8">
 
-    <div class="max-w-7xl mx-auto space-y-6">
+    <!-- 1. JELSZÓVÉDŐ KÉPERNYŐ (Alapértelmezett belépő felület) -->
+    <div id="loginScreen" class="fixed inset-0 bg-slate-950 flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl max-w-sm w-full text-center shadow-2xl space-y-5">
+            <div class="w-16 h-16 bg-indigo-950/60 border border-indigo-500/40 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-inner">
+                🔒
+            </div>
+            <div>
+                <h2 class="text-xl font-bold text-white">Belépés a Dashboardra</h2>
+                <p class="text-xs text-slate-400 mt-1">A statisztikák eléréséhez add meg a jelszót</p>
+            </div>
+            
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <input type="password" id="passwordInput" placeholder="Jelszó..." autofocus
+                           class="w-full bg-slate-800 text-center text-white text-base tracking-widest border border-slate-700 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                </div>
+                <button type="submit" 
+                        class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm py-2.5 rounded-xl transition shadow-lg shadow-indigo-600/30">
+                    Belépés
+                </button>
+                <p id="loginError" class="text-rose-400 text-xs hidden font-medium">Hibás jelszó! Próbáld újra.</p>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. DASHBOARD FELÜLET (Csak sikeres belépés után jelenik meg) -->
+    <div id="dashboardApp" class="hidden max-w-7xl mx-auto space-y-6">
         
         <!-- Fejléc -->
         <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
@@ -18,24 +44,20 @@
                 <h1 class="text-2xl font-bold text-white flex items-center gap-2">
                     <span>📊</span> Bolti & Értékesítői Dashboard
                 </h1>
-                <p class="text-sm text-slate-400 mt-1">CPR tranzakció-feldolgozó és többdimenziós napi target tervező</p>
+                <p class="text-sm text-slate-400 mt-1">CPR tranzakció-feldolgozó és súlyozott napi target tervező</p>
             </div>
             
             <div class="flex items-center gap-3">
-                <span class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Szerepkör:</span>
-                <select id="userRole" onchange="applyRoleRestrictions()" class="bg-slate-700 text-white text-sm border border-slate-600 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
-                    <option value="admin">1. Admin (Mindent lát + Feltöltés)</option>
-                    <option value="area_manager">2. Területi Vezető (Összes üzlet)</option>
-                    <option value="store_manager">3. Üzletvezető (Saját bolt)</option>
-                    <option value="salesperson">4. Értékesítő (Csak saját számok)</option>
-                </select>
+                <button onclick="logout()" class="bg-slate-700 hover:bg-rose-950/40 hover:text-rose-400 border border-slate-600 text-slate-300 text-xs font-semibold px-4 py-2 rounded-lg transition flex items-center gap-2">
+                    <span>🚪</span> Kijelentkezés
+                </button>
             </div>
         </header>
 
         <!-- CPR Fájl Feltöltési zóna -->
-        <section id="uploadSection" class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
+        <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
             <h2 class="text-lg font-semibold text-white mb-2">CPR Export Feltöltése</h2>
-            <p class="text-sm text-slate-400 mb-4">Húzd be a tranzakciós fájlt. A rendszer automatikusan észleli a hónapot és felülírja a korábbi adatokat.</p>
+            <p class="text-sm text-slate-400 mb-4">Húzd be a tranzakciós fájlt. A rendszer felismeri a hónapot, és <strong>kizárólag az adott hónap adatait írja felül</strong> a Supabase-ben.</p>
             
             <div onclick="document.getElementById('fileInput').click()" 
                  class="border-2 border-dashed border-indigo-500/50 hover:border-indigo-400 bg-indigo-950/20 hover:bg-indigo-950/40 rounded-xl p-8 text-center cursor-pointer transition">
@@ -53,10 +75,9 @@
                     <h3 class="text-lg font-bold text-indigo-400 flex items-center gap-2">
                         <span>🎯</span> Havi Targetek & Súlyozott Napi Elvárás
                     </h3>
-                    <p class="text-xs text-slate-400 mt-1">Target rögzítése boltonként és a hátralévő napokra kalkulált súlyozott ritmus</p>
+                    <p class="text-xs text-slate-400 mt-1">Targetek rögzítése és a hétköznap/hétvége ritmus szerinti napi leosztás</p>
                 </div>
                 
-                <!-- Target feltöltés / kézi mentés gombok -->
                 <div class="flex flex-wrap items-center gap-2">
                     <button onclick="document.getElementById('targetFileInput').click()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-3 py-2 rounded-lg border border-slate-600 transition flex items-center gap-1.5">
                         <span>📥</span> Target Excel Feltöltése
@@ -69,7 +90,7 @@
                 </div>
             </div>
 
-            <!-- Target Beviteli Mezők (Havi elvárások a kiválasztott szűrésre) -->
+            <!-- Target Beviteli Mezők -->
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 bg-slate-900/50 p-4 rounded-xl border border-slate-700/60">
                 <div>
                     <label class="text-[11px] uppercase font-bold text-amber-400">Összpont Target</label>
@@ -97,9 +118,8 @@
                 </div>
             </div>
 
-            <!-- Súlyozott Napi Számítás Eredményei -->
+            <!-- Súlyozott Napi Eredmények Kártyák -->
             <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                <!-- 1. Összpont -->
                 <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
                     <span class="text-[11px] font-semibold text-slate-400 uppercase">Összpont Telj.</span>
                     <div class="flex justify-between items-baseline">
@@ -112,7 +132,6 @@
                     </div>
                 </div>
 
-                <!-- 2. ACQ Pont -->
                 <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
                     <span class="text-[11px] font-semibold text-slate-400 uppercase">ACQ Pont Telj.</span>
                     <div class="flex justify-between items-baseline">
@@ -125,7 +144,6 @@
                     </div>
                 </div>
 
-                <!-- 3. RET Pont -->
                 <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
                     <span class="text-[11px] font-semibold text-slate-400 uppercase">RET Pont Telj.</span>
                     <div class="flex justify-between items-baseline">
@@ -138,7 +156,6 @@
                     </div>
                 </div>
 
-                <!-- 4. ACQ db -->
                 <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
                     <span class="text-[11px] font-semibold text-slate-400 uppercase">ACQ db Telj.</span>
                     <div class="flex justify-between items-baseline">
@@ -151,7 +168,6 @@
                     </div>
                 </div>
 
-                <!-- 5. Hűség db -->
                 <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
                     <span class="text-[11px] font-semibold text-slate-400 uppercase">Hűség db Telj.</span>
                     <div class="flex justify-between items-baseline">
@@ -164,7 +180,6 @@
                     </div>
                 </div>
 
-                <!-- 6. FIX db -->
                 <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
                     <span class="text-[11px] font-semibold text-slate-400 uppercase">FIX db Telj.</span>
                     <div class="flex justify-between items-baseline">
@@ -179,7 +194,7 @@
             </div>
 
             <div class="flex justify-between items-center text-xs text-slate-400 pt-1">
-                <span id="targetRemainingDaysLabel">Számítás betöltése...</span>
+                <span id="targetRemainingDaysLabel">Számítás folyamatban...</span>
                 <span id="todayWeightStatus" class="text-indigo-400 font-medium"></span>
             </div>
         </section>
@@ -208,7 +223,7 @@
                 </div>
             </div>
 
-            <!-- Fő KPI Kártyák (Most már ACQ Pont és RET Pont külön!) -->
+            <!-- Fő KPI Kártyák -->
             <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
                 <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
                     <span class="text-[11px] text-slate-400 uppercase font-semibold">Tranzakció</span>
@@ -275,15 +290,51 @@
     </div>
 
     <script>
+        // --- JELSZÓVÉDELEM BEÁLLÍTÁSA ---
+        const DASHBOARD_PASSWORD = "fpk2026"; // <-- Itt írhatod át a jelszót bármikor
+
+        function checkAuth() {
+            if (sessionStorage.getItem('dashboard_authenticated') === 'true') {
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('dashboardApp').classList.remove('hidden');
+                loadAllData();
+            } else {
+                document.getElementById('loginScreen').classList.remove('hidden');
+                document.getElementById('dashboardApp').classList.add('hidden');
+            }
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const inputVal = document.getElementById('passwordInput').value;
+            const errorElem = document.getElementById('loginError');
+
+            if (inputVal === DASHBOARD_PASSWORD) {
+                sessionStorage.setItem('dashboard_authenticated', 'true');
+                errorElem.classList.add('hidden');
+                checkAuth();
+            } else {
+                errorElem.classList.remove('hidden');
+                document.getElementById('passwordInput').value = '';
+                document.getElementById('passwordInput').focus();
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('dashboard_authenticated');
+            location.reload();
+        }
+
+        // --- SUPABASE KONFIGURÁCIÓ ---
         const SUPABASE_URL = "https://esbezhdyplpqumgrgmtv.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmV6aGR5cGxwcXVtZ3JnbXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyMDkyNTUsImV4cCI6MjEwODc4NTI1NX0.l4LH6uC0YRMLr4N-GlQqI_kEp6piV1zLTk2jLG4jBL0";
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let globalTransactions = [];
-        let globalTargets = []; // Supabase havi_targetek tábla adatai
+        let globalTargets = [];
 
         window.addEventListener('DOMContentLoaded', () => {
-            loadAllData();
+            checkAuth();
         });
 
         async function loadAllData() {
@@ -292,7 +343,6 @@
             calculateAllTargets();
         }
 
-        // 1. Tranzakciók betöltése (1000-es lapozás)
         async function loadFromSupabase() {
             const statusDiv = document.getElementById('uploadStatus');
             statusDiv.className = "mt-3 text-sm font-medium text-indigo-400";
@@ -336,7 +386,6 @@
             }
         }
 
-        // 2. Mentett havi targetek betöltése Supabase-ből
         async function loadTargetsFromSupabase() {
             try {
                 const { data, error } = await supabaseClient.from('havi_targetek').select('*');
@@ -344,11 +393,10 @@
                     globalTargets = data;
                 }
             } catch (e) {
-                console.warn("Targetek betöltése hiba:", e);
+                console.warn("Targetek betöltése figyelmeztetés:", e);
             }
         }
 
-        // 3. CPR Fájl feldolgozása (ACQ és RET pont szétválasztásával)
         function handleFileSelect(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -424,7 +472,6 @@
                         const rowMonth = detectedMonth || (parsedDate ? parsedDate.substring(0, 7) : "Aktuális");
                         const realPont = parseNum(r[colMap['Jutalék pont']]);
                         const acqPont = parseNum(r[colMap['ACQ pont']]);
-                        // A RET pont az összpont és az ACQ pont különbsége
                         const retPont = Math.max(0, realPont - acqPont);
 
                         parsed.push({
@@ -472,8 +519,6 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // 4. Target Excel fájl feltöltése (opcionális tömeges feltöltéshez)
-        // Elvárt fejléc: Hónap, Bolt, Target_Pont, Target_ACQ_Pont, Target_RET_Pont, Target_ACQ_db, Target_Huseg_db, Target_FIX_db
         function handleTargetExcelUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -512,7 +557,6 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // 5. Kézzel beírt targetek mentése Supabase-be
         async function saveCurrentTargetsToSupabase() {
             const selMonth = document.getElementById('filterMonth').value;
             const selStore = document.getElementById('filterStore').value;
@@ -524,7 +568,7 @@
 
             const targetPayload = {
                 honap: selMonth,
-                bolt: selStore, // Ha 'ALL', akkor az adott havi globális össztarget
+                bolt: selStore,
                 target_pont: parseFloat(document.getElementById('t_pont').value) || 0,
                 target_acq_pont: parseFloat(document.getElementById('t_acq_pont').value) || 0,
                 target_ret_pont: parseFloat(document.getElementById('t_ret_pont').value) || 0,
@@ -542,7 +586,6 @@
             }
         }
 
-        // 6. Szűrő változásakor szinkronizáljuk a target beviteli mezőket
         function onFilterChange() {
             syncTargetInputsWithSelection();
             renderData();
@@ -561,11 +604,16 @@
                 document.getElementById('t_huseg_db').value = existing.target_huseg_db;
                 document.getElementById('t_fix_db').value = existing.target_fix_db;
             } else {
-                // Ha még nincs rögzítve, hagyjuk az aktuális értéket vagy nullázzuk
+                // Ha még nincs rögzítve adott hónap/boltra, nullázzuk
+                document.getElementById('t_pont').value = 0;
+                document.getElementById('t_acq_pont').value = 0;
+                document.getElementById('t_ret_pont').value = 0;
+                document.getElementById('t_acq_db').value = 0;
+                document.getElementById('t_huseg_db').value = 0;
+                document.getElementById('t_fix_db').value = 0;
             }
         }
 
-        // 7. Súlyozott Napi Számítás minden metrikára (Pont, ACQ pont, RET pont, ACQ db, Hűség db, FIX db)
         function calculateAllTargets() {
             const selectedMonth = document.getElementById('filterMonth').value;
             const selectedStore = document.getElementById('filterStore').value;
@@ -578,7 +626,6 @@
                 return mOk && sOk && eOk;
             });
 
-            // Tények összesítése
             const actuals = {
                 pont: filtered.reduce((acc, t) => acc + (t.osszpont || 0), 0),
                 acq_pont: filtered.reduce((acc, t) => acc + (t.acq_pont || 0), 0),
@@ -597,7 +644,6 @@
                 fix_db: parseFloat(document.getElementById('t_fix_db').value) || 0
             };
 
-            // Hétköznap / Hétvége súlyozási arány a tranzakciókból
             const weekdayPoints = [0, 0, 0, 0, 0, 0, 0];
             globalTransactions.forEach(t => {
                 if (t.szerzodes_datuma) {
@@ -609,7 +655,6 @@
             const totalHistPoints = weekdayPoints.reduce((a, b) => a + b, 0);
             const dayWeights = weekdayPoints.map(pts => totalHistPoints > 0 ? (pts / totalHistPoints) * 7 : 1.0);
 
-            // Naptári napok és hátralévő súlyok
             const today = new Date();
             const year = today.getFullYear();
             const month = today.getMonth();
@@ -630,7 +675,6 @@
             document.getElementById('targetRemainingDaysLabel').innerText = `${daysInMonth} napos hónap: még ${remainingDaysCount} nap van hátra.`;
             document.getElementById('todayWeightStatus').innerText = `Ma: ${dayNames[todayDow]} (Forgalmi súly: ${todayWeight.toFixed(2)}x)`;
 
-            // Helper függvény egy metrika kiszámításához
             function updateMetricUI(key, isInt = false) {
                 const target = targets[key];
                 const actual = actuals[key];
@@ -654,7 +698,6 @@
             updateMetricUI('fix_db', true);
         }
 
-        // 8. Szűrők inicializálása
         function populateFilters() {
             const months = [...new Set(globalTransactions.map(t => t.honap))].filter(Boolean).sort().reverse();
             const stores = [...new Set(globalTransactions.map(t => t.bolt))].filter(Boolean).sort();
@@ -676,7 +719,6 @@
             sellerSelect.innerHTML = '<option value="ALL">Összes Értékesítő</option>' + sellers.map(s => `<option value="${s}">${s}</option>`).join('');
         }
 
-        // 9. Adatok megjelenítése a táblázatban
         function renderData() {
             const selectedMonth = document.getElementById('filterMonth').value;
             const selectedStore = document.getElementById('filterStore').value;
@@ -755,20 +797,6 @@
             `).join('');
 
             calculateAllTargets();
-        }
-
-        function applyRoleRestrictions() {
-            const role = document.getElementById('userRole').value;
-            const uploadSection = document.getElementById('uploadSection');
-            const storeFilter = document.getElementById('filterStore');
-
-            if (role === 'admin') {
-                uploadSection.classList.remove('hidden');
-                storeFilter.disabled = false;
-            } else if (role === 'area_manager' || role === 'store_manager' || role === 'salesperson') {
-                uploadSection.classList.add('hidden');
-            }
-            renderData();
         }
     </script>
 </body>
