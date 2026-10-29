@@ -167,6 +167,7 @@
                 </div>
             </section>
 
+            <!-- Statisztikai kártyák és Szűrők -->
             <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-700 pb-4">
                     <h2 class="text-lg font-semibold text-white">Értékesítési Eredmények</h2>
@@ -190,7 +191,8 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+                <!-- 9 db Részletes KPI Kártya (SOHO DB-vel bővítve) -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3">
                     <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
                         <span class="text-[11px] text-slate-400 uppercase font-semibold">Tranzakció</span>
                         <p id="kpiCount" class="text-xl font-bold text-white mt-1">0 db</p>
@@ -216,6 +218,10 @@
                         <p id="kpiFix" class="text-xl font-bold text-purple-400 mt-1">0 db</p>
                     </div>
                     <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
+                        <span class="text-[11px] text-slate-400 uppercase font-semibold">SOHO db</span>
+                        <p id="kpiSoho" class="text-xl font-bold text-amber-400 mt-1">0 db</p>
+                    </div>
+                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
                         <span class="text-[11px] text-slate-400 uppercase font-semibold">ACQ Pont</span>
                         <p id="kpiACQPont" class="text-xl font-bold text-sky-400 mt-1">0</p>
                     </div>
@@ -225,6 +231,7 @@
                     </div>
                 </div>
 
+                <!-- Eredménytáblázat (SOHO oszloppal kiegészítve) -->
                 <div class="overflow-x-auto mt-4">
                     <table class="w-full text-left border-collapse text-xs md:text-sm">
                         <thead>
@@ -238,6 +245,7 @@
                                 <th class="p-3 text-center">ACQ Tab</th>
                                 <th class="p-3 text-center">Hűség</th>
                                 <th class="p-3 text-center">FIX</th>
+                                <th class="p-3 text-center text-amber-400 font-semibold">SOHO</th>
                                 <th class="p-3 text-right">ACQ Pont</th>
                                 <th class="p-3 text-right">RET Pont</th>
                                 <th class="p-3 text-right">Összpont</th>
@@ -245,7 +253,7 @@
                         </thead>
                         <tbody id="tableBody" class="divide-y divide-slate-700 text-slate-200">
                             <tr>
-                                <td colspan="12" class="p-4 text-center text-slate-400">Nincs adat betöltve.</td>
+                                <td colspan="13" class="p-4 text-center text-slate-400">Nincs adat betöltve.</td>
                             </tr>
                         </tbody>
                     </table>
@@ -917,6 +925,7 @@
                         acq_tablet: 0, 
                         huseg: 0, 
                         fix: 0, 
+                        soho: 0,
                         acq_pont: 0,
                         ret_pont: 0, 
                         pont: 0 
@@ -928,6 +937,9 @@
                 summaryMap[key].acq_tablet += (t.acq_tablet || 0);
                 summaryMap[key].huseg += (t.huseg_db || 0);
                 summaryMap[key].fix += (t.fix_db || 0);
+                if (t.szegmens && t.szegmens.toLowerCase() === 'soho') {
+                    summaryMap[key].soho += 1;
+                }
                 summaryMap[key].acq_pont += (t.acq_pont || 0);
                 summaryMap[key].ret_pont += (t.ret_pont || 0);
                 summaryMap[key].pont += (t.osszpont || 0);
@@ -941,12 +953,13 @@
             document.getElementById('kpiACQTab').innerText = `${summaryList.reduce((acc, s) => acc + s.acq_tablet, 0)} db`;
             document.getElementById('kpiHuseg').innerText = `${summaryList.reduce((acc, s) => acc + s.huseg, 0)} db`;
             document.getElementById('kpiFix').innerText = `${summaryList.reduce((acc, s) => acc + s.fix, 0)} db`;
+            document.getElementById('kpiSoho').innerText = `${summaryList.reduce((acc, s) => acc + s.soho, 0)} db`;
             document.getElementById('kpiACQPont').innerText = summaryList.reduce((acc, s) => acc + s.acq_pont, 0).toFixed(1);
             document.getElementById('kpiRETPont').innerText = summaryList.reduce((acc, s) => acc + s.ret_pont, 0).toFixed(1);
 
             const tbody = document.getElementById('tableBody');
             if (summaryList.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="12" class="p-4 text-center text-slate-400">Nincs a szűrésnek megfelelő adat.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="13" class="p-4 text-center text-slate-400">Nincs a szűrésnek megfelelő adat.</td></tr>';
                 calculateAllTargets();
                 return;
             }
@@ -962,6 +975,7 @@
                     <td class="p-3 text-center text-teal-400 font-medium">${s.acq_tablet}</td>
                     <td class="p-3 text-center text-emerald-400 font-medium">${s.huseg}</td>
                     <td class="p-3 text-center text-purple-400 font-medium">${s.fix}</td>
+                    <td class="p-3 text-center text-amber-400 font-bold">${s.soho}</td>
                     <td class="p-3 text-right text-sky-300 font-medium">${s.acq_pont.toFixed(1)}</td>
                     <td class="p-3 text-right text-teal-300 font-medium">${s.ret_pont.toFixed(1)}</td>
                     <td class="p-3 text-right font-bold text-amber-400">${s.pont.toFixed(2)}</td>
