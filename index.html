@@ -12,12 +12,13 @@
 
     <div class="max-w-6xl mx-auto space-y-6">
         
+        <!-- Fejléc -->
         <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
             <div>
                 <h1 class="text-2xl font-bold text-white flex items-center gap-2">
                     <span>📊</span> Bolti & Értékesítői Dashboard
                 </h1>
-                <p class="text-sm text-slate-400 mt-1">CPR tranzakció-feldolgozó és központi target nyilvántartó</p>
+                <p class="text-sm text-slate-400 mt-1">CPR tranzakció-feldolgozó és súlyozott napi célszámító</p>
             </div>
             
             <div class="flex items-center gap-3">
@@ -31,9 +32,10 @@
             </div>
         </header>
 
+        <!-- Feltöltési zóna -->
         <section id="uploadSection" class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
-            <h2 class="text-lg font-semibold text-white mb-2">Havi CPR Export Feltöltése</h2>
-            <p class="text-sm text-slate-400 mb-4">Húzd be az exportált havi tranzakciós fájlt (pl. <code class="text-indigo-400">Tranzakciók - 202610.xlsx</code>). A lakossági és flotta adatok automatikusan törlődnek, kizárólag a Soho cégek adatai maradnak meg.</p>
+            <h2 class="text-lg font-semibold text-white mb-2">CPR Export Feltöltése (Havi / Napi frissítés)</h2>
+            <p class="text-sm text-slate-400 mb-4">Húzd be a tranzakciós fájlt. A rendszer automatikusan felismeri a hónapot, és <strong>kizárólag az adott hónap adatait írja felül</strong>, a korábbi hónapok megmaradnak a súlyozott eloszláshoz.</p>
             
             <div onclick="document.getElementById('fileInput').click()" 
                  class="border-2 border-dashed border-indigo-500/50 hover:border-indigo-400 bg-indigo-950/20 hover:bg-indigo-950/40 rounded-xl p-8 text-center cursor-pointer transition">
@@ -45,11 +47,61 @@
             <div id="uploadStatus" class="mt-3 text-sm font-medium"></div>
         </section>
 
+        <!-- Súlyozott Napi Target Modul -->
+        <section class="bg-slate-800/90 p-6 rounded-xl border border-indigo-500/30 shadow-lg space-y-4">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700 pb-3">
+                <div>
+                    <h3 class="text-base font-bold text-indigo-400 flex items-center gap-2">
+                        <span>🎯</span> Súlyozott Napi Target Tervező
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-0.5">A forgalom heti lefolyása alapján számolt napi elvárás</p>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <label class="text-xs text-slate-300">Havi Target Pont:</label>
+                    <input type="number" id="monthlyTargetInput" value="25000" oninput="calculateWeightedTarget()" class="w-28 bg-slate-700 text-white font-semibold text-sm border border-slate-600 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600">
+                    <span class="text-xs text-slate-400 uppercase">Havi Teljesülés</span>
+                    <p id="targetProgressPct" class="text-xl font-bold text-white mt-1">0%</p>
+                    <div class="w-full bg-slate-600 h-1.5 rounded-full mt-2 overflow-hidden">
+                        <div id="targetProgressBar" class="bg-indigo-500 h-full w-0"></div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600">
+                    <span class="text-xs text-slate-400 uppercase">Hátralévő Pont</span>
+                    <p id="targetRemainingPoints" class="text-xl font-bold text-amber-400 mt-1">0</p>
+                    <span id="targetRemainingDays" class="text-xs text-slate-400">0 nap van hátra</span>
+                </div>
+
+                <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600">
+                    <span class="text-xs text-slate-400 uppercase">Átlagos Napi Elvárás</span>
+                    <p id="targetLinearDaily" class="text-xl font-bold text-slate-300 mt-1">0</p>
+                    <span class="text-xs text-slate-400">egyenletesen osztva</span>
+                </div>
+
+                <div class="bg-indigo-950/40 p-3 rounded-lg border border-indigo-500/50">
+                    <span class="text-xs text-indigo-300 uppercase font-semibold">Mai Súlyozott Target</span>
+                    <p id="targetTodayWeighted" class="text-xl font-bold text-indigo-400 mt-1">0</p>
+                    <span id="todayWeightLabel" class="text-xs text-indigo-300">mai nap súlya alapján</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Statisztikai kártyák és Szűrők -->
         <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-700 pb-4">
-                <h2 class="text-lg font-semibold text-white">Értékesítési Adatok és Teljesítések</h2>
+                <h2 class="text-lg font-semibold text-white">Értékesítési Eredmények</h2>
                 
                 <div class="flex flex-wrap items-center gap-3">
+                    <select id="filterMonth" onchange="renderData()" class="bg-slate-700 text-white text-sm border border-slate-600 rounded-lg px-3 py-2">
+                        <option value="ALL">Összes Hónap</option>
+                    </select>
+
                     <select id="filterStore" onchange="renderData()" class="bg-slate-700 text-white text-sm border border-slate-600 rounded-lg px-3 py-2">
                         <option value="ALL">Összes Bolt</option>
                     </select>
@@ -64,6 +116,7 @@
                 </div>
             </div>
 
+            <!-- Fő KPI-ok -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="bg-slate-700/50 p-4 rounded-lg border border-slate-600">
                     <span class="text-xs text-slate-400 uppercase font-semibold">Tranzakciók</span>
@@ -78,15 +131,17 @@
                     <p id="kpiHusegFix" class="text-2xl font-bold text-emerald-400 mt-1">0 db</p>
                 </div>
                 <div class="bg-slate-700/50 p-4 rounded-lg border border-slate-600">
-                    <span class="text-xs text-slate-400 uppercase font-semibold">Pontszám</span>
+                    <span class="text-xs text-slate-400 uppercase font-semibold">Hivatalos Pontszám</span>
                     <p id="kpiPoints" class="text-2xl font-bold text-amber-400 mt-1">0</p>
                 </div>
             </div>
 
+            <!-- Eredménytáblázat -->
             <div class="overflow-x-auto mt-4">
                 <table class="w-full text-left border-collapse text-sm">
                     <thead>
                         <tr class="bg-slate-700/50 text-slate-300 border-b border-slate-600">
+                            <th class="p-3">Hónap</th>
                             <th class="p-3">Bolt</th>
                             <th class="p-3">Értékesítő</th>
                             <th class="p-3 text-center">Tranzakció</th>
@@ -98,7 +153,7 @@
                     </thead>
                     <tbody id="tableBody" class="divide-y divide-slate-700 text-slate-200">
                         <tr>
-                            <td colspan="7" class="p-4 text-center text-slate-400">Nincs még adat feltöltve vagy betöltve.</td>
+                            <td colspan="8" class="p-4 text-center text-slate-400">Nincs még adat feltöltve vagy betöltve.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -118,7 +173,7 @@
             loadFromSupabase();
         });
 
-        // 1000-es limit feloldása lapozással (összes sor lekérése a Supabase-ből)
+        // 1. Összes adat lapozott betöltése a Supabase-ből
         async function loadFromSupabase() {
             const statusDiv = document.getElementById('uploadStatus');
             statusDiv.className = "mt-3 text-sm font-medium text-indigo-400";
@@ -141,9 +196,7 @@
                     if (data && data.length > 0) {
                         allRows = allRows.concat(data);
                         from += batchSize;
-                        if (data.length < batchSize) {
-                            hasMore = false;
-                        }
+                        if (data.length < batchSize) hasMore = false;
                     } else {
                         hasMore = false;
                     }
@@ -164,6 +217,7 @@
             }
         }
 
+        // 2. Fájl feldolgozása, Hónap felismerése és csak az adott hónap felülírása
         function handleFileSelect(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -184,9 +238,9 @@
                     const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                     if (rows.length < 6) throw new Error("A fájl üres vagy túl kevés sort tartalmaz!");
 
+                    // Dinamikus fejléc keresés
                     let headerIndex = -1;
                     const colMap = {};
-
                     for (let r = 0; r < Math.min(15, rows.length); r++) {
                         if (rows[r] && rows[r].some(cell => String(cell).trim() === 'Bolt')) {
                             headerIndex = r;
@@ -199,6 +253,18 @@
 
                     if (headerIndex === -1 || colMap['Bolt'] === undefined) {
                         throw new Error("Nem található 'Bolt' fejléc a fájlban!");
+                    }
+
+                    // Hónap azonosítása a fejlécből (pl. 'Hónap:' mező az első pár sorban)
+                    let detectedMonth = null;
+                    for (let r = 0; r < headerIndex; r++) {
+                        if (rows[r]) {
+                            const foundIdx = rows[r].findIndex(cell => String(cell || '').toLowerCase().includes('hónap'));
+                            if (foundIdx !== -1 && rows[r][foundIdx + 2]) {
+                                detectedMonth = String(rows[r][foundIdx + 2]).trim();
+                                break;
+                            }
+                        }
                     }
 
                     const parsed = [];
@@ -231,12 +297,12 @@
                             }
                         }
 
-                        const jutalekPont = parseNum(r[colMap['Jutalék pont']]);
-                        const osszPont = parseNum(r[colMap['Összpont']]);
-                        const realPont = jutalekPont !== 0 ? jutalekPont : osszPont;
+                        // Ha nincs fejlécben hónap, a dátumból képezzük: YYYY-MM
+                        const rowMonth = detectedMonth || (parsedDate ? parsedDate.substring(0, 7) : "Aktuális");
+                        const realPont = parseNum(r[colMap['Jutalék pont']]);
 
                         parsed.push({
-                            honap: "2026 október",
+                            honap: rowMonth,
                             bolt: boltVal,
                             ertekesito: ertekesitoVal,
                             szerzodes_datuma: parsedDate,
@@ -259,11 +325,15 @@
                         });
                     }
 
-                    // Frissítés előtt töröljük az adott hónap régi adatait, hogy ne duplikálódjon
-                    statusDiv.innerText = `Feldolgozva (${parsed.length} tétel). Korábbi adatok frissítése a felhőben...`;
-                    await supabaseClient.from('bolti_teljesitesek').delete().eq('honap', '2026 október');
+                    if (parsed.length === 0) throw new Error("Nem sikerült érvényes rekordot kinyerni.");
 
-                    statusDiv.innerText = `Mentés a felhőbe...`;
+                    const targetMonth = parsed[0].honap;
+
+                    // KIZÁRÓLAG az adott feltöltött hónap sorait töröljük a Supabase-ből, a többi megmarad!
+                    statusDiv.innerText = `Feldolgozva (${parsed.length} tétel, Hónap: ${targetMonth}). Előző verzió törlése...`;
+                    await supabaseClient.from('bolti_teljesitesek').delete().eq('honap', targetMonth);
+
+                    statusDiv.innerText = `Új adatok mentése a felhőbe (${targetMonth})...`;
                     const chunkSize = 500;
                     for (let c = 0; c < parsed.length; c += chunkSize) {
                         const chunk = parsed.slice(c, c + chunkSize);
@@ -271,10 +341,9 @@
                         if (error) throw error;
                     }
 
-                    // Teljes újraolvasás a felhőből a pontos megjelenítéshez
                     await loadFromSupabase();
                     statusDiv.className = "mt-3 text-sm font-medium text-emerald-400";
-                    statusDiv.innerText = `Sikeres mentés a felhőbe! (${parsed.length} tranzakció feltöltve és szinkronizálva)`;
+                    statusDiv.innerText = `Sikeres mentés! [${targetMonth}]: ${parsed.length} tranzakció frissítve.`;
 
                 } catch (err) {
                     statusDiv.className = "mt-3 text-sm font-medium text-rose-400";
@@ -284,9 +353,21 @@
             reader.readAsArrayBuffer(file);
         }
 
+        // 3. Szűrők inicializálása
         function populateFilters() {
-            const stores = [...new Set(globalTransactions.map(t => t.bolt))].sort();
-            const sellers = [...new Set(globalTransactions.map(t => t.ertekesito))].sort();
+            const months = [...new Set(globalTransactions.map(t => t.honap))].filter(Boolean).sort().reverse();
+            const stores = [...new Set(globalTransactions.map(t => t.bolt))].filter(Boolean).sort();
+            const sellers = [...new Set(globalTransactions.map(t => t.ertekesito))].filter(Boolean).sort();
+
+            const monthSelect = document.getElementById('filterMonth');
+            const currentSelectedMonth = monthSelect.value;
+            monthSelect.innerHTML = '<option value="ALL">Összes Hónap</option>' + months.map(m => `<option value="${m}">${m}</option>`).join('');
+            if (months.length > 0 && currentSelectedMonth === 'ALL') {
+                // Alapértelmezetten a legfrissebb hónapot választjuk ki
+                monthSelect.value = months[0];
+            } else if (months.includes(currentSelectedMonth)) {
+                monthSelect.value = currentSelectedMonth;
+            }
 
             const storeSelect = document.getElementById('filterStore');
             storeSelect.innerHTML = '<option value="ALL">Összes Bolt</option>' + stores.map(s => `<option value="${s}">${s}</option>`).join('');
@@ -295,21 +376,96 @@
             sellerSelect.innerHTML = '<option value="ALL">Összes Értékesítő</option>' + sellers.map(s => `<option value="${s}">${s}</option>`).join('');
         }
 
+        // 4. Súlyozott napi target számítás a hét napjainak ritmusa alapján
+        function calculateWeightedTarget() {
+            const monthlyTarget = parseFloat(document.getElementById('monthlyTargetInput').value) || 0;
+            const selectedMonth = document.getElementById('filterMonth').value;
+
+            // Szűrés a kiválasztott hónapra és boltra
+            const selectedStore = document.getElementById('filterStore').value;
+            const selectedSeller = document.getElementById('filterSeller').value;
+
+            const currentMonthTransactions = globalTransactions.filter(t => {
+                const mOk = (selectedMonth === 'ALL' || t.honap === selectedMonth);
+                const sOk = (selectedStore === 'ALL' || t.bolt === selectedStore);
+                const eOk = (selectedSeller === 'ALL' || t.ertekesito === selectedSeller);
+                return mOk && sOk && eOk;
+            });
+
+            const currentPoints = currentMonthTransactions.reduce((acc, t) => acc + (t.osszpont || 0), 0);
+            const remainingPoints = Math.max(0, monthlyTarget - currentPoints);
+
+            const progressPct = monthlyTarget > 0 ? Math.min(100, (currentPoints / monthlyTarget) * 100) : 0;
+            document.getElementById('targetProgressPct').innerText = `${progressPct.toFixed(1)}%`;
+            document.getElementById('targetProgressBar').style.width = `${progressPct}%`;
+            document.getElementById('targetRemainingPoints').innerText = remainingPoints.toFixed(1);
+
+            // Történeti napok súlyozása (0 = Vasárnap, 1 = Hétfő ... 6 = Szombat)
+            const weekdayPoints = [0, 0, 0, 0, 0, 0, 0];
+            const weekdayCounts = [0, 0, 0, 0, 0, 0, 0];
+
+            globalTransactions.forEach(t => {
+                if (t.szerzodes_datuma) {
+                    const day = new Date(t.szerzodes_datuma).getDay();
+                    weekdayPoints[day] += (t.osszpont || 0);
+                    weekdayCounts[day] += 1;
+                }
+            });
+
+            const totalHistPoints = weekdayPoints.reduce((a, b) => a + b, 0);
+            // Súlyok normalizálása (alapértelmezett egyenletes súly, ha még nincs elég adat)
+            const dayWeights = weekdayPoints.map(pts => totalHistPoints > 0 ? (pts / totalHistPoints) * 7 : 1.0);
+
+            // Hónap hátralévő napjainak kiszámítása
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = today.getMonth();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const currentDay = today.getDate();
+            const remainingDaysCount = Math.max(1, daysInMonth - currentDay + 1);
+
+            document.getElementById('targetRemainingDays').innerText = `${remainingDaysCount} nap van hátra a hónapból`;
+
+            // Lineáris napi elvárás
+            const linearDaily = remainingPoints / remainingDaysCount;
+            document.getElementById('targetLinearDaily').innerText = `${linearDaily.toFixed(1)} pont`;
+
+            // Súlyozott napi cél ma: a hátralévő napok összsúlyából mekkora hányad esik a mai napra
+            let remainingWeightsSum = 0;
+            for (let d = currentDay; d <= daysInMonth; d++) {
+                const dow = new Date(year, month, d).getDay();
+                remainingWeightsSum += dayWeights[dow];
+            }
+
+            const todayDow = today.getDay();
+            const todayWeight = dayWeights[todayDow];
+            const todayWeightedTarget = remainingWeightsSum > 0 
+                ? (remainingPoints * (todayWeight / remainingWeightsSum)) 
+                : linearDaily;
+
+            document.getElementById('targetTodayWeighted').innerText = `${todayWeightedTarget.toFixed(1)} pont`;
+            const dayNames = ['Vasárnap', 'Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat'];
+            document.getElementById('todayWeightLabel').innerText = `Ma: ${dayNames[todayDow]} (Súly: ${(todayWeight).toFixed(2)}x)`;
+        }
+
+        // 5. Adatok és táblázat megjelenítése
         function renderData() {
+            const selectedMonth = document.getElementById('filterMonth').value;
             const selectedStore = document.getElementById('filterStore').value;
             const selectedSeller = document.getElementById('filterSeller').value;
 
             const filtered = globalTransactions.filter(t => {
+                const monthOk = (selectedMonth === 'ALL' || t.honap === selectedMonth);
                 const storeOk = (selectedStore === 'ALL' || t.bolt === selectedStore);
                 const sellerOk = (selectedSeller === 'ALL' || t.ertekesito === selectedSeller);
-                return storeOk && sellerOk;
+                return monthOk && storeOk && sellerOk;
             });
 
             const summaryMap = {};
             filtered.forEach(t => {
-                const key = `${t.bolt}___${t.ertekesito}`;
+                const key = `${t.honap}___${t.bolt}___${t.ertekesito}`;
                 if (!summaryMap[key]) {
-                    summaryMap[key] = { bolt: t.bolt, ertekesito: t.ertekesito, count: 0, acq: 0, huseg: 0, fix: 0, pont: 0 };
+                    summaryMap[key] = { honap: t.honap, bolt: t.bolt, ertekesito: t.ertekesito, count: 0, acq: 0, huseg: 0, fix: 0, pont: 0 };
                 }
                 summaryMap[key].count += 1;
                 summaryMap[key].acq += t.acq_db;
@@ -327,12 +483,14 @@
 
             const tbody = document.getElementById('tableBody');
             if (summaryList.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">Nincs a szűrésnek megfelelő adat.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-400">Nincs a szűrésnek megfelelő adat.</td></tr>';
+                calculateWeightedTarget();
                 return;
             }
 
             tbody.innerHTML = summaryList.map(s => `
                 <tr class="hover:bg-slate-700/30 transition">
+                    <td class="p-3 text-xs text-slate-400">${s.honap}</td>
                     <td class="p-3"><span class="px-2 py-1 bg-slate-700 text-xs font-semibold rounded">${s.bolt}</span></td>
                     <td class="p-3 font-medium text-white">${s.ertekesito}</td>
                     <td class="p-3 text-center text-slate-300">${s.count}</td>
@@ -342,8 +500,11 @@
                     <td class="p-3 text-right font-bold text-amber-400">${s.pont.toFixed(2)}</td>
                 </tr>
             `).join('');
+
+            calculateWeightedTarget();
         }
 
+        // 6. Jogosultsági szintek kezelése
         function applyRoleRestrictions() {
             const role = document.getElementById('userRole').value;
             const uploadSection = document.getElementById('uploadSection');
