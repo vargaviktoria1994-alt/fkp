@@ -18,7 +18,7 @@
                 <h1 class="text-2xl font-bold text-white flex items-center gap-2">
                     <span>📊</span> Bolti & Értékesítői Dashboard
                 </h1>
-                <p class="text-sm text-slate-400 mt-1">CPR tranzakció-feldolgozó és súlyozott napi célszámító</p>
+                <p class="text-sm text-slate-400 mt-1">CPR tranzakció-feldolgozó és többdimenziós napi target tervező</p>
             </div>
             
             <div class="flex items-center gap-3">
@@ -32,10 +32,10 @@
             </div>
         </header>
 
-        <!-- Feltöltési zóna -->
+        <!-- CPR Fájl Feltöltési zóna -->
         <section id="uploadSection" class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
-            <h2 class="text-lg font-semibold text-white mb-2">CPR Export Feltöltése (Havi / Napi frissítés)</h2>
-            <p class="text-sm text-slate-400 mb-4">Húzd be a tranzakciós fájlt. A rendszer automatikusan felismeri a hónapot, és <strong>kizárólag az adott hónap adatait írja felül</strong>, a korábbi hónapok megmaradnak a súlyozott eloszláshoz.</p>
+            <h2 class="text-lg font-semibold text-white mb-2">CPR Export Feltöltése</h2>
+            <p class="text-sm text-slate-400 mb-4">Húzd be a tranzakciós fájlt. A rendszer automatikusan észleli a hónapot és felülírja a korábbi adatokat.</p>
             
             <div onclick="document.getElementById('fileInput').click()" 
                  class="border-2 border-dashed border-indigo-500/50 hover:border-indigo-400 bg-indigo-950/20 hover:bg-indigo-950/40 rounded-xl p-8 text-center cursor-pointer transition">
@@ -43,52 +43,144 @@
                 <span id="uploadLabel" class="text-sm text-slate-300 font-medium">Kattints ide vagy húzd ide a fájlt...</span>
                 <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileSelect(event)">
             </div>
-            
             <div id="uploadStatus" class="mt-3 text-sm font-medium"></div>
         </section>
 
-        <!-- Súlyozott Napi Target Modul -->
-        <section class="bg-slate-800/90 p-6 rounded-xl border border-indigo-500/30 shadow-lg space-y-4">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700 pb-3">
+        <!-- Havi Target Menedzser & Súlyozott Tervező Modul -->
+        <section class="bg-slate-800/90 p-6 rounded-xl border border-indigo-500/30 shadow-lg space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700 pb-4">
                 <div>
-                    <h3 class="text-base font-bold text-indigo-400 flex items-center gap-2">
-                        <span>🎯</span> Súlyozott Napi Target Tervező
+                    <h3 class="text-lg font-bold text-indigo-400 flex items-center gap-2">
+                        <span>🎯</span> Havi Targetek & Súlyozott Napi Elvárás
                     </h3>
-                    <p class="text-xs text-slate-400 mt-0.5">A forgalom heti lefolyása alapján számolt napi elvárás</p>
+                    <p class="text-xs text-slate-400 mt-1">Target rögzítése boltonként és a hátralévő napokra kalkulált súlyozott ritmus</p>
                 </div>
                 
-                <div class="flex items-center gap-3">
-                    <label class="text-xs text-slate-300">Havi Target Pont:</label>
-                    <input type="number" id="monthlyTargetInput" value="25000" oninput="calculateWeightedTarget()" class="w-28 bg-slate-700 text-white font-semibold text-sm border border-slate-600 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500">
+                <!-- Target feltöltés / kézi mentés gombok -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="document.getElementById('targetFileInput').click()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-3 py-2 rounded-lg border border-slate-600 transition flex items-center gap-1.5">
+                        <span>📥</span> Target Excel Feltöltése
+                    </button>
+                    <input type="file" id="targetFileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleTargetExcelUpload(event)">
+
+                    <button onclick="saveCurrentTargetsToSupabase()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs px-4 py-2 rounded-lg transition shadow flex items-center gap-1.5">
+                        <span>💾</span> Targetek Mentése
+                    </button>
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600">
-                    <span class="text-xs text-slate-400 uppercase">Havi Teljesülés</span>
-                    <p id="targetProgressPct" class="text-xl font-bold text-white mt-1">0%</p>
-                    <div class="w-full bg-slate-600 h-1.5 rounded-full mt-2 overflow-hidden">
-                        <div id="targetProgressBar" class="bg-indigo-500 h-full w-0"></div>
+            <!-- Target Beviteli Mezők (Havi elvárások a kiválasztott szűrésre) -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 bg-slate-900/50 p-4 rounded-xl border border-slate-700/60">
+                <div>
+                    <label class="text-[11px] uppercase font-bold text-amber-400">Összpont Target</label>
+                    <input type="number" id="t_pont" oninput="calculateAllTargets()" class="w-full mt-1 bg-slate-800 text-white text-sm font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:ring-1 focus:ring-amber-400 outline-none" value="0">
+                </div>
+                <div>
+                    <label class="text-[11px] uppercase font-bold text-sky-400">ACQ Pont Target</label>
+                    <input type="number" id="t_acq_pont" oninput="calculateAllTargets()" class="w-full mt-1 bg-slate-800 text-white text-sm font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:ring-1 focus:ring-sky-400 outline-none" value="0">
+                </div>
+                <div>
+                    <label class="text-[11px] uppercase font-bold text-teal-400">RET Pont Target</label>
+                    <input type="number" id="t_ret_pont" oninput="calculateAllTargets()" class="w-full mt-1 bg-slate-800 text-white text-sm font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:ring-1 focus:ring-teal-400 outline-none" value="0">
+                </div>
+                <div>
+                    <label class="text-[11px] uppercase font-bold text-indigo-400">ACQ db Target</label>
+                    <input type="number" id="t_acq_db" oninput="calculateAllTargets()" class="w-full mt-1 bg-slate-800 text-white text-sm font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:ring-1 focus:ring-indigo-400 outline-none" value="0">
+                </div>
+                <div>
+                    <label class="text-[11px] uppercase font-bold text-emerald-400">Hűség db Target</label>
+                    <input type="number" id="t_huseg_db" oninput="calculateAllTargets()" class="w-full mt-1 bg-slate-800 text-white text-sm font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:ring-1 focus:ring-emerald-400 outline-none" value="0">
+                </div>
+                <div>
+                    <label class="text-[11px] uppercase font-bold text-purple-400">FIX db Target</label>
+                    <input type="number" id="t_fix_db" oninput="calculateAllTargets()" class="w-full mt-1 bg-slate-800 text-white text-sm font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:ring-1 focus:ring-purple-400 outline-none" value="0">
+                </div>
+            </div>
+
+            <!-- Súlyozott Napi Számítás Eredményei -->
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                <!-- 1. Összpont -->
+                <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
+                    <span class="text-[11px] font-semibold text-slate-400 uppercase">Összpont Telj.</span>
+                    <div class="flex justify-between items-baseline">
+                        <span id="c_pont_pct" class="text-sm font-bold text-amber-400">0%</span>
+                        <span id="c_pont_rem" class="text-xs text-slate-400">hátra: 0</span>
+                    </div>
+                    <div class="border-t border-slate-600/60 pt-1 mt-1">
+                        <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
+                        <span id="c_pont_daily" class="text-base font-bold text-white">0</span>
                     </div>
                 </div>
 
-                <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600">
-                    <span class="text-xs text-slate-400 uppercase">Hátralévő Pont</span>
-                    <p id="targetRemainingPoints" class="text-xl font-bold text-amber-400 mt-1">0</p>
-                    <span id="targetRemainingDays" class="text-xs text-slate-400">0 nap van hátra</span>
+                <!-- 2. ACQ Pont -->
+                <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
+                    <span class="text-[11px] font-semibold text-slate-400 uppercase">ACQ Pont Telj.</span>
+                    <div class="flex justify-between items-baseline">
+                        <span id="c_acq_pont_pct" class="text-sm font-bold text-sky-400">0%</span>
+                        <span id="c_acq_pont_rem" class="text-xs text-slate-400">hátra: 0</span>
+                    </div>
+                    <div class="border-t border-slate-600/60 pt-1 mt-1">
+                        <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
+                        <span id="c_acq_pont_daily" class="text-base font-bold text-white">0</span>
+                    </div>
                 </div>
 
-                <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600">
-                    <span class="text-xs text-slate-400 uppercase">Átlagos Napi Elvárás</span>
-                    <p id="targetLinearDaily" class="text-xl font-bold text-slate-300 mt-1">0</p>
-                    <span class="text-xs text-slate-400">egyenletesen osztva</span>
+                <!-- 3. RET Pont -->
+                <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
+                    <span class="text-[11px] font-semibold text-slate-400 uppercase">RET Pont Telj.</span>
+                    <div class="flex justify-between items-baseline">
+                        <span id="c_ret_pont_pct" class="text-sm font-bold text-teal-400">0%</span>
+                        <span id="c_ret_pont_rem" class="text-xs text-slate-400">hátra: 0</span>
+                    </div>
+                    <div class="border-t border-slate-600/60 pt-1 mt-1">
+                        <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
+                        <span id="c_ret_pont_daily" class="text-base font-bold text-white">0</span>
+                    </div>
                 </div>
 
-                <div class="bg-indigo-950/40 p-3 rounded-lg border border-indigo-500/50">
-                    <span class="text-xs text-indigo-300 uppercase font-semibold">Mai Súlyozott Target</span>
-                    <p id="targetTodayWeighted" class="text-xl font-bold text-indigo-400 mt-1">0</p>
-                    <span id="todayWeightLabel" class="text-xs text-indigo-300">mai nap súlya alapján</span>
+                <!-- 4. ACQ db -->
+                <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
+                    <span class="text-[11px] font-semibold text-slate-400 uppercase">ACQ db Telj.</span>
+                    <div class="flex justify-between items-baseline">
+                        <span id="c_acq_db_pct" class="text-sm font-bold text-indigo-400">0%</span>
+                        <span id="c_acq_db_rem" class="text-xs text-slate-400">hátra: 0</span>
+                    </div>
+                    <div class="border-t border-slate-600/60 pt-1 mt-1">
+                        <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
+                        <span id="c_acq_db_daily" class="text-base font-bold text-white">0 db</span>
+                    </div>
                 </div>
+
+                <!-- 5. Hűség db -->
+                <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
+                    <span class="text-[11px] font-semibold text-slate-400 uppercase">Hűség db Telj.</span>
+                    <div class="flex justify-between items-baseline">
+                        <span id="c_huseg_db_pct" class="text-sm font-bold text-emerald-400">0%</span>
+                        <span id="c_huseg_db_rem" class="text-xs text-slate-400">hátra: 0</span>
+                    </div>
+                    <div class="border-t border-slate-600/60 pt-1 mt-1">
+                        <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
+                        <span id="c_huseg_db_daily" class="text-base font-bold text-white">0 db</span>
+                    </div>
+                </div>
+
+                <!-- 6. FIX db -->
+                <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
+                    <span class="text-[11px] font-semibold text-slate-400 uppercase">FIX db Telj.</span>
+                    <div class="flex justify-between items-baseline">
+                        <span id="c_fix_db_pct" class="text-sm font-bold text-purple-400">0%</span>
+                        <span id="c_fix_db_rem" class="text-xs text-slate-400">hátra: 0</span>
+                    </div>
+                    <div class="border-t border-slate-600/60 pt-1 mt-1">
+                        <span class="text-[10px] text-slate-400 block">Mai Súlyozott Cél:</span>
+                        <span id="c_fix_db_daily" class="text-base font-bold text-white">0 db</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center text-xs text-slate-400 pt-1">
+                <span id="targetRemainingDaysLabel">Számítás betöltése...</span>
+                <span id="todayWeightStatus" class="text-indigo-400 font-medium"></span>
             </div>
         </section>
 
@@ -98,11 +190,11 @@
                 <h2 class="text-lg font-semibold text-white">Értékesítési Eredmények</h2>
                 
                 <div class="flex flex-wrap items-center gap-3">
-                    <select id="filterMonth" onchange="renderData()" class="bg-slate-700 text-white text-sm border border-slate-600 rounded-lg px-3 py-2">
+                    <select id="filterMonth" onchange="onFilterChange()" class="bg-slate-700 text-white text-sm border border-slate-600 rounded-lg px-3 py-2">
                         <option value="ALL">Összes Hónap</option>
                     </select>
 
-                    <select id="filterStore" onchange="renderData()" class="bg-slate-700 text-white text-sm border border-slate-600 rounded-lg px-3 py-2">
+                    <select id="filterStore" onchange="onFilterChange()" class="bg-slate-700 text-white text-sm border border-slate-600 rounded-lg px-3 py-2">
                         <option value="ALL">Összes Bolt</option>
                     </select>
 
@@ -110,41 +202,45 @@
                         <option value="ALL">Összes Értékesítő</option>
                     </select>
 
-                    <button onclick="loadFromSupabase()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm px-4 py-2 rounded-lg transition flex items-center gap-2">
+                    <button onclick="loadAllData()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm px-4 py-2 rounded-lg transition flex items-center gap-2">
                         <span>🔄</span> Frissítés
                     </button>
                 </div>
             </div>
 
-            <!-- Részletes KPI Kártyák -->
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+            <!-- Fő KPI Kártyák (Most már ACQ Pont és RET Pont külön!) -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
                 <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
                     <span class="text-[11px] text-slate-400 uppercase font-semibold">Tranzakció</span>
                     <p id="kpiCount" class="text-xl font-bold text-white mt-1">0 db</p>
                 </div>
                 <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
-                    <span class="text-[11px] text-slate-400 uppercase font-semibold">ACQ</span>
+                    <span class="text-[11px] text-slate-400 uppercase font-semibold">ACQ db</span>
                     <p id="kpiACQ" class="text-xl font-bold text-indigo-400 mt-1">0 db</p>
                 </div>
                 <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
-                    <span class="text-[11px] text-slate-400 uppercase font-semibold">ACQ HS (Készülék)</span>
+                    <span class="text-[11px] text-slate-400 uppercase font-semibold">ACQ HS</span>
                     <p id="kpiACQHS" class="text-xl font-bold text-sky-400 mt-1">0 db</p>
                 </div>
                 <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
-                    <span class="text-[11px] text-slate-400 uppercase font-semibold">ACQ Tablet</span>
+                    <span class="text-[11px] text-slate-400 uppercase font-semibold">ACQ Tab</span>
                     <p id="kpiACQTab" class="text-xl font-bold text-teal-400 mt-1">0 db</p>
                 </div>
                 <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
-                    <span class="text-[11px] text-slate-400 uppercase font-semibold">Hűség</span>
+                    <span class="text-[11px] text-slate-400 uppercase font-semibold">Hűség db</span>
                     <p id="kpiHuseg" class="text-xl font-bold text-emerald-400 mt-1">0 db</p>
                 </div>
                 <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
-                    <span class="text-[11px] text-slate-400 uppercase font-semibold">FIX</span>
+                    <span class="text-[11px] text-slate-400 uppercase font-semibold">FIX db</span>
                     <p id="kpiFix" class="text-xl font-bold text-purple-400 mt-1">0 db</p>
                 </div>
                 <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
-                    <span class="text-[11px] text-slate-400 uppercase font-semibold">Pontszám</span>
-                    <p id="kpiPoints" class="text-xl font-bold text-amber-400 mt-1">0</p>
+                    <span class="text-[11px] text-slate-400 uppercase font-semibold">ACQ Pont</span>
+                    <p id="kpiACQPont" class="text-xl font-bold text-sky-400 mt-1">0</p>
+                </div>
+                <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
+                    <span class="text-[11px] text-slate-400 uppercase font-semibold">RET Pont</span>
+                    <p id="kpiRETPont" class="text-xl font-bold text-teal-400 mt-1">0</p>
                 </div>
             </div>
 
@@ -162,12 +258,14 @@
                             <th class="p-3 text-center">ACQ Tab</th>
                             <th class="p-3 text-center">Hűség</th>
                             <th class="p-3 text-center">FIX</th>
-                            <th class="p-3 text-right">Pontszám</th>
+                            <th class="p-3 text-right">ACQ Pont</th>
+                            <th class="p-3 text-right">RET Pont</th>
+                            <th class="p-3 text-right">Összpont</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody" class="divide-y divide-slate-700 text-slate-200">
                         <tr>
-                            <td colspan="10" class="p-4 text-center text-slate-400">Nincs még adat feltöltve vagy betöltve.</td>
+                            <td colspan="12" class="p-4 text-center text-slate-400">Nincs adat betöltve.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -182,15 +280,23 @@
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let globalTransactions = [];
+        let globalTargets = []; // Supabase havi_targetek tábla adatai
 
         window.addEventListener('DOMContentLoaded', () => {
-            loadFromSupabase();
+            loadAllData();
         });
 
+        async function loadAllData() {
+            await Promise.all([loadFromSupabase(), loadTargetsFromSupabase()]);
+            syncTargetInputsWithSelection();
+            calculateAllTargets();
+        }
+
+        // 1. Tranzakciók betöltése (1000-es lapozás)
         async function loadFromSupabase() {
             const statusDiv = document.getElementById('uploadStatus');
             statusDiv.className = "mt-3 text-sm font-medium text-indigo-400";
-            statusDiv.innerText = "Adatok betöltése a felhőből...";
+            statusDiv.innerText = "Tranzakciók betöltése a felhőből...";
 
             let allRows = [];
             let from = 0;
@@ -218,18 +324,31 @@
                 globalTransactions = allRows;
                 if (allRows.length > 0) {
                     statusDiv.className = "mt-3 text-sm font-medium text-emerald-400";
-                    statusDiv.innerText = `Sikeresen betöltve ${allRows.length} db rekord a felhőből.`;
+                    statusDiv.innerText = `Sikeresen betöltve ${allRows.length} db tranzakció.`;
                     populateFilters();
                     renderData();
                 } else {
-                    statusDiv.innerText = "Még nincsenek feltöltött adatok az adatbázisban.";
+                    statusDiv.innerText = "Még nincsenek tranzakciók az adatbázisban.";
                 }
             } catch (err) {
                 statusDiv.className = "mt-3 text-sm font-medium text-rose-400";
-                statusDiv.innerText = "Nem sikerült betölteni az adatokat: " + err.message;
+                statusDiv.innerText = "Hiba a tranzakciók betöltésekor: " + err.message;
             }
         }
 
+        // 2. Mentett havi targetek betöltése Supabase-ből
+        async function loadTargetsFromSupabase() {
+            try {
+                const { data, error } = await supabaseClient.from('havi_targetek').select('*');
+                if (!error && data) {
+                    globalTargets = data;
+                }
+            } catch (e) {
+                console.warn("Targetek betöltése hiba:", e);
+            }
+        }
+
+        // 3. CPR Fájl feldolgozása (ACQ és RET pont szétválasztásával)
         function handleFileSelect(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -244,11 +363,8 @@
                 try {
                     const data = new Uint8Array(evt.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
-                    const sheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[sheetName];
-
-                    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                    if (rows.length < 6) throw new Error("A fájl üres vagy túl kevés sort tartalmaz!");
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
                     let headerIndex = -1;
                     const colMap = {};
@@ -263,7 +379,7 @@
                     }
 
                     if (headerIndex === -1 || colMap['Bolt'] === undefined) {
-                        throw new Error("Nem található 'Bolt' fejléc a fájlban!");
+                        throw new Error("Nem található 'Bolt' fejléc az Excelben!");
                     }
 
                     let detectedMonth = null;
@@ -296,19 +412,20 @@
 
                         const szegmens = String(r[colMap['Szegmens']] || '').trim();
                         const cegnev = String(r[colMap['Cégnév']] || '').trim();
-                        const isSohoCompany = (szegmens.toLowerCase() === 'soho') || (cegnev.length > 0 && szegmens.toLowerCase() !== 'flotta');
+                        const isSoho = (szegmens.toLowerCase() === 'soho') || (cegnev.length > 0 && szegmens.toLowerCase() !== 'flotta');
 
                         let parsedDate = null;
                         const rawDate = r[colMap['Szerződés dátuma']];
                         if (rawDate) {
                             const d = new Date(rawDate);
-                            if (!isNaN(d.getTime())) {
-                                parsedDate = d.toISOString().split('T')[0];
-                            }
+                            if (!isNaN(d.getTime())) parsedDate = d.toISOString().split('T')[0];
                         }
 
                         const rowMonth = detectedMonth || (parsedDate ? parsedDate.substring(0, 7) : "Aktuális");
                         const realPont = parseNum(r[colMap['Jutalék pont']]);
+                        const acqPont = parseNum(r[colMap['ACQ pont']]);
+                        // A RET pont az összpont és az ACQ pont különbsége
+                        const retPont = Math.max(0, realPont - acqPont);
 
                         parsed.push({
                             honap: rowMonth,
@@ -316,22 +433,16 @@
                             ertekesito: ertekesitoVal,
                             szerzodes_datuma: parsedDate,
                             szegmens: szegmens || null,
-                            cegnev: isSohoCompany && cegnev ? cegnev : null,
-                            kapcsolattarto: isSohoCompany ? (String(r[colMap['Kapcsolattartó']] || '').trim() || null) : null,
-                            kapcsolattarto_tel: isSohoCompany ? (String(r[colMap['Kapcsolattartó telefonszám']] || '').trim() || null) : null,
-                            telefonszam: isSohoCompany ? (String(r[colMap['Telefonszám']] || '').trim() || null) : null,
-                            szerzodesszam: isSohoCompany ? (String(r[colMap['Szerződésszám']] || '').trim() || null) : null,
-                            sales_order: isSohoCompany ? (String(r[colMap['Sales Order szám / Számlaszám / Átvételi elism. szám']] || '').trim() || null) : null,
-                            bpi_mutato: isSohoCompany ? (String(r[colMap['BPI mutató']] || '').trim() || null) : null,
-                            imei: isSohoCompany ? (String(r[colMap['IMEI szám']] || '').trim() || null) : null,
-                            hordozando_szam: isSohoCompany ? (String(r[colMap['Hordozandó szám']] || '').trim() || null) : null,
-                            megjegyzes: isSohoCompany ? (String(r[colMap['Megjegyzés']] || '').trim() || null) : null,
+                            cegnev: isSoho && cegnev ? cegnev : null,
+                            kapcsolattarto: isSoho ? (String(r[colMap['Kapcsolattartó']] || '').trim() || null) : null,
+                            telefonszam: isSoho ? (String(r[colMap['Telefonszám']] || '').trim() || null) : null,
                             acq_db: parseNum(r[colMap['ACQ']]),
-                            acq_hs: parseNum(r[colMap['ACQ Készülék']]),
-                            acq_tablet: parseNum(r[colMap['ACQ Tablet']]),
+                            acq_hs: parseNum(r[colMap['ACQ Készülék']] || r[colMap['ACQ HS']] || r[colMap['Készüléket vásárolt']]),
+                            acq_tablet: parseNum(r[colMap['ACQ Tablet']] || r[colMap['Táblagépet vásárolt']]),
                             huseg_db: parseNum(r[colMap['Hűség']]),
                             fix_db: parseNum(r[colMap['FIX']]),
-                            acq_pont: parseNum(r[colMap['ACQ pont']]),
+                            acq_pont: acqPont,
+                            ret_pont: retPont,
                             osszpont: realPont
                         });
                     }
@@ -339,11 +450,9 @@
                     if (parsed.length === 0) throw new Error("Nem sikerült érvényes rekordot kinyerni.");
 
                     const targetMonth = parsed[0].honap;
-
-                    statusDiv.innerText = `Feldolgozva (${parsed.length} tétel, Hónap: ${targetMonth}). Előző verzió törlése...`;
+                    statusDiv.innerText = `Feldolgozva (${parsed.length} tétel). Hónap cseréje a felhőben...`;
                     await supabaseClient.from('bolti_teljesitesek').delete().eq('honap', targetMonth);
 
-                    statusDiv.innerText = `Új adatok mentése a felhőbe (${targetMonth})...`;
                     const chunkSize = 500;
                     for (let c = 0; c < parsed.length; c += chunkSize) {
                         const chunk = parsed.slice(c, c + chunkSize);
@@ -351,7 +460,7 @@
                         if (error) throw error;
                     }
 
-                    await loadFromSupabase();
+                    await loadAllData();
                     statusDiv.className = "mt-3 text-sm font-medium text-emerald-400";
                     statusDiv.innerText = `Sikeres mentés! [${targetMonth}]: ${parsed.length} tranzakció frissítve.`;
 
@@ -363,6 +472,189 @@
             reader.readAsArrayBuffer(file);
         }
 
+        // 4. Target Excel fájl feltöltése (opcionális tömeges feltöltéshez)
+        // Elvárt fejléc: Hónap, Bolt, Target_Pont, Target_ACQ_Pont, Target_RET_Pont, Target_ACQ_db, Target_Huseg_db, Target_FIX_db
+        function handleTargetExcelUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(evt) {
+                try {
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const json = XLSX.utils.sheet_to_json(sheet);
+
+                    const targetPayloads = json.map(r => ({
+                        honap: String(r['Hónap'] || r['honap'] || document.getElementById('filterMonth').value),
+                        bolt: String(r['Bolt'] || r['bolt'] || 'ÖSSZES'),
+                        target_pont: parseFloat(r['Target_Pont'] || r['target_pont'] || 0),
+                        target_acq_pont: parseFloat(r['Target_ACQ_Pont'] || r['target_acq_pont'] || 0),
+                        target_ret_pont: parseFloat(r['Target_RET_Pont'] || r['target_ret_pont'] || 0),
+                        target_acq_db: parseFloat(r['Target_ACQ_db'] || r['target_acq_db'] || 0),
+                        target_huseg_db: parseFloat(r['Target_Huseg_db'] || r['target_huseg_db'] || 0),
+                        target_fix_db: parseFloat(r['Target_FIX_db'] || r['target_fix_db'] || 0)
+                    }));
+
+                    for (const t of targetPayloads) {
+                        await supabaseClient.from('havi_targetek').upsert(t, { onConflict: 'honap,bolt' });
+                    }
+
+                    await loadTargetsFromSupabase();
+                    syncTargetInputsWithSelection();
+                    calculateAllTargets();
+                    alert("A targetek sikeresen feltöltve és rögzítve!");
+                } catch (err) {
+                    alert("Hiba a target fájl feldolgozásakor: " + err.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // 5. Kézzel beírt targetek mentése Supabase-be
+        async function saveCurrentTargetsToSupabase() {
+            const selMonth = document.getElementById('filterMonth').value;
+            const selStore = document.getElementById('filterStore').value;
+
+            if (selMonth === 'ALL') {
+                alert("Kérlek válassz ki egy konkrét hónapot a target mentéséhez!");
+                return;
+            }
+
+            const targetPayload = {
+                honap: selMonth,
+                bolt: selStore, // Ha 'ALL', akkor az adott havi globális össztarget
+                target_pont: parseFloat(document.getElementById('t_pont').value) || 0,
+                target_acq_pont: parseFloat(document.getElementById('t_acq_pont').value) || 0,
+                target_ret_pont: parseFloat(document.getElementById('t_ret_pont').value) || 0,
+                target_acq_db: parseFloat(document.getElementById('t_acq_db').value) || 0,
+                target_huseg_db: parseFloat(document.getElementById('t_huseg_db').value) || 0,
+                target_fix_db: parseFloat(document.getElementById('t_fix_db').value) || 0
+            };
+
+            const { error } = await supabaseClient.from('havi_targetek').upsert(targetPayload, { onConflict: 'honap,bolt' });
+            if (error) {
+                alert("Hiba a mentéskor: " + error.message);
+            } else {
+                await loadTargetsFromSupabase();
+                alert(`Targetek elmentve a felhőbe! [${selMonth} - ${selStore}]`);
+            }
+        }
+
+        // 6. Szűrő változásakor szinkronizáljuk a target beviteli mezőket
+        function onFilterChange() {
+            syncTargetInputsWithSelection();
+            renderData();
+        }
+
+        function syncTargetInputsWithSelection() {
+            const selMonth = document.getElementById('filterMonth').value;
+            const selStore = document.getElementById('filterStore').value;
+
+            const existing = globalTargets.find(t => t.honap === selMonth && t.bolt === selStore);
+            if (existing) {
+                document.getElementById('t_pont').value = existing.target_pont;
+                document.getElementById('t_acq_pont').value = existing.target_acq_pont;
+                document.getElementById('t_ret_pont').value = existing.target_ret_pont;
+                document.getElementById('t_acq_db').value = existing.target_acq_db;
+                document.getElementById('t_huseg_db').value = existing.target_huseg_db;
+                document.getElementById('t_fix_db').value = existing.target_fix_db;
+            } else {
+                // Ha még nincs rögzítve, hagyjuk az aktuális értéket vagy nullázzuk
+            }
+        }
+
+        // 7. Súlyozott Napi Számítás minden metrikára (Pont, ACQ pont, RET pont, ACQ db, Hűség db, FIX db)
+        function calculateAllTargets() {
+            const selectedMonth = document.getElementById('filterMonth').value;
+            const selectedStore = document.getElementById('filterStore').value;
+            const selectedSeller = document.getElementById('filterSeller').value;
+
+            const filtered = globalTransactions.filter(t => {
+                const mOk = (selectedMonth === 'ALL' || t.honap === selectedMonth);
+                const sOk = (selectedStore === 'ALL' || t.bolt === selectedStore);
+                const eOk = (selectedSeller === 'ALL' || t.ertekesito === selectedSeller);
+                return mOk && sOk && eOk;
+            });
+
+            // Tények összesítése
+            const actuals = {
+                pont: filtered.reduce((acc, t) => acc + (t.osszpont || 0), 0),
+                acq_pont: filtered.reduce((acc, t) => acc + (t.acq_pont || 0), 0),
+                ret_pont: filtered.reduce((acc, t) => acc + (t.ret_pont || 0), 0),
+                acq_db: filtered.reduce((acc, t) => acc + (t.acq_db || 0), 0),
+                huseg_db: filtered.reduce((acc, t) => acc + (t.huseg_db || 0), 0),
+                fix_db: filtered.reduce((acc, t) => acc + (t.fix_db || 0), 0)
+            };
+
+            const targets = {
+                pont: parseFloat(document.getElementById('t_pont').value) || 0,
+                acq_pont: parseFloat(document.getElementById('t_acq_pont').value) || 0,
+                ret_pont: parseFloat(document.getElementById('t_ret_pont').value) || 0,
+                acq_db: parseFloat(document.getElementById('t_acq_db').value) || 0,
+                huseg_db: parseFloat(document.getElementById('t_huseg_db').value) || 0,
+                fix_db: parseFloat(document.getElementById('t_fix_db').value) || 0
+            };
+
+            // Hétköznap / Hétvége súlyozási arány a tranzakciókból
+            const weekdayPoints = [0, 0, 0, 0, 0, 0, 0];
+            globalTransactions.forEach(t => {
+                if (t.szerzodes_datuma) {
+                    const day = new Date(t.szerzodes_datuma).getDay();
+                    weekdayPoints[day] += (t.osszpont || 0);
+                }
+            });
+
+            const totalHistPoints = weekdayPoints.reduce((a, b) => a + b, 0);
+            const dayWeights = weekdayPoints.map(pts => totalHistPoints > 0 ? (pts / totalHistPoints) * 7 : 1.0);
+
+            // Naptári napok és hátralévő súlyok
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = today.getMonth();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const currentDay = today.getDate();
+            const remainingDaysCount = Math.max(1, daysInMonth - currentDay + 1);
+
+            let remainingWeightsSum = 0;
+            for (let d = currentDay; d <= daysInMonth; d++) {
+                const dow = new Date(year, month, d).getDay();
+                remainingWeightsSum += dayWeights[dow];
+            }
+
+            const todayDow = today.getDay();
+            const todayWeight = dayWeights[todayDow];
+            const dayNames = ['Vasárnap', 'Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat'];
+
+            document.getElementById('targetRemainingDaysLabel').innerText = `${daysInMonth} napos hónap: még ${remainingDaysCount} nap van hátra.`;
+            document.getElementById('todayWeightStatus').innerText = `Ma: ${dayNames[todayDow]} (Forgalmi súly: ${todayWeight.toFixed(2)}x)`;
+
+            // Helper függvény egy metrika kiszámításához
+            function updateMetricUI(key, isInt = false) {
+                const target = targets[key];
+                const actual = actuals[key];
+                const rem = Math.max(0, target - actual);
+                const pct = target > 0 ? Math.min(999, (actual / target) * 100) : 0;
+
+                const dailyWeighted = remainingWeightsSum > 0 
+                    ? (rem * (todayWeight / remainingWeightsSum)) 
+                    : (rem / remainingDaysCount);
+
+                document.getElementById(`c_${key}_pct`).innerText = `${pct.toFixed(1)}%`;
+                document.getElementById(`c_${key}_rem`).innerText = `hátra: ${isInt ? Math.round(rem) : rem.toFixed(1)}`;
+                document.getElementById(`c_${key}_daily`).innerText = isInt ? `${Math.ceil(dailyWeighted)} db` : dailyWeighted.toFixed(1);
+            }
+
+            updateMetricUI('pont');
+            updateMetricUI('acq_pont');
+            updateMetricUI('ret_pont');
+            updateMetricUI('acq_db', true);
+            updateMetricUI('huseg_db', true);
+            updateMetricUI('fix_db', true);
+        }
+
+        // 8. Szűrők inicializálása
         function populateFilters() {
             const months = [...new Set(globalTransactions.map(t => t.honap))].filter(Boolean).sort().reverse();
             const stores = [...new Set(globalTransactions.map(t => t.bolt))].filter(Boolean).sort();
@@ -384,67 +676,7 @@
             sellerSelect.innerHTML = '<option value="ALL">Összes Értékesítő</option>' + sellers.map(s => `<option value="${s}">${s}</option>`).join('');
         }
 
-        function calculateWeightedTarget() {
-            const monthlyTarget = parseFloat(document.getElementById('monthlyTargetInput').value) || 0;
-            const selectedMonth = document.getElementById('filterMonth').value;
-            const selectedStore = document.getElementById('filterStore').value;
-            const selectedSeller = document.getElementById('filterSeller').value;
-
-            const currentMonthTransactions = globalTransactions.filter(t => {
-                const mOk = (selectedMonth === 'ALL' || t.honap === selectedMonth);
-                const sOk = (selectedStore === 'ALL' || t.bolt === selectedStore);
-                const eOk = (selectedSeller === 'ALL' || t.ertekesito === selectedSeller);
-                return mOk && sOk && eOk;
-            });
-
-            const currentPoints = currentMonthTransactions.reduce((acc, t) => acc + (t.osszpont || 0), 0);
-            const remainingPoints = Math.max(0, monthlyTarget - currentPoints);
-
-            const progressPct = monthlyTarget > 0 ? Math.min(100, (currentPoints / monthlyTarget) * 100) : 0;
-            document.getElementById('targetProgressPct').innerText = `${progressPct.toFixed(1)}%`;
-            document.getElementById('targetProgressBar').style.width = `${progressPct}%`;
-            document.getElementById('targetRemainingPoints').innerText = remainingPoints.toFixed(1);
-
-            const weekdayPoints = [0, 0, 0, 0, 0, 0, 0];
-            globalTransactions.forEach(t => {
-                if (t.szerzodes_datuma) {
-                    const day = new Date(t.szerzodes_datuma).getDay();
-                    weekdayPoints[day] += (t.osszpont || 0);
-                }
-            });
-
-            const totalHistPoints = weekdayPoints.reduce((a, b) => a + b, 0);
-            const dayWeights = weekdayPoints.map(pts => totalHistPoints > 0 ? (pts / totalHistPoints) * 7 : 1.0);
-
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = today.getMonth();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const currentDay = today.getDate();
-            const remainingDaysCount = Math.max(1, daysInMonth - currentDay + 1);
-
-            document.getElementById('targetRemainingDays').innerText = `${remainingDaysCount} nap van hátra`;
-
-            const linearDaily = remainingPoints / remainingDaysCount;
-            document.getElementById('targetLinearDaily').innerText = `${linearDaily.toFixed(1)} pont`;
-
-            let remainingWeightsSum = 0;
-            for (let d = currentDay; d <= daysInMonth; d++) {
-                const dow = new Date(year, month, d).getDay();
-                remainingWeightsSum += dayWeights[dow];
-            }
-
-            const todayDow = today.getDay();
-            const todayWeight = dayWeights[todayDow];
-            const todayWeightedTarget = remainingWeightsSum > 0 
-                ? (remainingPoints * (todayWeight / remainingWeightsSum)) 
-                : linearDaily;
-
-            document.getElementById('targetTodayWeighted').innerText = `${todayWeightedTarget.toFixed(1)} pont`;
-            const dayNames = ['Vasárnap', 'Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat'];
-            document.getElementById('todayWeightLabel').innerText = `Ma: ${dayNames[todayDow]} (Súly: ${(todayWeight).toFixed(2)}x)`;
-        }
-
+        // 9. Adatok megjelenítése a táblázatban
         function renderData() {
             const selectedMonth = document.getElementById('filterMonth').value;
             const selectedStore = document.getElementById('filterStore').value;
@@ -471,6 +703,8 @@
                         acq_tablet: 0, 
                         huseg: 0, 
                         fix: 0, 
+                        acq_pont: 0,
+                        ret_pont: 0,
                         pont: 0 
                     };
                 }
@@ -480,25 +714,26 @@
                 summaryMap[key].acq_tablet += (t.acq_tablet || 0);
                 summaryMap[key].huseg += (t.huseg_db || 0);
                 summaryMap[key].fix += (t.fix_db || 0);
+                summaryMap[key].acq_pont += (t.acq_pont || 0);
+                summaryMap[key].ret_pont += (t.ret_pont || 0);
                 summaryMap[key].pont += (t.osszpont || 0);
             });
 
             const summaryList = Object.values(summaryMap).sort((a,b) => b.pont - a.pont);
 
-            // KPI Kártyák frissítése külön bontásban
             document.getElementById('kpiCount').innerText = `${filtered.length} db`;
             document.getElementById('kpiACQ').innerText = `${summaryList.reduce((acc, s) => acc + s.acq, 0)} db`;
             document.getElementById('kpiACQHS').innerText = `${summaryList.reduce((acc, s) => acc + s.acq_hs, 0)} db`;
             document.getElementById('kpiACQTab').innerText = `${summaryList.reduce((acc, s) => acc + s.acq_tablet, 0)} db`;
             document.getElementById('kpiHuseg').innerText = `${summaryList.reduce((acc, s) => acc + s.huseg, 0)} db`;
             document.getElementById('kpiFix').innerText = `${summaryList.reduce((acc, s) => acc + s.fix, 0)} db`;
-            document.getElementById('kpiPoints').innerText = summaryList.reduce((acc, s) => acc + s.pont, 0).toFixed(2);
+            document.getElementById('kpiACQPont').innerText = summaryList.reduce((acc, s) => acc + s.acq_pont, 0).toFixed(1);
+            document.getElementById('kpiRETPont').innerText = summaryList.reduce((acc, s) => acc + s.ret_pont, 0).toFixed(1);
 
-            // Táblázat kirajzolása
             const tbody = document.getElementById('tableBody');
             if (summaryList.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-slate-400">Nincs a szűrésnek megfelelő adat.</td></tr>';
-                calculateWeightedTarget();
+                tbody.innerHTML = '<tr><td colspan="12" class="p-4 text-center text-slate-400">Nincs a szűrésnek megfelelő adat.</td></tr>';
+                calculateAllTargets();
                 return;
             }
 
@@ -513,11 +748,13 @@
                     <td class="p-3 text-center text-teal-400 font-medium">${s.acq_tablet}</td>
                     <td class="p-3 text-center text-emerald-400 font-medium">${s.huseg}</td>
                     <td class="p-3 text-center text-purple-400 font-medium">${s.fix}</td>
+                    <td class="p-3 text-right text-sky-300 font-medium">${s.acq_pont.toFixed(1)}</td>
+                    <td class="p-3 text-right text-teal-300 font-medium">${s.ret_pont.toFixed(1)}</td>
                     <td class="p-3 text-right font-bold text-amber-400">${s.pont.toFixed(2)}</td>
                 </tr>
             `).join('');
 
-            calculateWeightedTarget();
+            calculateAllTargets();
         }
 
         function applyRoleRestrictions() {
