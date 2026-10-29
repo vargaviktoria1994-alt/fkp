@@ -470,12 +470,35 @@
             }
         }
 
+        
+        // Magyar hónapok időrendi rendezője (legfrissebb/aktuális legfelül)
+        function sortMonthsChronological(monthList) {
+            const monthMap = {
+                'január': 1, 'február': 2, 'március': 3, 'április': 4,
+                'május': 5, 'június': 6, 'július': 7, 'augusztus': 8,
+                'szeptember': 9, 'október': 10, 'november': 11, 'december': 12
+            };
+
+            return monthList.sort((a, b) => {
+                const parseM = (str) => {
+                    if (!str) return 0;
+                    const parts = String(str).trim().toLowerCase().split(' ');
+                    const year = parseInt(parts[0], 10) || 2026;
+                    const mName = parts[1] || '';
+                    const mNum = monthMap[mName] || 0;
+                    return year * 100 + mNum;
+                };
+                return parseM(b) - parseM(a); // Csökkenő: legújabb legfelül
+            });
+        }
+
         function populateFilters() {
-            const months = [...new Set(globalTransactions.map(t => t.honap))].filter(Boolean).sort().reverse();
+            const rawMonths = [...new Set(globalTransactions.map(t => t.honap))].filter(Boolean);
+            const months = sortMonthsChronological(rawMonths);
             const stores = [...new Set(globalTransactions.map(t => t.bolt))].filter(Boolean).sort();
             const sellers = [...new Set(globalTransactions.map(t => t.ertekesito))].filter(Boolean).sort();
 
-            const monthOptions = '<option value="ALL">Összes Hónap</option>' + months.map(m => `<option value="${m}">${m}</option>`).join('');
+            const monthOptions = months.map(m => `<option value="${m}">${m}</option>`).join('') + '<option value="ALL">Összes Hónap</option>';
             const storeOptions = '<option value="ALL">Összes Üzlet (Hálózat)</option>' + stores.map(s => `<option value="${s}">${s}</option>`).join('');
 
             // Fő szűrők
