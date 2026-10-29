@@ -38,13 +38,12 @@
     <!-- 2. FŐ ALKALMAZÁS -->
     <div id="dashboardApp" class="hidden max-w-7xl mx-auto space-y-6">
         
-        <!-- Felső Menüsáv és Tab Váltó -->
         <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-lg">
             <div>
                 <h1 class="text-2xl font-bold text-white flex items-center gap-2">
                     <span>📊</span> Bolti & Értékesítői Dashboard
                 </h1>
-                <p class="text-xs text-slate-400 mt-1">CPR tranzakció-feldolgozó és többhavi előzményre épülő súlyozott célszámító</p>
+                <p class="text-xs text-slate-400 mt-1">CPR tranzakció-feldolgozó és súlyozott napi célszámító</p>
             </div>
             
             <div class="flex flex-wrap items-center gap-2">
@@ -65,25 +64,22 @@
             </div>
         </header>
 
-        <!-- ==================== 1. FÜL: ÁTTEKINTÉS ÉS TARGETEK ==================== -->
+        <!-- 1. FÜL: ÁTTEKINTÉS ÉS TARGETEK -->
         <main id="tabDashboard" class="space-y-6">
-            
-            <!-- Súlyozott Napi Target Modul -->
             <section class="bg-slate-800/90 p-6 rounded-xl border border-indigo-500/30 shadow-lg space-y-5">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700 pb-3">
                     <div>
                         <h3 class="text-base font-bold text-indigo-400 flex items-center gap-2">
                             <span>🎯</span> Súlyozott Napi Target Állapot
                         </h3>
-                        <p class="text-xs text-slate-400 mt-0.5">Többhavi előzmény (fizetésnap + hét napja hatás) alapján számolt napi elvárás</p>
+                        <p class="text-xs text-slate-400 mt-0.5">Forgalom hétköznap / hétvégi súlyozása alapján számolt napi elvárások</p>
                     </div>
-                    <div class="text-xs text-slate-400 flex flex-wrap items-center gap-3">
+                    <div class="text-xs text-slate-400 flex items-center gap-3">
                         <span id="targetRemainingDaysLabel">Számítás folyamatban...</span>
                         <span id="todayWeightStatus" class="text-indigo-400 font-semibold"></span>
                     </div>
                 </div>
 
-                <!-- 7 Fő Target Metrika Kártyája -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
                     <div class="bg-slate-700/40 p-3 rounded-lg border border-slate-600 space-y-1">
                         <span class="text-[11px] font-semibold text-sky-400 uppercase">ACQ Pont</span>
@@ -171,7 +167,6 @@
                 </div>
             </section>
 
-            <!-- Statisztikai kártyák és Szűrők -->
             <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-700 pb-4">
                     <h2 class="text-lg font-semibold text-white">Értékesítési Eredmények</h2>
@@ -195,7 +190,6 @@
                     </div>
                 </div>
 
-                <!-- Fő KPI Kártyák -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
                     <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
                         <span class="text-[11px] text-slate-400 uppercase font-semibold">Tranzakció</span>
@@ -231,7 +225,6 @@
                     </div>
                 </div>
 
-                <!-- Eredménytáblázat -->
                 <div class="overflow-x-auto mt-4">
                     <table class="w-full text-left border-collapse text-xs md:text-sm">
                         <thead>
@@ -260,16 +253,14 @@
             </section>
         </main>
 
-        <!-- ==================== 2. FÜL: KÜLÖN FELTÖLTÉS & TARGET ADMIN ==================== -->
+        <!-- 2. FÜL: KÜLÖN FELTÖLTÉS & TARGET ADMIN -->
         <main id="tabUpload" class="hidden space-y-6">
-            
-            <!-- CPR Tranzakció Feltöltő Box -->
             <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-4">
                 <div class="border-b border-slate-700 pb-3">
                     <h2 class="text-lg font-semibold text-white flex items-center gap-2">
                         <span>📤</span> CPR Havi Export Feltöltése
                     </h2>
-                    <p class="text-xs text-slate-400 mt-1">Húzd be a tranzakciós fájlokat (egymás után töltheted a múltbeli hónapokat is). A rendszer felismeri a hónapot és felülírja a korábbi változatot.</p>
+                    <p class="text-xs text-slate-400 mt-1">Jelölj ki akár több hónapnyi fájlt egyszerre, vagy húzd be őket együtt.</p>
                 </div>
 
                 <div id="dropZone" onclick="document.getElementById('fileInput').click()" 
@@ -278,13 +269,12 @@
                      ondrop="event.preventDefault(); this.classList.remove('border-indigo-400', 'bg-indigo-950/60'); handleDropFiles(event);"
                      class="border-2 border-dashed border-indigo-500/50 hover:border-indigo-400 bg-indigo-950/20 hover:bg-indigo-950/40 rounded-xl p-8 text-center cursor-pointer transition">
                     <div class="text-4xl mb-3">📁</div>
-                    <span id="uploadLabel" class="text-sm text-slate-300 font-medium">Kattints ide vagy húzd ide a CPR Excel fájlt...</span>
-                    <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" multiple multiple class="hidden" onchange="handleFileSelect(event)">
+                    <span id="uploadLabel" class="text-sm text-slate-300 font-medium">Kattints ide vagy húzd ide az Excel fájlokat (akár egyszerre többet is)...</span>
+                    <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" multiple class="hidden" onchange="handleFileSelect(event)">
                 </div>
                 <div id="uploadStatus" class="text-sm font-medium"></div>
             </section>
 
-            <!-- Havi Target Beállító & Excel Feltöltő Box -->
             <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-5">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700 pb-3">
                     <div>
@@ -311,7 +301,7 @@
 
                 <div class="space-y-2">
                     <label class="text-xs font-semibold text-slate-300 flex items-center gap-1">
-                        <span>📋</span> Vagy másold be ide a táblázat soraidat (Ctrl+C & Ctrl+V):
+                        <span>📋</span> Másold be ide a táblázat soraidat (Ctrl+C & Ctrl+V):
                     </label>
                     <textarea id="targetPasteArea" rows="4" placeholder="FPK002	192	108	81	18	1500	3800	500000&#10;FPK007	217	139	67	38	1550	4350	1000000&#10;FPK012	452	291	172	88	3200	10200	1200000"
                               class="w-full bg-slate-900 text-slate-200 text-xs font-mono p-3 rounded-xl border border-slate-700 outline-none focus:ring-1 focus:ring-indigo-500"></textarea>
@@ -445,7 +435,7 @@
                 populateFilters();
                 renderData();
             } catch (err) {
-                console.error("Hiba:", err);
+                console.error("Hiba a tranzakciók betöltésekor:", err);
             }
         }
 
@@ -461,171 +451,13 @@
             }
         }
 
-        function handleTargetExcelUpload(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = async function(evt) {
-                try {
-                    const data = new Uint8Array(evt.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-
-                    if (rows.length < 2) throw new Error("A fájl túl kevés sort tartalmaz!");
-
-                    let headerIndex = -1;
-                    const colMap = {};
-                    for (let r = 0; r < Math.min(6, rows.length); r++) {
-                        if (rows[r] && rows[r].some(cell => String(cell).trim() === 'ACQ' || String(cell).trim() === 'Hűség')) {
-                            headerIndex = r;
-                            rows[r].forEach((colName, idx) => {
-                                if (colName) colMap[String(colName).trim().toLowerCase()] = idx;
-                            });
-                            break;
-                        }
-                    }
-
-                    if (headerIndex === -1) throw new Error("Nem sikerült beazonosítani a fejléceket (ACQ, Hűség, FIX stb.)!");
-
-                    const targetMonth = document.getElementById('targetUploadMonth').value;
-                    const cleanNum = (val) => parseFloat(String(val || 0).replace(/\s+/g, '').replace(',', '.')) || 0;
-
-                    const targetPayloads = [];
-                    for (let i = headerIndex + 1; i < rows.length; i++) {
-                        const r = rows[i];
-                        if (!r || !r[0]) continue;
-
-                        const bolt = String(r[0]).trim();
-                        if (!bolt || bolt.toLowerCase().includes('összesen')) continue;
-
-                        const acq = cleanNum(r[colMap['acq']]);
-                        const huseg = cleanNum(r[colMap['hűség']] || r[colMap['huseg']]);
-                        const fix = cleanNum(r[colMap['fix']]);
-                        const soho = cleanNum(r[colMap['soho']]);
-                        const acq_pont = cleanNum(r[colMap['acq pont']]);
-                        const ret_pont = cleanNum(r[colMap['reti pont']] || r[colMap['ret pont']] || r[colMap['retipont']]);
-                        const tartozek = cleanNum(r[colMap['tartozék']] || r[colMap['tartozek']]);
-
-                        targetPayloads.push({
-                            honap: targetMonth,
-                            bolt: bolt,
-                            target_acq_db: acq,
-                            target_huseg_db: huseg,
-                            target_fix_db: fix,
-                            target_soho_db: soho,
-                            target_acq_pont: acq_pont,
-                            target_ret_pont: ret_pont,
-                            target_pont: acq_pont + ret_pont,
-                            target_tartozek_ft: tartozek
-                        });
-                    }
-
-                    for (const t of targetPayloads) {
-                        await supabaseClient.from('havi_targetek').upsert(t, { onConflict: 'honap,bolt' });
-                    }
-
-                    await loadTargetsFromSupabase();
-                    calculateAllTargets();
-                    alert(`Sikeresen rögzítve ${targetPayloads.length} bolt targetje a(z) ${targetMonth} hónapra!`);
-
-                } catch (err) {
-                    alert("Hiba a target Excel feldolgozásakor: " + err.message);
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
-        async function processPastedTargets() {
-            const rawText = document.getElementById('targetPasteArea').value.trim();
-            if (!rawText) {
-                alert("Kérlek illeszd be a táblázat sorait!");
-                return;
-            }
-
-            const targetMonth = document.getElementById('targetUploadMonth').value;
-            const lines = rawText.split('\n');
-            const targetPayloads = [];
-
-            const cleanNum = (val) => parseFloat(String(val || 0).replace(/\s+/g, '').replace(',', '.')) || 0;
-
-            lines.forEach(line => {
-                const parts = line.split('\t').map(p => p.trim());
-                if (parts.length >= 7) {
-                    if (parts[0].toLowerCase().includes('bolt') || parts[1].toLowerCase().includes('acq')) return;
-
-                    const bolt = parts[0];
-                    const acq = cleanNum(parts[1]);
-                    const huseg = cleanNum(parts[2]);
-                    const fix = cleanNum(parts[3]);
-                    const soho = cleanNum(parts[4]);
-                    const acq_pont = cleanNum(parts[5]);
-                    const ret_pont = cleanNum(parts[6]);
-                    const tartozek = parts[7] ? cleanNum(parts[7]) : 0;
-
-                    targetPayloads.push({
-                        honap: targetMonth,
-                        bolt: bolt,
-                        target_acq_db: acq,
-                        target_huseg_db: huseg,
-                        target_fix_db: fix,
-                        target_soho_db: soho,
-                        target_acq_pont: acq_pont,
-                        target_ret_pont: ret_pont,
-                        target_pont: acq_pont + ret_pont,
-                        target_tartozek_ft: tartozek
-                    });
-                }
-            });
-
-            if (targetPayloads.length === 0) {
-                alert("Nem sikerült értelmezni a beillesztett sorokat.");
-                return;
-            }
-
-            for (const t of targetPayloads) {
-                await supabaseClient.from('havi_targetek').upsert(t, { onConflict: 'honap,bolt' });
-            }
-
-            await loadTargetsFromSupabase();
-            calculateAllTargets();
-            document.getElementById('targetPasteArea').value = '';
-            alert(`Sikeresen elmentve ${targetPayloads.length} bolt targetje!`);
-        }
-
-        function renderTargetAdminTable() {
-            const tbody = document.getElementById('targetTableBody');
-            if (!tbody) return;
-
-            if (globalTargets.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-slate-500">Még nincsenek feltöltött bolti targetek.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = globalTargets.map(t => `
-                <tr class="hover:bg-slate-700/20 transition">
-                    <td class="p-2.5 text-slate-400 font-normal">${t.honap}</td>
-                    <td class="p-2.5"><span class="px-2 py-0.5 bg-slate-800 text-indigo-400 font-bold rounded">${t.bolt}</span></td>
-                    <td class="p-2.5 text-center text-indigo-300">${t.target_acq_db || 0}</td>
-                    <td class="p-2.5 text-center text-emerald-300">${t.target_huseg_db || 0}</td>
-                    <td class="p-2.5 text-center text-purple-300">${t.target_fix_db || 0}</td>
-                    <td class="p-2.5 text-center text-amber-300">${t.target_soho_db || 0}</td>
-                    <td class="p-2.5 text-center text-sky-400">${t.target_acq_pont || 0}</td>
-                    <td class="p-2.5 text-center text-teal-400">${t.target_ret_pont || 0}</td>
-                    <td class="p-2.5 text-right font-mono text-pink-300">${(t.target_tartozek_ft || 0).toLocaleString('hu-HU')} Ft</td>
-                </tr>
-            `).join('');
-        }
-
-        
         function handleDropFiles(e) {
             if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                 processFileList(Array.from(e.dataTransfer.files));
             }
         }
 
-        async function handleFileSelect(e) {
+        function handleFileSelect(e) {
             const files = Array.from(e.target.files);
             if (files && files.length > 0) {
                 processFileList(files);
@@ -633,10 +465,6 @@
         }
 
         async function processFileList(files) {
-
-            const files = Array.from(e.target.files);
-            if (!files || files.length === 0) return;
-
             const statusDiv = document.getElementById('uploadStatus');
             const uploadLabel = document.getElementById('uploadLabel');
             uploadLabel.innerText = `${files.length} db fájl kiválasztva`;
@@ -673,10 +501,7 @@
                         }
                     }
 
-                    if (headerIndex === -1 || colMap['Bolt'] === undefined) {
-                        console.warn("Nem található Bolt fejléc:", file.name);
-                        continue;
-                    }
+                    if (headerIndex === -1 || colMap['Bolt'] === undefined) continue;
 
                     let detectedMonth = null;
                     for (let r = 0; r < headerIndex; r++) {
@@ -739,7 +564,7 @@
 
                     if (parsed.length > 0) {
                         const targetMonth = parsed[0].honap;
-                        statusDiv.innerText = `[${fIdx + 1}/${files.length}] Adatbázis szinkronizálása (${targetMonth})...`;
+                        statusDiv.innerText = `[${fIdx + 1}/${files.length}] Felhő frissítése (${targetMonth})...`;
                         await supabaseClient.from('bolti_teljesitesek').delete().eq('honap', targetMonth);
 
                         const chunkSize = 500;
@@ -759,7 +584,81 @@
             statusDiv.innerText = `Kész! Mind a ${successCount} db fájl feldolgozva és elmentve a felhőbe.`;
             await loadAllData();
         }
-    }
+
+        function handleTargetExcelUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(evt) {
+                try {
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+                    if (rows.length < 2) throw new Error("A fájl túl kevés sort tartalmaz!");
+
+                    let headerIndex = -1;
+                    const colMap = {};
+                    for (let r = 0; r < Math.min(6, rows.length); r++) {
+                        if (rows[r] && rows[r].some(cell => String(cell).trim() === 'ACQ' || String(cell).trim() === 'Hűség')) {
+                            headerIndex = r;
+                            rows[r].forEach((colName, idx) => {
+                                if (colName) colMap[String(colName).trim().toLowerCase()] = idx;
+                            });
+                            break;
+                        }
+                    }
+
+                    if (headerIndex === -1) throw new Error("Nem található megfelelő fejléc!");
+
+                    const targetMonth = document.getElementById('targetUploadMonth').value;
+                    const cleanNum = (val) => parseFloat(String(val || 0).replace(/\s+/g, '').replace(',', '.')) || 0;
+
+                    const targetPayloads = [];
+                    for (let i = headerIndex + 1; i < rows.length; i++) {
+                        const r = rows[i];
+                        if (!r || !r[0]) continue;
+
+                        const bolt = String(r[0]).trim();
+                        if (!bolt || bolt.toLowerCase().includes('összesen')) continue;
+
+                        const acq = cleanNum(r[colMap['acq']]);
+                        const huseg = cleanNum(r[colMap['hűség']] || r[colMap['huseg']]);
+                        const fix = cleanNum(r[colMap['fix']]);
+                        const soho = cleanNum(r[colMap['soho']]);
+                        const acq_pont = cleanNum(r[colMap['acq pont']]);
+                        const ret_pont = cleanNum(r[colMap['reti pont']] || r[colMap['ret pont']] || r[colMap['retipont']]);
+                        const tartozek = cleanNum(r[colMap['tartozék']] || r[colMap['tartozek']]);
+
+                        targetPayloads.push({
+                            honap: targetMonth,
+                            bolt: bolt,
+                            target_acq_db: acq,
+                            target_huseg_db: huseg,
+                            target_fix_db: fix,
+                            target_soho_db: soho,
+                            target_acq_pont: acq_pont,
+                            target_ret_pont: ret_pont,
+                            target_pont: acq_pont + ret_pont,
+                            target_tartozek_ft: tartozek
+                        });
+                    }
+
+                    for (const t of targetPayloads) {
+                        await supabaseClient.from('havi_targetek').upsert(t, { onConflict: 'honap,bolt' });
+                    }
+
+                    await loadTargetsFromSupabase();
+                    calculateAllTargets();
+                    alert(`Sikeresen rögzítve ${targetPayloads.length} bolt targetje!`);
+                } catch (err) {
+                    alert("Hiba a target Excel feldolgozásakor: " + err.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
 
         async function processPastedTargets() {
             const rawText = document.getElementById('targetPasteArea').value.trim();
@@ -771,7 +670,6 @@
             const targetMonth = document.getElementById('targetUploadMonth').value;
             const lines = rawText.split('\n');
             const targetPayloads = [];
-
             const cleanNum = (val) => parseFloat(String(val || 0).replace(/\s+/g, '').replace(',', '.')) || 0;
 
             lines.forEach(line => {
@@ -842,135 +740,10 @@
             `).join('');
         }
 
-        function handleFileSelect(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            document.getElementById('uploadLabel').innerText = `Kiválasztva: ${file.name}`;
-            const statusDiv = document.getElementById('uploadStatus');
-            statusDiv.className = "text-sm font-medium text-indigo-400";
-            statusDiv.innerText = "Fájl feldolgozása a böngészőben...";
-
-            const reader = new FileReader();
-            reader.onload = async function(evt) {
-                try {
-                    const data = new Uint8Array(evt.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-
-                    let headerIndex = -1;
-                    const colMap = {};
-                    for (let r = 0; r < Math.min(15, rows.length); r++) {
-                        if (rows[r] && rows[r].some(cell => String(cell).trim() === 'Bolt')) {
-                            headerIndex = r;
-                            rows[r].forEach((colName, idx) => {
-                                if (colName) colMap[String(colName).trim()] = idx;
-                            });
-                            break;
-                        }
-                    }
-
-                    if (headerIndex === -1 || colMap['Bolt'] === undefined) {
-                        throw new Error("Nem található 'Bolt' fejléc az Excelben!");
-                    }
-
-                    let detectedMonth = null;
-                    for (let r = 0; r < headerIndex; r++) {
-                        if (rows[r]) {
-                            const foundIdx = rows[r].findIndex(cell => String(cell || '').toLowerCase().includes('hónap'));
-                            if (foundIdx !== -1 && rows[r][foundIdx + 2]) {
-                                detectedMonth = String(rows[r][foundIdx + 2]).trim();
-                                break;
-                            }
-                        }
-                    }
-
-                    const parsed = [];
-                    for (let i = headerIndex + 1; i < rows.length; i++) {
-                        const r = rows[i];
-                        if (!r) continue;
-
-                        const boltVal = String(r[colMap['Bolt']] || '').trim();
-                        const ertekesitoVal = String(r[colMap['Értékesítő']] || '').trim();
-
-                        if (!boltVal || !ertekesitoVal || boltVal.toLowerCase().includes('különbözet') || ertekesitoVal.toLowerCase().includes('összesen')) {
-                            continue;
-                        }
-
-                        const parseNum = (val) => {
-                            if (!val) return 0;
-                            return parseFloat(String(val).replace(',', '.')) || 0;
-                        };
-
-                        const szegmens = String(r[colMap['Szegmens']] || '').trim();
-                        const cegnev = String(r[colMap['Cégnév']] || '').trim();
-                        const isSoho = (szegmens.toLowerCase() === 'soho') || (cegnev.length > 0 && szegmens.toLowerCase() !== 'flotta');
-
-                        let parsedDate = null;
-                        const rawDate = r[colMap['Szerződés dátuma']];
-                        if (rawDate) {
-                            const d = new Date(rawDate);
-                            if (!isNaN(d.getTime())) parsedDate = d.toISOString().split('T')[0];
-                        }
-
-                        const rowMonth = detectedMonth || (parsedDate ? parsedDate.substring(0, 7) : "Aktuális");
-                        const realPont = parseNum(r[colMap['Jutalék pont']]);
-                        const acqPont = parseNum(r[colMap['ACQ pont']]);
-                        const retPont = Math.max(0, realPont - acqPont);
-
-                        parsed.push({
-                            honap: rowMonth,
-                            bolt: boltVal,
-                            ertekesito: ertekesitoVal,
-                            szerzodes_datuma: parsedDate,
-                            szegmens: szegmens || null,
-                            cegnev: isSoho && cegnev ? cegnev : null,
-                            kapcsolattarto: isSoho ? (String(r[colMap['Kapcsolattartó']] || '').trim() || null) : null,
-                            telefonszam: isSoho ? (String(r[colMap['Telefonszám']] || '').trim() || null) : null,
-                            acq_db: parseNum(r[colMap['ACQ']]),
-                            acq_hs: parseNum(r[colMap['ACQ Készülék']] || r[colMap['ACQ HS']] || r[colMap['Készüléket vásárolt']]),
-                            acq_tablet: parseNum(r[colMap['ACQ Tablet']] || r[colMap['Táblagépet vásárolt']]),
-                            huseg_db: parseNum(r[colMap['Hűség']]),
-                            fix_db: parseNum(r[colMap['FIX']]),
-                            acq_pont: acqPont,
-                            ret_pont: retPont,
-                            osszpont: realPont
-                        });
-                    }
-
-                    if (parsed.length === 0) throw new Error("Nem sikerült érvényes rekordot kinyerni.");
-
-                    const targetMonth = parsed[0].honap;
-                    statusDiv.innerText = `Feldolgozva (${parsed.length} tétel). Hónap cseréje a felhőben...`;
-                    await supabaseClient.from('bolti_teljesitesek').delete().eq('honap', targetMonth);
-
-                    const chunkSize = 500;
-                    for (let c = 0; c < parsed.length; c += chunkSize) {
-                        const chunk = parsed.slice(c, c + chunkSize);
-                        const { error } = await supabaseClient.from('bolti_teljesitesek').insert(chunk);
-                        if (error) throw error;
-                    }
-
-                    await loadAllData();
-                    statusDiv.className = "text-sm font-medium text-emerald-400";
-                    statusDiv.innerText = `Sikeres mentés! [${targetMonth}]: ${parsed.length} tranzakció frissítve.`;
-
-                } catch (err) {
-                    statusDiv.className = "text-sm font-medium text-rose-400";
-                    statusDiv.innerText = "Hiba a feldolgozás során: " + err.message;
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
         function onFilterChange() {
             renderData();
         }
 
-        // =========================================================================
-        // --- 10 HAVI ELŐZMÉNYRE ÉPÜLŐ KOMB INÁLT SÚLYOZÁS (DOM + DOW) ---
-        // =========================================================================
         function calculateAllTargets() {
             const selectedMonth = document.getElementById('filterMonth').value;
             const selectedStore = document.getElementById('filterStore').value;
@@ -1008,10 +781,8 @@
                 tartozek_ft: relevantTargets.reduce((a, b) => a + (b.target_tartozek_ft || 0), 0)
             };
 
-            // 1. TÖBBHAVI ELŐZMÉNYEK STATISZTIKÁJA (Fizetésnapi és Hétköznapi ritmus)
-            // Day of Week (0..6) és Day of Month (1..31) eloszlások
             const dowPoints = [0, 0, 0, 0, 0, 0, 0];
-            const domPoints = Array(32).fill(0); // 1-től 31-ig
+            const domPoints = Array(32).fill(0);
 
             let totalHistPoints = 0;
             globalTransactions.forEach(t => {
@@ -1027,11 +798,9 @@
                 }
             });
 
-            // Normalizált súlyok
             const dowWeights = dowPoints.map(p => totalHistPoints > 0 ? (p / totalHistPoints) * 7 : 1.0);
             const domWeights = domPoints.map(p => totalHistPoints > 0 ? (p / totalHistPoints) * 30.5 : 1.0);
 
-            // 2. ADOTT HÓNAP HÁTRALÉVŐ NAPJAINAK KISZÁMÍTÁSA
             const today = new Date();
             const year = today.getFullYear();
             const month = today.getMonth();
@@ -1039,7 +808,6 @@
             const currentDay = today.getDate();
             const remainingDaysCount = Math.max(1, daysInMonth - currentDay + 1);
 
-            // Naponkénti súly = (Hét napja súly) * (Hónap napja súly: pl. fizetésnap hatás)
             function getDayWeight(dNum) {
                 const dow = new Date(year, month, dNum).getDay();
                 const dowW = dowWeights[dow] || 1.0;
@@ -1150,7 +918,7 @@
                         huseg: 0, 
                         fix: 0, 
                         acq_pont: 0,
-                        ret_pont: 0,
+                        ret_pont: 0, 
                         pont: 0 
                     };
                 }
