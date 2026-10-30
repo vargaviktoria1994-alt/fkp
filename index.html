@@ -715,7 +715,7 @@
                 ...globalTransactions.map(t => t.ertekesito),
                 ...globalAccessories.map(a => a.ertekesito)
             ];
-            const sellers = [...new Set(allSellersList)].filter(Boolean).sort();
+            const sellers = [...new Set(allSellersList.map(s => String(s || '').trim().replace(/\s+/g, ' ')))].filter(Boolean).sort();
 
             const monthOptions = months.map(m => `<option value="${m}">${m}</option>`).join('') + '<option value="ALL">Összes Hónap</option>';
             const storeOptions = '<option value="ALL">Összes Üzlet (Hálózat)</option>' + stores.map(s => `<option value="${s}">${s}</option>`).join('');
@@ -1272,16 +1272,17 @@
 
             // 1. CPR tranzakciók összesítése
             filteredCPR.forEach(t => {
+                const cleanSeller = String(t.ertekesito || '').trim().replace(/\s+/g, ' ');
                 const key = (selectedStore === 'ALL')
-                    ? `${t.honap}___${t.ertekesito}`
-                    : `${t.honap}___${t.bolt}___${t.ertekesito}`;
+                    ? `${t.honap}___${cleanSeller}`
+                    : `${t.honap}___${t.bolt}___${cleanSeller}`;
 
                 if (!summaryMap[key]) {
                     summaryMap[key] = { 
                         honap: t.honap, 
                         bolt: t.bolt, 
                         stores: new Set([t.bolt]),
-                        ertekesito: t.ertekesito, 
+                        ertekesito: cleanSeller, 
                         count: 0, 
                         acq: 0, 
                         acq_hs: 0, 
@@ -1312,16 +1313,17 @@
 
             // 2. Tartozékok hozzáadása ugyanahhoz a kulcshoz
             filteredAcc.forEach(a => {
+                const cleanSellerAcc = String(a.ertekesito || '').trim().replace(/\s+/g, ' ');
                 const key = (selectedStore === 'ALL')
-                    ? `${a.honap}___${a.ertekesito}`
-                    : `${a.honap}___${a.bolt}___${a.ertekesito}`;
+                    ? `${a.honap}___${cleanSellerAcc}`
+                    : `${a.honap}___${a.bolt}___${cleanSellerAcc}`;
 
                 if (!summaryMap[key]) {
                     summaryMap[key] = { 
                         honap: a.honap, 
                         bolt: a.bolt, 
                         stores: new Set([a.bolt]),
-                        ertekesito: a.ertekesito, 
+                        ertekesito: cleanSellerAcc, 
                         count: 0, 
                         acq: 0, 
                         acq_hs: 0, 
