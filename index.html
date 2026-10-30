@@ -37,7 +37,7 @@
     </div>
 
     <!-- 2. FŐ ALKALMAZÁS -->
-    <div id="dashboardApp" class="hidden max-w-[1550px] mx-auto space-y-6">
+    <div id="dashboardApp" class="hidden max-w-[1600px] mx-auto space-y-6">
         
         <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-slate-800/90 p-5 rounded-xl border border-slate-700 shadow-lg">
             <div>
@@ -68,16 +68,16 @@
         <!-- 1. FÜL: ÁTTEKINTÉS ÉS TARGETEK -->
         <main id="tabDashboard" class="space-y-6">
 
-            <!-- FŐ TARGET MODUL -->
+            <!-- FŐ MODUL: BAL OLDALON AZ ADOTT NAPI TARGETEK, JOBB OLDALON A DIAGRAM ÉS NAPI LISTA -->
             <section class="bg-slate-800/95 p-5 md:p-6 rounded-2xl border border-slate-700 shadow-xl space-y-6">
                 
-                <!-- Fejléc szűrők: Hónap, Üzlet, Metrika -->
+                <!-- Szűrő sáv -->
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700/80 pb-4">
                     <div class="flex items-center gap-3">
                         <span class="text-2xl">🎯</span>
                         <div>
-                            <h2 class="text-lg font-bold text-white">Havi & Napi Target Követés</h2>
-                            <p class="text-xs text-slate-400" id="monthSubtitle">Havi összesített állás és naponkénti haladási görbe</p>
+                            <h2 class="text-lg font-bold text-white">Napi & Havi Célok Követése</h2>
+                            <p class="text-xs text-slate-400" id="monthSubtitle">Súlyozott elvárások és valós eredmények</p>
                         </div>
                     </div>
 
@@ -96,7 +96,7 @@
                         </div>
 
                         <div class="flex items-center gap-2">
-                            <span class="text-xs text-slate-400 font-semibold uppercase">Diagram Metrika:</span>
+                            <span class="text-xs text-slate-400 font-semibold uppercase">Metrika:</span>
                             <select id="chartMetricSelect" onchange="updateTargetView()" class="bg-slate-900 text-amber-400 font-bold text-xs border border-slate-700 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-amber-500">
                                 <option value="pont">Összpont</option>
                                 <option value="acq_pont">ACQ Pont</option>
@@ -110,95 +110,101 @@
                     </div>
                 </div>
 
-                <!-- FELSŐ SOR: BALRA A HAVI TARGET ÉS TELJESÍTÉS ÖSSZEFOGLALÓ, JOBBRA A NAPI DIAGRAM -->
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                <!-- 2 OSZLOPOS ELRENDEZÉS -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                     
-                    <!-- BAL OLDAL: Havi Teljesítmény és Target Összefoglaló Táblázat -->
-                    <div class="lg:col-span-6 bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col justify-between">
-                        <div>
-                            <div class="flex items-center justify-between mb-3">
-                                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Havi Target és Teljesítés</h3>
-                                <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-500/30">Havi Állapot</span>
+                    <!-- BAL OLDAL (5 OSZLOP): KIZÁRÓLAG AZ ADOTT NAPI TARGETEK ÉS TÉNYEK -->
+                    <div class="lg:col-span-5 bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="text-indigo-400 font-bold text-base">📌</span>
+                                <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider" id="todayTargetBoxTitle">
+                                    Adott Napi Targetek (MA)
+                                </h3>
+                            </div>
+                            <span id="todayDateBadge" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-500/30">
+                                Ma
+                            </span>
+                        </div>
+
+                        <!-- Adott napi metrikák kártyái / táblázata -->
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr class="text-slate-400 border-b border-slate-700/80 text-[11px]">
+                                        <th class="py-2.5 px-3">Kategória</th>
+                                        <th class="py-2.5 px-2 text-right text-amber-300 font-semibold">Mai Target</th>
+                                        <th class="py-2.5 px-2 text-right text-cyan-300 font-semibold">Mai Tény</th>
+                                        <th class="py-2.5 px-2 text-right">Teljesülés</th>
+                                        <th class="py-2.5 px-3 text-right">Hó Végéig Hátra</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="todayTargetTableBody" class="divide-y divide-slate-800/80 font-medium">
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="pt-3 border-t border-slate-800 text-[11px] text-slate-400 flex justify-between items-center">
+                            <span id="targetDayInfoText">31 napos hónap</span>
+                            <span id="storeStatusBadge" class="text-emerald-400 font-semibold">Nyitva</span>
+                        </div>
+                    </div>
+
+                    <!-- JOBB OLDAL (7 OSZLOP): ÖSSZEHÚZOTT VONALDIAGRAM + ALATTA A NAPI BONTÁSÚ TÁBLÁZAT -->
+                    <div class="lg:col-span-7 space-y-4">
+                        
+                        <!-- 1. Vonaldiagram (Kompakt magasság) -->
+                        <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                                    Napi Teljesítés vs. Target Görbe — <span class="text-amber-400" id="chartMetricLabel">Összpont</span>
+                                </h3>
+                                <div class="flex items-center gap-4 text-[11px]">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="inline-block w-3 h-0.5 bg-amber-400"></span>
+                                        <span class="text-slate-300">Target</span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="inline-block w-3 h-0.5 bg-cyan-400"></span>
+                                        <span class="text-white font-semibold">Tény</span>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="overflow-x-auto">
+                            <div class="relative w-full h-[220px]">
+                                <canvas id="targetLineChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- 2. Összehúzott Napi Bontású Táblázat (1-től 31-ig) -->
+                        <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 space-y-2">
+                            <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+                                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                                    Napi Bontás (1-től 31-ig)
+                                </h3>
+                                <span class="text-[11px] text-slate-400">Kattints a sorra a részletekért</span>
+                            </div>
+
+                            <div class="overflow-y-auto max-h-[260px] pr-1">
                                 <table class="w-full text-left border-collapse text-xs">
-                                    <thead>
+                                    <thead class="sticky top-0 bg-slate-900 shadow z-10">
                                         <tr class="text-slate-400 border-b border-slate-700/80 text-[11px]">
-                                            <th class="py-2.5 px-3">Kategória</th>
-                                            <th class="py-2.5 px-2 text-right">Target</th>
-                                            <th class="py-2.5 px-2 text-right">Tény</th>
-                                            <th class="py-2.5 px-2 text-right">Teljesülés</th>
-                                            <th class="py-2.5 px-2 text-right">Hátralévő</th>
-                                            <th class="py-2.5 px-3 text-right text-indigo-300 font-semibold">Mai Napi Cél</th>
+                                            <th class="py-2 px-2.5">Nap</th>
+                                            <th class="py-2 px-2 text-right">Napi Target</th>
+                                            <th class="py-2 px-2 text-right">Napi Tény</th>
+                                            <th class="py-2 px-2 text-right">Teljesülés</th>
+                                            <th class="py-2 px-2.5 text-right">Eltérés</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="monthlySummaryTableBody" class="divide-y divide-slate-800/80 font-medium">
+                                    <tbody id="targetMetricTableBody" class="divide-y divide-slate-800/80 font-medium">
                                     </tbody>
                                 </table>
                             </div>
                         </div>
 
-                        <div class="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-400 flex flex-wrap justify-between items-center gap-2">
-                            <span id="targetDayInfoText">31 napos hónap</span>
-                            <span id="targetDayWeightBadge" class="text-amber-400 font-semibold"></span>
-                        </div>
-                    </div>
-
-                    <!-- JOBB OLDAL: Napi Vonaldiagram -->
-                    <div class="lg:col-span-6 bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col justify-between">
-                        <div class="flex items-center justify-between mb-3">
-                            <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Napi Teljesítés vs. Napi Target</h3>
-                            <span class="text-[11px] text-slate-400">Naponkénti elvárás és valós haladás</span>
-                        </div>
-
-                        <div class="relative w-full h-[280px] md:h-[300px]">
-                            <canvas id="targetLineChart"></canvas>
-                        </div>
-
-                        <div class="flex items-center justify-center gap-6 mt-3 pt-2 border-t border-slate-800 text-xs">
-                            <div class="flex items-center gap-2">
-                                <span class="inline-block w-4 h-1 bg-amber-400 rounded-full"></span>
-                                <span class="text-slate-300">Súlyozott Napi Target</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span class="inline-block w-4 h-1 bg-cyan-400 rounded-full"></span>
-                                <span class="text-white font-semibold">Napi Tényleges Teljesítés</span>
-                            </div>
-                        </div>
                     </div>
 
                 </div>
-
-                <!-- ALSÓ RÉSZ (A DIAGRAM ALATT): NAPI BONTÁSÚ TÁBLÁZAT (1-TŐL 31-IG) -->
-                <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 space-y-3">
-                    <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
-                        <div class="flex items-center gap-2">
-                            <span class="text-indigo-400 font-bold text-sm">📅</span>
-                            <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider" id="dailyTableTitle">
-                                Napi Bontás (1-től 31-ig) — <span class="text-amber-400" id="dailyTableMetricLabel">Összpont</span>
-                            </h3>
-                        </div>
-                        <span class="text-[11px] text-slate-400">A diagram részletes naponkénti adatai</span>
-                    </div>
-
-                    <div class="overflow-y-auto max-h-[360px] pr-1">
-                        <table class="w-full text-left border-collapse text-xs">
-                            <thead class="sticky top-0 bg-slate-900 shadow z-10">
-                                <tr class="text-slate-400 border-b border-slate-700/80 text-[11px]">
-                                    <th class="py-2.5 px-3">Nap</th>
-                                    <th class="py-2.5 px-3 text-right">Súlyozott Napi Target</th>
-                                    <th class="py-2.5 px-3 text-right">Napi Tény</th>
-                                    <th class="py-2.5 px-3 text-right">Teljesülés</th>
-                                    <th class="py-2.5 px-3 text-right">Napi Eltérés</th>
-                                </tr>
-                            </thead>
-                            <tbody id="targetMetricTableBody" class="divide-y divide-slate-800/80 font-medium">
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
             </section>
 
             <!-- ÉRTÉKESÍTŐI RÉSZLETES TÁBLÁZAT -->
@@ -557,7 +563,7 @@
                 return mOk && sOk;
             });
 
-            // 1. HAVI TÉNYADATOK ÖSSZESÍTÉSE
+            // 1. HAVI TÉNYADATOK
             const actuals = {
                 pont: filtered.reduce((acc, t) => acc + (t.osszpont || 0), 0),
                 acq_pont: filtered.reduce((acc, t) => acc + (t.acq_pont || 0), 0),
@@ -569,7 +575,7 @@
                 tartozek_ft: 0
             };
 
-            // 2. HAVI TARGETEK ÖSSZESÍTÉSE
+            // 2. HAVI TARGETEK
             let relevantTargets = globalTargets.filter(t => selectedMonth === 'ALL' || t.honap === selectedMonth);
             if (selectedStore !== 'ALL') {
                 relevantTargets = relevantTargets.filter(t => t.bolt === selectedStore);
@@ -633,7 +639,7 @@
                     }
                 });
 
-                // Ha egy adott boltnál vasárnap 0 forgalom volt, a vasárnapi súly szigorúan 0.0!
+                // Vasárnap forgalom nélküli bolt esetén a súly garantáltan 0.0!
                 const sDowWeights = sDowPoints.map(p => sTotalPts > 0 ? (p / sTotalPts) * 7 : 0.0);
                 const sDomWeights = sDomPoints.map(p => sTotalPts > 0 ? (p / sTotalPts) * 30.5 : 1.0);
 
@@ -657,17 +663,13 @@
                 return { dailyMap, calcDayWeight, sumWeights };
             }
 
-            // Kiválasztott diagram-metrika havi célja
             const currentMetricTarget = targets[metricKey] || 0;
             const isMetricInt = ['acq_db', 'huseg_db', 'fix_db', 'soho_db', 'tartozek_ft'].includes(metricKey);
 
             let storeDailyTargetMap = {};
-            let currentDayWeightVal = 1.0;
-
             if (selectedStore !== 'ALL') {
                 const res = getStoreDailyTargets(selectedStore, currentMetricTarget);
                 storeDailyTargetMap = res.dailyMap;
-                currentDayWeightVal = res.calcDayWeight(currentDay);
             } else {
                 const allStoreCodes = [...new Set(globalTargets.filter(t => selectedMonth === 'ALL' || t.honap === selectedMonth).map(t => t.bolt))].filter(b => b !== 'ALL');
                 for (let d = 1; d <= daysInMonth; d++) storeDailyTargetMap[d] = 0;
@@ -692,7 +694,7 @@
                 });
             }
 
-            // Napi tények kinyerése a kiválasztott metrikához
+            // Napi tények a kiválasztott metrikához
             const dailyActualMap = Array(daysInMonth + 1).fill(0);
             filtered.forEach(t => {
                 if (t.szerzodes_datuma) {
@@ -715,7 +717,7 @@
             });
 
             // =========================================================================
-            // 1. BAL FELSŐ RÉSZ: HAVI TARGET ÉS TELJESÍTÉS ÖSSZEFOGLALÓ TÁBLÁZAT
+            // 1. BAL OLDAL: KIZÁRÓLAG AZ ADOTT NAPI TARGETEK ÉS TÉNYEK
             // =========================================================================
             const metricRows = [
                 { key: 'pont', label: 'Összpont', isInt: false, color: 'text-amber-400' },
@@ -728,24 +730,56 @@
                 { key: 'tartozek_ft', label: 'Tartozék (Ft)', isInt: true, isCurrency: true, color: 'text-pink-400' }
             ];
 
-            const monthlyTbody = document.getElementById('monthlySummaryTableBody');
-            monthlyTbody.innerHTML = metricRows.map(m => {
-                const targetVal = targets[m.key] || 0;
-                const actualVal = actuals[m.key] || 0;
-                const remVal = Math.max(0, targetVal - actualVal);
-                const pct = targetVal > 0 ? (actualVal / targetVal) * 100 : 0;
+            const todayDow = new Date(currentYear, currentMonthIdx, currentDay).getDay();
+            const dayNamesLong = ['Vasárnap', 'Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat'];
+            document.getElementById('todayTargetBoxTitle').innerText = `Mai Célok (${currentDay}. ${dayNamesLong[todayDow]})`;
+            document.getElementById('todayDateBadge').innerText = `${currentDay}. ${dayNamesLong[todayDow]}`;
 
-                // Mai cél leosztása a bolt ritmusa szerint
-                let todayTargetVal = 0;
+            // Kiszámítjuk minden kategóriára a mai napra eső súlyozott célt és a mai valós tényt
+            const todayTbody = document.getElementById('todayTargetTableBody');
+            todayTbody.innerHTML = metricRows.map(m => {
+                const mTarget = targets[m.key] || 0;
+                const mActual = actuals[m.key] || 0;
+                const mRem = Math.max(0, mTarget - mActual);
+
+                // Mai cél kiszámítása
+                let mTodayTarget = 0;
                 if (selectedStore !== 'ALL') {
-                    const res = getStoreDailyTargets(selectedStore, remVal);
-                    todayTargetVal = res.dailyMap[currentDay] || 0;
+                    const r = getStoreDailyTargets(selectedStore, mTarget);
+                    mTodayTarget = r.dailyMap[currentDay] || 0;
                 } else {
-                    todayTargetVal = remVal / remainingDaysCount;
+                    const allStoreCodes = [...new Set(globalTargets.filter(t => selectedMonth === 'ALL' || t.honap === selectedMonth).map(t => t.bolt))].filter(b => b !== 'ALL');
+                    allStoreCodes.forEach(bCode => {
+                        const bObj = globalTargets.find(t => (selectedMonth === 'ALL' || t.honap === selectedMonth) && t.bolt === bCode);
+                        let bVal = bObj ? (bObj[m.key === 'pont' ? 'target_pont' : `target_${m.key}`] || 0) : 0;
+                        const r = getStoreDailyTargets(bCode, bVal);
+                        mTodayTarget += (r.dailyMap[currentDay] || 0);
+                    });
                 }
 
+                // Mai tény kiszámítása az adott metrikára
+                let mTodayActual = 0;
+                filtered.forEach(t => {
+                    if (t.szerzodes_datuma) {
+                        const p = String(t.szerzodes_datuma).split('-');
+                        if (p.length === 3 && parseInt(p[2], 10) === currentDay) {
+                            if (m.key === 'pont') mTodayActual += (t.osszpont || 0);
+                            else if (m.key === 'acq_pont') mTodayActual += (t.acq_pont || 0);
+                            else if (m.key === 'ret_pont') mTodayActual += (t.ret_pont || 0);
+                            else if (m.key === 'acq_db') mTodayActual += (t.acq_db || 0);
+                            else if (m.key === 'huseg_db') mTodayActual += (t.huseg_db || 0);
+                            else if (m.key === 'fix_db') mTodayActual += (t.fix_db || 0);
+                            else if (m.key === 'soho_db') mTodayActual += (t.szegmens && t.szegmens.toLowerCase() === 'soho' && t.acq_db > 0) ? (t.acq_db || 1) : 0;
+                        }
+                    }
+                });
+
+                const isClosed = (mTodayTarget === 0);
+                const pct = mTodayTarget > 0 ? (mTodayActual / mTodayTarget) * 100 : (mTodayActual > 0 ? 100 : 0);
+
                 let badgeColor = "bg-rose-950/60 text-rose-300 border-rose-800";
-                if (pct >= 100) badgeColor = "bg-emerald-950/60 text-emerald-300 border-emerald-800";
+                if (isClosed) badgeColor = "bg-slate-800 text-slate-400 border-slate-700";
+                else if (pct >= 100) badgeColor = "bg-emerald-950/60 text-emerald-300 border-emerald-800";
                 else if (pct >= 80) badgeColor = "bg-indigo-950/60 text-indigo-300 border-indigo-800";
                 else if (pct >= 60) badgeColor = "bg-amber-950/60 text-amber-300 border-amber-800";
 
@@ -757,27 +791,31 @@
 
                 return `
                     <tr class="hover:bg-slate-800/40 transition">
-                        <td class="py-2 px-3 font-semibold ${m.color}">${m.label}</td>
-                        <td class="py-2 px-2 text-right text-slate-300">${formatVal(targetVal)}</td>
-                        <td class="py-2 px-2 text-right text-white font-bold">${formatVal(actualVal)}</td>
-                        <td class="py-2 px-2 text-right">
+                        <td class="py-2.5 px-3 font-semibold ${m.color}">${m.label}</td>
+                        <td class="py-2.5 px-2 text-right font-bold text-amber-300 font-mono">${isClosed ? 'ZÁRVA' : formatVal(mTodayTarget)}</td>
+                        <td class="py-2.5 px-2 text-right font-bold text-cyan-300 font-mono">${formatVal(mTodayActual)}</td>
+                        <td class="py-2.5 px-2 text-right">
                             <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeColor}">
-                                ${pct.toFixed(1)}%
+                                ${isClosed ? 'ZÁRVA' : pct.toFixed(0) + '%'}
                             </span>
                         </td>
-                        <td class="py-2 px-2 text-right text-slate-400">${formatVal(remVal)}</td>
-                        <td class="py-2 px-3 text-right font-bold text-white">${formatVal(todayTargetVal)}</td>
+                        <td class="py-2.5 px-3 text-right text-slate-400 font-mono">${formatVal(mRem)}</td>
                     </tr>
                 `;
             }).join('');
 
             document.getElementById('targetDayInfoText').innerText = `${daysInMonth} napos hónap: még ${remainingDaysCount} nap van hátra`;
-            document.getElementById('targetDayWeightBadge').innerText = `Ma: ${currentDay}-e`;
+            document.getElementById('storeStatusBadge').innerText = (storeDailyTargetMap[currentDay] === 0) ? 'ZÁRVA' : 'NYITVA';
+            document.getElementById('storeStatusBadge').className = (storeDailyTargetMap[currentDay] === 0) ? 'text-rose-400 font-bold' : 'text-emerald-400 font-semibold';
             document.getElementById('monthSubtitle').innerText = `${selectedMonth} • ${selectedStore === 'ALL' ? 'Összes Üzlet' : selectedStore}`;
 
             // =========================================================================
-            // 2. JOBB FELSŐ RÉSZ: NAPI TELJESÍTÉS VS. TARGET VONALDIAGRAM
+            // 2. JOBB OLDAL FENT: KOMPAKT NAPI VONALDIAGRAM
             // =========================================================================
+            const metricSelectElem = document.getElementById('chartMetricSelect');
+            const selectedMetricText = metricSelectElem.options[metricSelectElem.selectedIndex].text;
+            document.getElementById('chartMetricLabel').innerText = selectedMetricText;
+
             const dayNamesShort = ['V', 'H', 'K', 'Sze', 'Cs', 'P', 'Szo'];
             const dailyTargetValues = [];
             const dailyActualValues = [];
@@ -813,10 +851,9 @@
                             data: dailyTargetValues,
                             borderColor: '#fbbf24',
                             borderWidth: 2,
-                            borderDash: [5, 5],
+                            borderDash: [4, 4],
                             pointRadius: 2,
                             pointBackgroundColor: '#fbbf24',
-                            pointHoverRadius: 5,
                             fill: false,
                             tension: 0.3
                         },
@@ -824,11 +861,10 @@
                             label: 'Napi Tényleges Teljesítés',
                             data: dailyActualValues,
                             borderColor: '#22d3ee',
-                            backgroundColor: 'rgba(34, 211, 238, 0.15)',
-                            borderWidth: 2.5,
-                            pointRadius: 3,
+                            backgroundColor: 'rgba(34, 211, 238, 0.12)',
+                            borderWidth: 2,
+                            pointRadius: 2.5,
                             pointBackgroundColor: '#22d3ee',
-                            pointHoverRadius: 6,
                             fill: true,
                             tension: 0.2
                         }
@@ -846,30 +882,26 @@
                             bodyColor: '#e2e8f0',
                             borderColor: '#334155',
                             borderWidth: 1,
-                            padding: 10
+                            padding: 8
                         }
                     },
                     scales: {
                         x: {
-                            grid: { color: 'rgba(51, 65, 85, 0.3)' },
-                            ticks: { color: '#94a3b8', font: { size: 10 }, maxTicksLimit: 16 }
+                            grid: { color: 'rgba(51, 65, 85, 0.25)' },
+                            ticks: { color: '#94a3b8', font: { size: 9 }, maxTicksLimit: 16 }
                         },
                         y: {
                             beginAtZero: true,
-                            grid: { color: 'rgba(51, 65, 85, 0.3)' },
-                            ticks: { color: '#94a3b8', font: { size: 10 } }
+                            grid: { color: 'rgba(51, 65, 85, 0.25)' },
+                            ticks: { color: '#94a3b8', font: { size: 9 } }
                         }
                     }
                 }
             });
 
             // =========================================================================
-            // 3. ALSÓ RÉSZ: NAPI BONTÁSÚ TÁBLÁZAT (A DIAGRAM ALATT)
+            // 3. JOBB OLDAL LENT: ÖSSZEHÚZOTT NAPI BONTÁSÚ TÁBLÁZAT
             // =========================================================================
-            const metricSelectElem = document.getElementById('chartMetricSelect');
-            const selectedMetricText = metricSelectElem.options[metricSelectElem.selectedIndex].text;
-            document.getElementById('dailyTableMetricLabel').innerText = selectedMetricText;
-
             const dailyTbody = document.getElementById('targetMetricTableBody');
             let dailyTableHtml = '';
 
@@ -908,14 +940,14 @@
 
                 dailyTableHtml += `
                     <tr class="${rowBg} transition text-[11px]">
-                        <td class="py-2 px-3">
+                        <td class="py-1.5 px-2.5">
                             <span class="${isToday ? 'text-indigo-300 font-bold' : (dow === 0 ? 'text-rose-400/80 font-semibold' : 'text-slate-300')}">${d}. ${dayName}</span>
                             ${isToday ? '<span class="text-[9px] bg-indigo-500/20 text-indigo-300 px-1 rounded ml-1">MA</span>' : ''}
                         </td>
-                        <td class="py-2 px-3 text-right text-amber-300/90 font-mono">${fmt(dailyT)}</td>
-                        <td class="py-2 px-3 text-right font-bold ${hasPassed ? 'text-cyan-300' : 'text-slate-600'} font-mono">${hasPassed ? fmt(dailyA) : '-'}</td>
-                        <td class="py-2 px-3 text-right ${badgeClass}">${pctText}</td>
-                        <td class="py-2 px-3 text-right font-mono ${diff >= 0 && hasPassed && !isClosedDay ? 'text-emerald-400' : (hasPassed && !isClosedDay ? 'text-rose-400' : 'text-slate-600')}">${diffText}</td>
+                        <td class="py-1.5 px-2 text-right text-amber-300 font-mono">${isClosedDay ? 'ZÁRVA' : fmt(dailyT)}</td>
+                        <td class="py-1.5 px-2 text-right font-bold ${hasPassed ? 'text-cyan-300' : 'text-slate-600'} font-mono">${hasPassed ? fmt(dailyA) : '-'}</td>
+                        <td class="py-1.5 px-2 text-right ${badgeClass}">${pctText}</td>
+                        <td class="py-1.5 px-2.5 text-right font-mono ${diff >= 0 && hasPassed && !isClosedDay ? 'text-emerald-400' : (hasPassed && !isClosedDay ? 'text-rose-400' : 'text-slate-600')}">${diffText}</td>
                     </tr>
                 `;
             }
