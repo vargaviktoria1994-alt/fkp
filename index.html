@@ -68,7 +68,7 @@
         <!-- 1. FÜL: ÁTTEKINTÉS ÉS TARGETEK -->
         <main id="tabDashboard" class="space-y-6">
 
-            <!-- FŐ MODUL -->
+            <!-- FŐ TARGET MODUL -->
             <section class="bg-slate-800/95 p-5 md:p-6 rounded-2xl border border-slate-700 shadow-xl space-y-5">
                 
                 <!-- Szűrősáv -->
@@ -248,10 +248,13 @@
                 </div>
             </section>
 
-            <!-- ÉRTÉKESÍTŐI RÉSZLETES TÁBLÁZAT -->
+            <!-- ÉRTÉKESÍTŐI RÉSZLETES TÁBLÁZAT (KATTINTHATÓ RENDEZÉSSEL) -->
             <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-700 pb-4">
-                    <h2 class="text-lg font-semibold text-white">Értékesítési Eredmények</h2>
+                    <div>
+                        <h2 class="text-lg font-semibold text-white">Értékesítési Eredmények</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Kattints a fejléc oszlopaira a növekvő / csökkenő sorrendbe rendezéshez</p>
+                    </div>
                     
                     <div class="flex flex-wrap items-center gap-3">
                         <select id="filterMonth" onchange="onFilterChange()" class="bg-slate-700 text-white text-sm border border-slate-600 rounded-lg px-3 py-2">
@@ -310,23 +313,89 @@
                     </div>
                 </div>
 
+                <!-- TÁBLÁZAT KATTINTHATÓ, RENDEZHETŐ OSZLOPFEJLÉCEKKEL -->
                 <div class="overflow-x-auto mt-4">
-                    <table class="w-full text-left border-collapse text-xs md:text-sm">
+                    <table class="w-full text-left border-collapse text-xs md:text-sm select-none">
                         <thead>
-                            <tr class="bg-slate-700/50 text-slate-300 border-b border-slate-600 whitespace-nowrap">
-                                <th class="p-3">Hónap</th>
-                                <th class="p-3">Bolt</th>
-                                <th class="p-3">Értékesítő</th>
-                                <th class="p-3 text-center">Tranz.</th>
-                                <th class="p-3 text-center">ACQ</th>
-                                <th class="p-3 text-center">ACQ HS</th>
-                                <th class="p-3 text-center">ACQ Tab</th>
-                                <th class="p-3 text-center">Hűség</th>
-                                <th class="p-3 text-center">FIX</th>
-                                <th class="p-3 text-center text-amber-400 font-semibold">SOHO</th>
-                                <th class="p-3 text-right">ACQ Pont</th>
-                                <th class="p-3 text-right">RET Pont</th>
-                                <th class="p-3 text-right">Összpont</th>
+                            <tr class="bg-slate-700/60 text-slate-300 border-b border-slate-600 whitespace-nowrap text-xs">
+                                <th onclick="sortTableBy('honap')" class="p-3 cursor-pointer hover:bg-slate-700 hover:text-white transition group">
+                                    <div class="flex items-center gap-1.5">
+                                        <span>Hónap</span>
+                                        <span id="sort_icon_honap" class="text-slate-500 text-[10px] group-hover:text-indigo-400">↕</span>
+                                    </div>
+                                </th>
+                                <th onclick="sortTableBy('bolt')" class="p-3 cursor-pointer hover:bg-slate-700 hover:text-white transition group">
+                                    <div class="flex items-center gap-1.5">
+                                        <span>Bolt</span>
+                                        <span id="sort_icon_bolt" class="text-slate-500 text-[10px] group-hover:text-indigo-400">↕</span>
+                                    </div>
+                                </th>
+                                <th onclick="sortTableBy('ertekesito')" class="p-3 cursor-pointer hover:bg-slate-700 hover:text-white transition group">
+                                    <div class="flex items-center gap-1.5">
+                                        <span>Értékesítő</span>
+                                        <span id="sort_icon_ertekesito" class="text-slate-500 text-[10px] group-hover:text-indigo-400">↕</span>
+                                    </div>
+                                </th>
+                                <th onclick="sortTableBy('count')" class="p-3 text-center cursor-pointer hover:bg-slate-700 hover:text-white transition group">
+                                    <div class="flex items-center justify-center gap-1">
+                                        <span>Tranz.</span>
+                                        <span id="sort_icon_count" class="text-slate-500 text-[10px] group-hover:text-indigo-400">↕</span>
+                                    </div>
+                                </th>
+                                <th onclick="sortTableBy('acq')" class="p-3 text-center cursor-pointer hover:bg-slate-700 hover:text-white transition group">
+                                    <div class="flex items-center justify-center gap-1">
+                                        <span class="text-indigo-300 font-bold">ACQ</span>
+                                        <span id="sort_icon_acq" class="text-slate-500 text-[10px] group-hover:text-indigo-400">↕</span>
+                                    </div>
+                                </th>
+                                <th onclick="sortTableBy('acq_hs')" class="p-3 text-center cursor-pointer hover:bg-slate-700 hover:text-white transition group">
+                                    <div class="flex items-center justify-center gap-1">
+                                        <span class="text-sky-300 font-bold">ACQ HS</span>
+                                        <span id="sort_icon_acq_hs" class="text-slate-500 text-[10px] group-hover:text-indigo-400">↕</span>
+                                    </div>
+                                </th>
+                                <th onclick="sortTableBy('acq_tablet')" class="p-3 text-center cursor-pointer hover:bg-slate-700 hover:text-white transition group">
+                                    <div class="flex items-center justify-center gap-1">
+                                        <span class="text-teal-300 font-bold">ACQ Tab</span>
+                                        <span id="sort_icon_acq_tablet" class="text-slate-500 text-[10px] group-hover:text-indigo-400">↕</span>
+                                    </div>
+                                </th>
+                                <th onclick="sortTableBy('huseg')" class="p-3 text-center cursor-pointer hover:bg-slate-700 hover:text-white transition group">
+                                    <div class="flex items-center justify-center gap-1">
+                                        <span class="text-emerald-300 font-bold">Hűség</span>
+                                        <span id="sort_icon_huseg" class="text-slate-500 text-[10px] group-hover:text-indigo-400">↕</span>
+                                    </div>
+                                </th>
+                                <th onclick="sortTableBy('fix')" class="p-3 text-center cursor-pointer hover:bg-slate-700 hover:text-white transition group">
+                                    <div class="flex items-center justify-center gap-1">
+                                        <span class="text-purple-300 font-bold">FIX</span>
+                                        <span id="sort_icon_fix" class="text-slate-500 text-[10px] group-hover:text-indigo-400">↕</span>
+                                    </div>
+                                </th>
+                                <th onclick="sortTableBy('soho')" class="p-3 text-center cursor-pointer hover:bg-slate-700 hover:text-white transition group">
+                                    <div class="flex items-center justify-center gap-1">
+                                        <span class="text-amber-400 font-bold">SOHO</span>
+                                        <span id="sort_icon_soho" class="text-slate-500 text-[10px] group-hover:text-amber-400">↕</span>
+                                    </div>
+                                </th>
+                                <th onclick="sortTableBy('acq_pont')" class="p-3 text-right cursor-pointer hover:bg-slate-700 hover:text-white transition group">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <span class="text-sky-300 font-bold">ACQ Pont</span>
+                                        <span id="sort_icon_acq_pont" class="text-slate-500 text-[10px] group-hover:text-indigo-400">↕</span>
+                                    </div>
+                                </th>
+                                <th onclick="sortTableBy('ret_pont')" class="p-3 text-right cursor-pointer hover:bg-slate-700 hover:text-white transition group">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <span class="text-teal-300 font-bold">RET Pont</span>
+                                        <span id="sort_icon_ret_pont" class="text-slate-500 text-[10px] group-hover:text-indigo-400">↕</span>
+                                    </div>
+                                </th>
+                                <th onclick="sortTableBy('pont')" class="p-3 text-right cursor-pointer hover:bg-slate-700 hover:text-white transition group">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <span class="text-amber-400 font-bold">Összpont</span>
+                                        <span id="sort_icon_pont" class="text-slate-500 text-[10px] group-hover:text-amber-400">↕</span>
+                                    </div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody id="tableBody" class="divide-y divide-slate-700 text-slate-200">
@@ -486,6 +555,10 @@
         let globalTargets = [];
         let targetChartInstance = null;
 
+        // Értékesítői táblázat rendezési állapota
+        let currentSortColumn = 'pont'; // Alapértelmezett: Összpont
+        let currentSortDirection = 'desc'; // Alapértelmezett: Csökkenő (legjobb legfelül)
+
         window.addEventListener('DOMContentLoaded', () => {
             checkAuth();
         });
@@ -633,7 +706,6 @@
                 tartozek_ft: relevantTargets.reduce((a, b) => a + (b.target_tartozek_ft || 0), 0)
             };
 
-            // Naptári időszak meghatározása
             let currentYear = 2026;
             let currentMonthIdx = 9; // október
             if (selectedMonth && selectedMonth !== 'ALL') {
@@ -680,7 +752,6 @@
                     }
                 });
 
-                // Vasárnap zárva tartó bolt esetén a vasárnapi súly garantáltan 0.0!
                 const sDowWeights = sDowPoints.map(p => sTotalPts > 0 ? (p / sTotalPts) * 7 : 0.0);
                 const sDomWeights = sDomPoints.map(p => sTotalPts > 0 ? (p / sTotalPts) * 30.5 : 1.0);
 
@@ -735,7 +806,7 @@
                 });
             }
 
-            // Napi tények a kiválasztott metrikához
+            // Napi tények
             const dailyActualMap = Array(daysInMonth + 1).fill(0);
             filtered.forEach(t => {
                 if (t.szerzodes_datuma) {
@@ -768,9 +839,7 @@
                 { key: 'tartozek_ft', label: 'Tartozék (Ft)', isInt: true, isCurrency: true, color: 'text-pink-400' }
             ];
 
-            // =========================================================================
-            // 1. BAL OLDAL / FENT: HAVI TARGET ÉS TELJESÍTÉS ÖSSZEFOGLALÓ
-            // =========================================================================
+            // 1. BAL FELSŐ: HAVI TARGETEK
             const monthlyTbody = document.getElementById('monthlySummaryTableBody');
             monthlyTbody.innerHTML = metricRows.map(m => {
                 const targetVal = targets[m.key] || 0;
@@ -807,9 +876,7 @@
             document.getElementById('targetDayInfoText').innerText = `${daysInMonth} napos hónap: még ${remainingDaysCount} nap van hátra`;
             document.getElementById('targetDayRemainingBadge').innerText = `Ma: ${currentDay}-e`;
 
-            // =========================================================================
-            // 2. BAL OLDAL / LENT: ADOTT NAPI TARGETEK (MA)
-            // =========================================================================
+            // 2. BAL ALSÓ: ADOTT NAPI TARGETEK (MA)
             const todayDow = new Date(currentYear, currentMonthIdx, currentDay).getDay();
             const dayNamesLong = ['Vasárnap', 'Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat'];
             document.getElementById('todayTargetBoxTitle').innerText = `Mai Célok (${currentDay}. ${dayNamesLong[todayDow]})`;
@@ -819,7 +886,6 @@
             todayTbody.innerHTML = metricRows.map(m => {
                 const mTarget = targets[m.key] || 0;
 
-                // Mai cél kiszámítása
                 let mTodayTarget = 0;
                 if (selectedStore !== 'ALL') {
                     const r = getStoreDailyTargets(selectedStore, mTarget);
@@ -834,7 +900,6 @@
                     });
                 }
 
-                // Mai tény kiszámítása
                 let mTodayActual = 0;
                 filtered.forEach(t => {
                     if (t.szerzodes_datuma) {
@@ -889,9 +954,7 @@
             document.getElementById('storeStatusBadge').className = (storeDailyTargetMap[currentDay] === 0) ? 'text-rose-400 font-bold' : 'text-emerald-400 font-semibold';
             document.getElementById('monthSubtitle').innerText = `${selectedMonth} • ${selectedStore === 'ALL' ? 'Összes Üzlet' : selectedStore}`;
 
-            // =========================================================================
-            // 3. JOBB OLDAL / FENT: KOMPAKT NAPI VONALDIAGRAM
-            // =========================================================================
+            // 3. JOBB FELSŐ: KOMPAKT NAPI DIAGRAM
             const metricSelectElem = document.getElementById('chartMetricSelect');
             const selectedMetricText = metricSelectElem.options[metricSelectElem.selectedIndex].text;
             document.getElementById('chartMetricLabel').innerText = selectedMetricText;
@@ -979,9 +1042,7 @@
                 }
             });
 
-            // =========================================================================
-            // 4. JOBB OLDAL / LENT: ÖSSZEHÚZOTT NAPI BONTÁSÚ TÁBLÁZAT (1-TŐL 31-IG)
-            // =========================================================================
+            // 4. JOBB ALSÓ: 1-31 NAPI BONTÁSÚ TÁBLÁZAT
             const dailyTbody = document.getElementById('targetMetricTableBody');
             let dailyTableHtml = '';
 
@@ -1040,6 +1101,35 @@
             renderData();
         }
 
+        // --- KATTINTÁSRA TÖRTÉNŐ OSZLOP RENDEZÉS LOGIKA ---
+        function sortTableBy(columnKey) {
+            if (currentSortColumn === columnKey) {
+                // Ha ugyanarra az oszlopra kattint, megfordítjuk az irányt
+                currentSortDirection = currentSortDirection === 'desc' ? 'asc' : 'desc';
+            } else {
+                currentSortColumn = columnKey;
+                // Szöveges oszlopoknál (hónap, bolt, értékesítő) alapból növekvő (A-Z), számoknál csökkenő (legtöbb legfelül)
+                currentSortDirection = ['honap', 'bolt', 'ertekesito'].includes(columnKey) ? 'asc' : 'desc';
+            }
+            renderData();
+        }
+
+        function updateSortHeaderIcons() {
+            const allKeys = ['honap', 'bolt', 'ertekesito', 'count', 'acq', 'acq_hs', 'acq_tablet', 'huseg', 'fix', 'soho', 'acq_pont', 'ret_pont', 'pont'];
+            allKeys.forEach(k => {
+                const iconElem = document.getElementById(`sort_icon_${k}`);
+                if (!iconElem) return;
+
+                if (k === currentSortColumn) {
+                    iconElem.innerText = currentSortDirection === 'desc' ? '▼' : '▲';
+                    iconElem.className = "text-indigo-400 font-bold text-[11px]";
+                } else {
+                    iconElem.innerText = '↕';
+                    iconElem.className = "text-slate-500 text-[10px] group-hover:text-indigo-400";
+                }
+            });
+        }
+
         function renderData() {
             const selectedMonth = document.getElementById('filterMonth').value;
             const selectedStore = document.getElementById('filterStore').value;
@@ -1086,7 +1176,23 @@
                 summaryMap[key].pont += (t.osszpont || 0);
             });
 
-            const summaryList = Object.values(summaryMap).sort((a,b) => b.pont - a.pont);
+            // Dinamikus rendezés a kiválasztott oszlop és irány szerint
+            const summaryList = Object.values(summaryMap).sort((a, b) => {
+                let valA = a[currentSortColumn];
+                let valB = b[currentSortColumn];
+
+                if (typeof valA === 'string') {
+                    valA = valA.toLowerCase();
+                    valB = String(valB).toLowerCase();
+                    return currentSortDirection === 'asc' ? valA.localeCompare(valB, 'hu') : valB.localeCompare(valA, 'hu');
+                } else {
+                    valA = Number(valA || 0);
+                    valB = Number(valB || 0);
+                    return currentSortDirection === 'asc' ? valA - valB : valB - valA;
+                }
+            });
+
+            updateSortHeaderIcons();
 
             document.getElementById('kpiCount').innerText = `${filtered.length} db`;
             document.getElementById('kpiACQ').innerText = `${summaryList.reduce((acc, s) => acc + s.acq, 0)} db`;
@@ -1109,16 +1215,16 @@
                     <td class="p-3 text-xs text-slate-400">${s.honap}</td>
                     <td class="p-3"><span class="px-2 py-1 bg-slate-700 text-xs font-semibold rounded">${s.bolt}</span></td>
                     <td class="p-3 font-medium text-white">${s.ertekesito}</td>
-                    <td class="p-3 text-center text-slate-300">${s.count}</td>
-                    <td class="p-3 text-center font-bold text-indigo-400">${s.acq}</td>
-                    <td class="p-3 text-center text-sky-400 font-medium">${s.acq_hs}</td>
-                    <td class="p-3 text-center text-teal-400 font-medium">${s.acq_tablet}</td>
-                    <td class="p-3 text-center text-emerald-400 font-medium">${s.huseg}</td>
-                    <td class="p-3 text-center text-purple-400 font-medium">${s.fix}</td>
-                    <td class="p-3 text-center text-amber-400 font-bold">${s.soho}</td>
-                    <td class="p-3 text-right text-sky-300 font-medium">${s.acq_pont.toFixed(1)}</td>
-                    <td class="p-3 text-right text-teal-300 font-medium">${s.ret_pont.toFixed(1)}</td>
-                    <td class="p-3 text-right font-bold text-amber-400">${s.pont.toFixed(2)}</td>
+                    <td class="p-3 text-center text-slate-300 font-mono">${s.count}</td>
+                    <td class="p-3 text-center font-bold text-indigo-400 font-mono">${s.acq}</td>
+                    <td class="p-3 text-center text-sky-400 font-medium font-mono">${s.acq_hs}</td>
+                    <td class="p-3 text-center text-teal-400 font-medium font-mono">${s.acq_tablet}</td>
+                    <td class="p-3 text-center text-emerald-400 font-medium font-mono">${s.huseg}</td>
+                    <td class="p-3 text-center text-purple-400 font-medium font-mono">${s.fix}</td>
+                    <td class="p-3 text-center text-amber-400 font-bold font-mono">${s.soho}</td>
+                    <td class="p-3 text-right text-sky-300 font-medium font-mono">${s.acq_pont.toFixed(1)}</td>
+                    <td class="p-3 text-right text-teal-300 font-medium font-mono">${s.ret_pont.toFixed(1)}</td>
+                    <td class="p-3 text-right font-bold text-amber-400 font-mono">${s.pont.toFixed(2)}</td>
                 </tr>
             `).join('');
         }
