@@ -8,30 +8,20 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen p-3 md:p-6">
 
     <!-- 1. JELSZÓVÉDŐ KÉPERNYŐ -->
     <div id="loginScreen" class="fixed inset-0 bg-slate-950 flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl max-w-sm w-full text-center shadow-2xl space-y-5">
-            <div class="w-16 h-16 bg-indigo-950/60 border border-indigo-500/40 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-inner">
-                🔒
-            </div>
+            <div class="w-16 h-16 bg-indigo-950/60 border border-indigo-500/40 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-inner">🔒</div>
             <div>
                 <h2 class="text-xl font-bold text-white">Belépés a Dashboardra</h2>
                 <p class="text-xs text-slate-400 mt-1">Add meg a jelszót a statisztikák eléréséhez</p>
             </div>
-            
             <form onsubmit="handleLogin(event)" class="space-y-4">
-                <div>
-                    <input type="password" id="passwordInput" placeholder="Jelszó..." autofocus
-                           class="w-full bg-slate-800 text-center text-white text-base tracking-widest border border-slate-700 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 transition">
-                </div>
-                <button type="submit" 
-                        class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm py-2.5 rounded-xl transition shadow-lg shadow-indigo-600/30">
-                    Belépés
-                </button>
+                <div><input type="password" id="passwordInput" placeholder="Jelszó..." autofocus class="w-full bg-slate-800 text-center text-white text-base tracking-widest border border-slate-700 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 transition"></div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm py-2.5 rounded-xl transition shadow-lg shadow-indigo-600/30">Belépés</button>
                 <p id="loginError" class="text-rose-400 text-xs hidden font-medium">Hibás jelszó! Próbáld újra.</p>
             </form>
         </div>
@@ -42,120 +32,83 @@
         
         <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-slate-800/90 p-5 rounded-xl border border-slate-700 shadow-lg">
             <div>
-                <h1 class="text-2xl font-bold text-white flex items-center gap-2">
-                    <span>📊</span> Bolti & Értékesítői Dashboard
-                </h1>
+                <h1 class="text-2xl font-bold text-white flex items-center gap-2"><span>📊</span> Bolti & Értékesítői Dashboard</h1>
                 <p class="text-xs text-slate-400 mt-1">CPR tranzakció-feldolgozó, tartozék forgalom és súlyozott target követő</p>
             </div>
-            
             <div class="flex flex-wrap items-center gap-2">
                 <nav class="flex bg-slate-900/70 p-1 rounded-xl border border-slate-700/60">
-                    <button id="tabBtnDashboard" onclick="switchTab('dashboard')" 
-                            class="px-4 py-2 rounded-lg text-xs font-semibold transition bg-indigo-600 text-white shadow">
-                        📈 Áttekintés & Targetek
-                    </button>
-                    <button id="tabBtnUpload" onclick="switchTab('upload')" 
-                            class="px-4 py-2 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white">
-                        📤 Adatfeltöltés & Target Admin
-                    </button>
+                    <button id="tabBtnDashboard" onclick="switchTab('dashboard')" class="px-4 py-2 rounded-lg text-xs font-semibold transition bg-indigo-600 text-white shadow">📈 Áttekintés & Targetek</button>
+                    <button id="tabBtnUpload" onclick="switchTab('upload')" class="px-4 py-2 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white">📤 Adatfeltöltés & Target Admin</button>
                 </nav>
-
-                <button onclick="logout()" class="bg-slate-700 hover:bg-rose-950/40 hover:text-rose-400 border border-slate-600 text-slate-300 text-xs font-semibold px-3 py-2 rounded-lg transition ml-2">
-                    🚪 Kilépés
-                </button>
+                <button onclick="logout()" class="bg-slate-700 hover:bg-rose-950/40 hover:text-rose-400 border border-slate-600 text-slate-300 text-xs font-semibold px-3 py-2 rounded-lg transition ml-2">🚪 Kilépés</button>
             </div>
         </header>
 
         <!-- 1. FÜL: ÁTTEKINTÉS ÉS TARGETEK -->
         <main id="tabDashboard" class="space-y-6">
-
             <!-- FŐ TARGET MODUL -->
             <section class="bg-slate-800/95 p-5 md:p-6 rounded-2xl border border-slate-700 shadow-xl space-y-5">
-                
-                <!-- Szűrősáv -->
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700/80 pb-4">
                     <div class="flex items-center gap-3">
                         <span class="text-2xl">🎯</span>
                         <div>
                             <h2 class="text-lg font-bold text-white">Target & Teljesítmény Központ</h2>
-                            <p class="text-xs text-slate-400" id="monthSubtitle">Havi elvárások, napi eloszlás és valós eredmények</p>
-                        </div>
-                    </div>
-
-                    <div class="flex flex-wrap items-center gap-3">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs text-slate-400 font-semibold uppercase">Hónap:</span>
-                            <select id="targetViewMonth" onchange="updateTargetView()" class="bg-slate-900 text-white text-xs border border-slate-700 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-indigo-500 font-medium">
-                            </select>
-                        </div>
-
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs text-slate-400 font-semibold uppercase">Üzlet:</span>
-                            <select id="targetViewStore" onchange="updateTargetView()" class="bg-slate-900 text-indigo-300 font-bold text-xs border border-indigo-500/40 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
-                                <option value="ALL">Összes Üzlet (Hálózat)</option>
-                            </select>
-                        </div>
-
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs text-slate-400 font-semibold uppercase">Diagram Metrika:</span>
-                            <select id="chartMetricSelect" onchange="updateTargetView()" class="bg-slate-900 text-amber-400 font-bold text-xs border border-slate-700 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-amber-500">
-                                <option value="pont">Összpont</option>
-                                <option value="acq_pont">ACQ Pont</option>
-                                <option value="ret_pont">Reti Pont</option>
-                                <option value="acq_db">ACQ db</option>
-                                <option value="huseg_db">Hűség db</option>
-                                <option value="fix_db">FIX db</option>
-                                <option value="soho_db">SOHO db</option>
-                                <option value="tartozek_ft">Tartozék Ft</option>
-                            </select>
+                            <p class="text-xs text-slate-400">A kártyák mostantól teljesen függetlenül, a saját szűrőikkel vezérelhetők.</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- 2x2 TÖKÉLETESEN EGYENLŐ RÁCS (GRID) ELRENDEZÉS -->
+                <!-- 2x2 TÖKÉLETESEN EGYENLŐ RÁCS (GRID) ELRENDEZÉS FÜGGETLEN SZŰRŐKKEL -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
                     
                     <!-- 1. Havi Target (BAL FELSŐ) -->
                     <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col justify-between shadow-sm">
                         <div class="flex-1 flex flex-col space-y-3">
-                            <div class="flex items-center justify-between border-b border-slate-700/60 pb-2.5">
+                            <div class="flex flex-col xl:flex-row xl:items-center justify-between border-b border-slate-700/60 pb-2.5 gap-3">
                                 <div class="flex items-center gap-2">
                                     <span class="text-indigo-400 font-bold text-base">📊</span>
-                                    <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider">Havi Target és Teljesítés</h3>
+                                    <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider">Havi Összegzés</h3>
                                 </div>
-                                <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-500/30">Havi Összegzés</span>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <select id="box1Month" onchange="updateBox1()" class="bg-slate-800 text-slate-300 text-[11px] font-medium border border-slate-600 rounded px-2 py-1 outline-none focus:border-indigo-400"></select>
+                                    <select id="box1Store" onchange="updateBox1()" class="bg-slate-800 text-indigo-300 font-bold text-[11px] border border-indigo-500/50 rounded px-2 py-1 outline-none focus:border-indigo-400"><option value="ALL">Összes Üzlet</option></select>
+                                </div>
                             </div>
                             <div class="overflow-x-auto flex-1">
                                 <table class="w-full text-left border-collapse text-xs">
                                     <thead>
                                         <tr class="text-slate-400 border-b border-slate-700/80 text-[11px]">
                                             <th class="py-2 px-2.5">Kategória</th>
-                                            <th class="py-2 px-2 text-right text-amber-300 font-semibold">Havi Target</th>
-                                            <th class="py-2 px-2 text-right text-cyan-300 font-semibold">Havi Tény</th>
+                                            <th class="py-2 px-2 text-right text-amber-300 font-semibold">Target</th>
+                                            <th class="py-2 px-2 text-right text-cyan-300 font-semibold">Tény</th>
                                             <th class="py-2 px-2 text-right">Teljesülés</th>
-                                            <th class="py-2 px-2.5 text-right">Hó Végéig Hátra</th>
+                                            <th class="py-2 px-2.5 text-right">Hátra</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="monthlySummaryTableBody" class="divide-y divide-slate-800/80 font-medium">
-                                    </tbody>
+                                    <tbody id="box1TableBody" class="divide-y divide-slate-800/80 font-medium"></tbody>
                                 </table>
                             </div>
                         </div>
                         <div class="pt-2 border-t border-slate-800 text-[11px] text-slate-400 flex justify-between items-center mt-3">
-                            <span id="targetDayInfoText">31 napos hónap</span>
-                            <span id="targetDayRemainingBadge" class="text-indigo-300 font-medium"></span>
+                            <span id="box1Info"></span>
+                            <span id="box1Remaining" class="text-indigo-300 font-medium"></span>
                         </div>
                     </div>
 
                     <!-- 2. Vonaldiagram (JOBB FELSŐ) -->
                     <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">
-                                Napi Görbe — <span class="text-amber-400" id="chartMetricLabel">Összpont</span>
-                            </h3>
-                            <div class="flex items-center gap-4 text-[11px]">
-                                <div class="flex items-center gap-1.5"><span class="inline-block w-3 h-0.5 bg-amber-400"></span><span class="text-slate-300">Target</span></div>
-                                <div class="flex items-center gap-1.5"><span class="inline-block w-3 h-0.5 bg-cyan-400"></span><span class="text-white font-semibold">Tény</span></div>
+                        <div class="flex flex-col xl:flex-row xl:items-center justify-between border-b border-slate-700/60 pb-2.5 mb-2 gap-3">
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Napi Görbe</h3>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <select id="box2Month" onchange="updateBox2()" class="bg-slate-800 text-slate-300 text-[11px] font-medium border border-slate-600 rounded px-2 py-1 outline-none"></select>
+                                <select id="box2Store" onchange="updateBox2()" class="bg-slate-800 text-indigo-300 font-bold text-[11px] border border-indigo-500/50 rounded px-2 py-1 outline-none"><option value="ALL">Összes Üzlet</option></select>
+                                <select id="box2Metric" onchange="updateBox2()" class="bg-slate-800 text-amber-400 font-bold text-[11px] border border-amber-500/50 rounded px-2 py-1 outline-none">
+                                    <option value="pont">Összpont</option><option value="acq_pont">ACQ Pont</option><option value="ret_pont">Reti Pont</option>
+                                    <option value="acq_db">ACQ db</option><option value="huseg_db">Hűség db</option><option value="fix_db">FIX db</option>
+                                    <option value="soho_db">SOHO db</option><option value="tartozek_ft">Tartozék</option>
+                                </select>
                             </div>
                         </div>
                         <div class="relative w-full flex-1 min-h-[250px]">
@@ -166,12 +119,15 @@
                     <!-- 3. Mai Targetek (BAL ALSÓ) -->
                     <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col justify-between shadow-sm">
                         <div class="flex-1 flex flex-col space-y-3">
-                            <div class="flex items-center justify-between border-b border-slate-700/60 pb-2.5">
+                            <div class="flex flex-col xl:flex-row xl:items-center justify-between border-b border-slate-700/60 pb-2.5 gap-3">
                                 <div class="flex items-center gap-2">
                                     <span class="text-amber-400 font-bold text-base">📌</span>
-                                    <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider" id="todayTargetBoxTitle">Adott Napi Targetek (MA)</h3>
+                                    <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider" id="box3Title">Mai Célok</h3>
                                 </div>
-                                <span id="todayDateBadge" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-950/70 text-amber-300 border border-amber-500/30">Ma</span>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <select id="box3Month" onchange="updateBox3()" class="bg-slate-800 text-slate-300 text-[11px] font-medium border border-slate-600 rounded px-2 py-1 outline-none"></select>
+                                    <select id="box3Store" onchange="updateBox3()" class="bg-slate-800 text-indigo-300 font-bold text-[11px] border border-indigo-500/50 rounded px-2 py-1 outline-none"><option value="ALL">Összes Üzlet</option></select>
+                                </div>
                             </div>
                             <div class="overflow-x-auto flex-1">
                                 <table class="w-full text-left border-collapse text-xs">
@@ -181,28 +137,35 @@
                                             <th class="py-2 px-2 text-right text-amber-300 font-semibold">Mai Target</th>
                                             <th class="py-2 px-2 text-right text-cyan-300 font-semibold">Mai Tény</th>
                                             <th class="py-2 px-2 text-right">Mai %</th>
-                                            <th class="py-2 px-2.5 text-right">Mai Eltérés</th>
+                                            <th class="py-2 px-2.5 text-right">Eltérés</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="todayTargetTableBody" class="divide-y divide-slate-800/80 font-medium">
-                                    </tbody>
+                                    <tbody id="box3TableBody" class="divide-y divide-slate-800/80 font-medium"></tbody>
                                 </table>
                             </div>
                         </div>
                         <div class="pt-2 border-t border-slate-800 text-[11px] text-slate-400 flex justify-between items-center mt-3">
-                            <span>Mai állapot</span>
-                            <span id="storeStatusBadge" class="text-emerald-400 font-semibold">NYITVA</span>
+                            <span>Mai állapot:</span>
+                            <span id="box3StatusBadge" class="font-semibold"></span>
                         </div>
                     </div>
 
                     <!-- 4. Napi Bontás (JOBB ALSÓ) -->
                     <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
-                        <div class="flex items-center justify-between border-b border-slate-700/60 pb-2 mb-2">
+                        <div class="flex flex-col xl:flex-row xl:items-center justify-between border-b border-slate-700/60 pb-2.5 mb-2 gap-3">
                             <div class="flex items-center gap-2">
                                 <span class="text-indigo-400 font-bold text-sm">📅</span>
-                                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Napi Bontás (1-től 31-ig)</h3>
+                                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Napi Bontás</h3>
                             </div>
-                            <span class="text-[11px] text-slate-400">Részletes levezetés</span>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <select id="box4Month" onchange="updateBox4()" class="bg-slate-800 text-slate-300 text-[11px] font-medium border border-slate-600 rounded px-2 py-1 outline-none"></select>
+                                <select id="box4Store" onchange="updateBox4()" class="bg-slate-800 text-indigo-300 font-bold text-[11px] border border-indigo-500/50 rounded px-2 py-1 outline-none"><option value="ALL">Összes Üzlet</option></select>
+                                <select id="box4Metric" onchange="updateBox4()" class="bg-slate-800 text-amber-400 font-bold text-[11px] border border-amber-500/50 rounded px-2 py-1 outline-none">
+                                    <option value="pont">Összpont</option><option value="acq_pont">ACQ Pont</option><option value="ret_pont">Reti Pont</option>
+                                    <option value="acq_db">ACQ db</option><option value="huseg_db">Hűség db</option><option value="fix_db">FIX db</option>
+                                    <option value="soho_db">SOHO db</option><option value="tartozek_ft">Tartozék</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="overflow-y-auto flex-1 pr-1 min-h-[250px] relative">
                             <div class="absolute inset-0">
@@ -216,15 +179,13 @@
                                             <th class="py-2 px-2.5 text-right">Eltérés</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="targetMetricTableBody" class="divide-y divide-slate-800/80 font-medium">
-                                    </tbody>
+                                    <tbody id="box4TableBody" class="divide-y divide-slate-800/80 font-medium"></tbody>
                                 </table>
                             </div>
                         </div>
                     </div>
-
                 </div>
-</section>
+            </section>
 
             <!-- ÉRTÉKESÍTŐI RÉSZLETES TÁBLÁZAT -->
             <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-4">
@@ -233,224 +194,65 @@
                         <h2 class="text-lg font-semibold text-white">Értékesítési Eredmények</h2>
                         <p class="text-xs text-slate-400 mt-0.5">Kattints a fejléc oszlopaira a növekvő / csökkenő sorrendbe rendezéshez</p>
                     </div>
-                    
                     <div class="flex flex-wrap items-center gap-3">
-                        <select id="filterMonth" onchange="onFilterChange()" class="bg-slate-700 text-white text-sm border border-slate-600 rounded-lg px-3 py-2">
-                        </select>
-
-                        <select id="filterStore" onchange="onFilterChange()" class="bg-slate-700 text-white text-sm border border-slate-600 rounded-lg px-3 py-2">
-                            <option value="ALL">Összes Üzlet</option>
-                        </select>
-
-                        <select id="filterSeller" onchange="renderData()" class="bg-slate-700 text-white text-sm border border-slate-600 rounded-lg px-3 py-2">
-                            <option value="ALL">Összes Értékesítő</option>
-                        </select>
-
-                        <button onclick="loadAllData()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm px-4 py-2 rounded-lg transition flex items-center gap-2">
-                            <span>🔄</span> Frissítés
-                        </button>
+                        <select id="filterMonth" onchange="renderData()" class="bg-slate-700 text-white text-sm border border-slate-600 rounded-lg px-3 py-2"></select>
+                        <select id="filterStore" onchange="renderData()" class="bg-slate-700 text-white text-sm border border-slate-600 rounded-lg px-3 py-2"><option value="ALL">Összes Üzlet</option></select>
+                        <select id="filterSeller" onchange="renderData()" class="bg-slate-700 text-white text-sm border border-slate-600 rounded-lg px-3 py-2"><option value="ALL">Összes Értékesítő</option></select>
+                        <button onclick="loadAllData()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm px-4 py-2 rounded-lg transition flex items-center gap-2"><span>🔄</span> Frissítés</button>
                     </div>
                 </div>
 
-                <!-- 10 db KPI KÁRTYA (Tartozék Ft-vel bővítve) -->
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-3">
-                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
-                        <span class="text-[11px] text-slate-400 uppercase font-semibold">Tranzakció</span>
-                        <p id="kpiCount" class="text-xl font-bold text-white mt-1">0 db</p>
-                    </div>
-                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
-                        <span class="text-[11px] text-slate-400 uppercase font-semibold">ACQ db</span>
-                        <p id="kpiACQ" class="text-xl font-bold text-indigo-400 mt-1">0 db</p>
-                    </div>
-                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
-                        <span class="text-[11px] text-slate-400 uppercase font-semibold">ACQ HS</span>
-                        <p id="kpiACQHS" class="text-xl font-bold text-sky-400 mt-1">0 db</p>
-                    </div>
-                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
-                        <span class="text-[11px] text-slate-400 uppercase font-semibold">ACQ Tab</span>
-                        <p id="kpiACQTab" class="text-xl font-bold text-teal-400 mt-1">0 db</p>
-                    </div>
-                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
-                        <span class="text-[11px] text-slate-400 uppercase font-semibold">Hűség db</span>
-                        <p id="kpiHuseg" class="text-xl font-bold text-emerald-400 mt-1">0 db</p>
-                    </div>
-                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
-                        <span class="text-[11px] text-slate-400 uppercase font-semibold">FIX db</span>
-                        <p id="kpiFix" class="text-xl font-bold text-purple-400 mt-1">0 db</p>
-                    </div>
-                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
-                        <span class="text-[11px] text-slate-400 uppercase font-semibold">SOHO db</span>
-                        <p id="kpiSoho" class="text-xl font-bold text-amber-400 mt-1">0 db</p>
-                    </div>
-                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
-                        <span class="text-[11px] text-slate-400 uppercase font-semibold">ACQ Pont</span>
-                        <p id="kpiACQPont" class="text-xl font-bold text-sky-400 mt-1">0</p>
-                    </div>
-                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
-                        <span class="text-[11px] text-slate-400 uppercase font-semibold">RET Pont</span>
-                        <p id="kpiRETPont" class="text-xl font-bold text-teal-400 mt-1">0</p>
-                    </div>
-                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600">
-                        <span class="text-[11px] text-pink-400 uppercase font-semibold">Tartozék</span>
-                        <p id="kpiTartozek" class="text-lg font-bold text-pink-400 mt-1">0 Ft</p>
-                    </div>
+                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600"><span class="text-[11px] text-slate-400 uppercase font-semibold">Tranzakció</span><p id="kpiCount" class="text-xl font-bold text-white mt-1">0 db</p></div>
+                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600"><span class="text-[11px] text-slate-400 uppercase font-semibold">ACQ db</span><p id="kpiACQ" class="text-xl font-bold text-indigo-400 mt-1">0 db</p></div>
+                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600"><span class="text-[11px] text-slate-400 uppercase font-semibold">ACQ HS</span><p id="kpiACQHS" class="text-xl font-bold text-sky-400 mt-1">0 db</p></div>
+                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600"><span class="text-[11px] text-slate-400 uppercase font-semibold">ACQ Tab</span><p id="kpiACQTab" class="text-xl font-bold text-teal-400 mt-1">0 db</p></div>
+                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600"><span class="text-[11px] text-slate-400 uppercase font-semibold">Hűség db</span><p id="kpiHuseg" class="text-xl font-bold text-emerald-400 mt-1">0 db</p></div>
+                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600"><span class="text-[11px] text-slate-400 uppercase font-semibold">FIX db</span><p id="kpiFix" class="text-xl font-bold text-purple-400 mt-1">0 db</p></div>
+                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600"><span class="text-[11px] text-slate-400 uppercase font-semibold">SOHO db</span><p id="kpiSoho" class="text-xl font-bold text-amber-400 mt-1">0 db</p></div>
+                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600"><span class="text-[11px] text-slate-400 uppercase font-semibold">ACQ Pont</span><p id="kpiACQPont" class="text-xl font-bold text-sky-400 mt-1">0</p></div>
+                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600"><span class="text-[11px] text-slate-400 uppercase font-semibold">RET Pont</span><p id="kpiRETPont" class="text-xl font-bold text-teal-400 mt-1">0</p></div>
+                    <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600"><span class="text-[11px] text-pink-400 uppercase font-semibold">Tartozék</span><p id="kpiTartozek" class="text-lg font-bold text-pink-400 mt-1">0 Ft</p></div>
                 </div>
 
-                <!-- TÁBLÁZAT KATTINTHATÓ, RENDEZHETŐ OSZLOPFEJLÉCEKKEL -->
                 <div class="overflow-x-auto mt-4">
                     <table class="w-full text-left border-collapse text-xs md:text-sm select-none">
                         <thead>
                             <tr class="bg-slate-700/60 text-slate-300 border-b border-slate-600 whitespace-nowrap text-xs">
-                                <th onclick="sortTableBy('honap')" class="p-3 cursor-pointer hover:bg-slate-700 hover:text-white transition group">
-                                    <div class="flex items-center gap-1.5">
-                                        <span>Hónap</span>
-                                        <span id="sort_icon_honap" class="text-slate-500 text-[10px] group-hover:text-indigo-400">↕</span>
-                                    </div>
-                                </th>
-                                <th onclick="sortTableBy('bolt')" class="p-3 cursor-pointer hover:bg-slate-700 hover:text-white transition group">
-                                    <div class="flex items-center gap-1.5">
-                                        <span>Bolt</span>
-                                        <span id="sort_icon_bolt" class="text-slate-500 text-[10px] group-hover:text-indigo-400">↕</span>
-                                    </div>
-                                </th>
-                                <th onclick="sortTableBy('ertekesito')" class="p-3 cursor-pointer hover:bg-slate-700 hover:text-white transition group">
-                                    <div class="flex items-center gap-1.5">
-                                        <span>Értékesítő</span>
-                                        <span id="sort_icon_ertekesito" class="text-slate-500 text-[10px] group-hover:text-indigo-400">↕</span>
-                                    </div>
-                                </th>
-                                <th onclick="sortTableBy('count')" class="p-3 text-center cursor-pointer hover:bg-slate-700 hover:text-white transition group">
-                                    <div class="flex items-center justify-center gap-1">
-                                        <span>Tranz.</span>
-                                        <span id="sort_icon_count" class="text-slate-500 text-[10px] group-hover:text-indigo-400">↕</span>
-                                    </div>
-                                </th>
-                                <th onclick="sortTableBy('acq')" class="p-3 text-center cursor-pointer hover:bg-slate-700 hover:text-white transition group">
-                                    <div class="flex items-center justify-center gap-1">
-                                        <span class="text-indigo-300 font-bold">ACQ</span>
-                                        <span id="sort_icon_acq" class="text-slate-500 text-[10px] group-hover:text-indigo-400">↕</span>
-                                    </div>
-                                </th>
-                                <th onclick="sortTableBy('acq_hs')" class="p-3 text-center cursor-pointer hover:bg-slate-700 hover:text-white transition group">
-                                    <div class="flex items-center justify-center gap-1">
-                                        <span class="text-sky-300 font-bold">ACQ HS</span>
-                                        <span id="sort_icon_acq_hs" class="text-slate-500 text-[10px] group-hover:text-indigo-400">↕</span>
-                                    </div>
-                                </th>
-                                <th onclick="sortTableBy('acq_tablet')" class="p-3 text-center cursor-pointer hover:bg-slate-700 hover:text-white transition group">
-                                    <div class="flex items-center justify-center gap-1">
-                                        <span class="text-teal-300 font-bold">ACQ Tab</span>
-                                        <span id="sort_icon_acq_tablet" class="text-slate-500 text-[10px] group-hover:text-indigo-400">↕</span>
-                                    </div>
-                                </th>
-                                <th onclick="sortTableBy('huseg')" class="p-3 text-center cursor-pointer hover:bg-slate-700 hover:text-white transition group">
-                                    <div class="flex items-center justify-center gap-1">
-                                        <span class="text-emerald-300 font-bold">Hűség</span>
-                                        <span id="sort_icon_huseg" class="text-slate-500 text-[10px] group-hover:text-indigo-400">↕</span>
-                                    </div>
-                                </th>
-                                <th onclick="sortTableBy('fix')" class="p-3 text-center cursor-pointer hover:bg-slate-700 hover:text-white transition group">
-                                    <div class="flex items-center justify-center gap-1">
-                                        <span class="text-purple-300 font-bold">FIX</span>
-                                        <span id="sort_icon_fix" class="text-slate-500 text-[10px] group-hover:text-indigo-400">↕</span>
-                                    </div>
-                                </th>
-                                <th onclick="sortTableBy('soho')" class="p-3 text-center cursor-pointer hover:bg-slate-700 hover:text-white transition group">
-                                    <div class="flex items-center justify-center gap-1">
-                                        <span class="text-amber-400 font-bold">SOHO</span>
-                                        <span id="sort_icon_soho" class="text-slate-500 text-[10px] group-hover:text-amber-400">↕</span>
-                                    </div>
-                                </th>
-                                <th onclick="sortTableBy('acq_pont')" class="p-3 text-right cursor-pointer hover:bg-slate-700 hover:text-white transition group">
-                                    <div class="flex items-center justify-end gap-1">
-                                        <span class="text-sky-300 font-bold">ACQ Pont</span>
-                                        <span id="sort_icon_acq_pont" class="text-slate-500 text-[10px] group-hover:text-indigo-400">↕</span>
-                                    </div>
-                                </th>
-                                <th onclick="sortTableBy('ret_pont')" class="p-3 text-right cursor-pointer hover:bg-slate-700 hover:text-white transition group">
-                                    <div class="flex items-center justify-end gap-1">
-                                        <span class="text-teal-300 font-bold">RET Pont</span>
-                                        <span id="sort_icon_ret_pont" class="text-slate-500 text-[10px] group-hover:text-indigo-400">↕</span>
-                                    </div>
-                                </th>
-                                <th onclick="sortTableBy('tartozek')" class="p-3 text-right cursor-pointer hover:bg-slate-700 hover:text-white transition group">
-                                    <div class="flex items-center justify-end gap-1">
-                                        <span class="text-pink-400 font-bold">Tartozék</span>
-                                        <span id="sort_icon_tartozek" class="text-slate-500 text-[10px] group-hover:text-pink-400">↕</span>
-                                    </div>
-                                </th>
-                                <th onclick="sortTableBy('pont')" class="p-3 text-right cursor-pointer hover:bg-slate-700 hover:text-white transition group">
-                                    <div class="flex items-center justify-end gap-1">
-                                        <span class="text-amber-400 font-bold">Összpont</span>
-                                        <span id="sort_icon_pont" class="text-slate-500 text-[10px] group-hover:text-amber-400">↕</span>
-                                    </div>
-                                </th>
+                                <th onclick="sortTableBy('honap')" class="p-3 cursor-pointer hover:bg-slate-700 hover:text-white transition group"><div class="flex items-center gap-1.5"><span>Hónap</span><span id="sort_icon_honap" class="text-slate-500 text-[10px]">↕</span></div></th>
+                                <th onclick="sortTableBy('bolt')" class="p-3 cursor-pointer hover:bg-slate-700 hover:text-white transition group"><div class="flex items-center gap-1.5"><span>Bolt</span><span id="sort_icon_bolt" class="text-slate-500 text-[10px]">↕</span></div></th>
+                                <th onclick="sortTableBy('ertekesito')" class="p-3 cursor-pointer hover:bg-slate-700 hover:text-white transition group"><div class="flex items-center gap-1.5"><span>Értékesítő</span><span id="sort_icon_ertekesito" class="text-slate-500 text-[10px]">↕</span></div></th>
+                                <th onclick="sortTableBy('count')" class="p-3 text-center cursor-pointer hover:bg-slate-700 hover:text-white transition group"><div class="flex items-center justify-center gap-1"><span>Tranz.</span><span id="sort_icon_count" class="text-slate-500 text-[10px]">↕</span></div></th>
+                                <th onclick="sortTableBy('acq')" class="p-3 text-center cursor-pointer hover:bg-slate-700 hover:text-white transition group"><div class="flex items-center justify-center gap-1"><span class="text-indigo-300 font-bold">ACQ</span><span id="sort_icon_acq" class="text-slate-500 text-[10px]">↕</span></div></th>
+                                <th onclick="sortTableBy('acq_hs')" class="p-3 text-center cursor-pointer hover:bg-slate-700 hover:text-white transition group"><div class="flex items-center justify-center gap-1"><span class="text-sky-300 font-bold">ACQ HS</span><span id="sort_icon_acq_hs" class="text-slate-500 text-[10px]">↕</span></div></th>
+                                <th onclick="sortTableBy('acq_tablet')" class="p-3 text-center cursor-pointer hover:bg-slate-700 hover:text-white transition group"><div class="flex items-center justify-center gap-1"><span class="text-teal-300 font-bold">ACQ Tab</span><span id="sort_icon_acq_tablet" class="text-slate-500 text-[10px]">↕</span></div></th>
+                                <th onclick="sortTableBy('huseg')" class="p-3 text-center cursor-pointer hover:bg-slate-700 hover:text-white transition group"><div class="flex items-center justify-center gap-1"><span class="text-emerald-300 font-bold">Hűség</span><span id="sort_icon_huseg" class="text-slate-500 text-[10px]">↕</span></div></th>
+                                <th onclick="sortTableBy('fix')" class="p-3 text-center cursor-pointer hover:bg-slate-700 hover:text-white transition group"><div class="flex items-center justify-center gap-1"><span class="text-purple-300 font-bold">FIX</span><span id="sort_icon_fix" class="text-slate-500 text-[10px]">↕</span></div></th>
+                                <th onclick="sortTableBy('soho')" class="p-3 text-center cursor-pointer hover:bg-slate-700 hover:text-white transition group"><div class="flex items-center justify-center gap-1"><span class="text-amber-400 font-bold">SOHO</span><span id="sort_icon_soho" class="text-slate-500 text-[10px]">↕</span></div></th>
+                                <th onclick="sortTableBy('acq_pont')" class="p-3 text-right cursor-pointer hover:bg-slate-700 hover:text-white transition group"><div class="flex items-center justify-end gap-1"><span class="text-sky-300 font-bold">ACQ Pont</span><span id="sort_icon_acq_pont" class="text-slate-500 text-[10px]">↕</span></div></th>
+                                <th onclick="sortTableBy('ret_pont')" class="p-3 text-right cursor-pointer hover:bg-slate-700 hover:text-white transition group"><div class="flex items-center justify-end gap-1"><span class="text-teal-300 font-bold">RET Pont</span><span id="sort_icon_ret_pont" class="text-slate-500 text-[10px]">↕</span></div></th>
+                                <th onclick="sortTableBy('tartozek')" class="p-3 text-right cursor-pointer hover:bg-slate-700 hover:text-white transition group"><div class="flex items-center justify-end gap-1"><span class="text-pink-400 font-bold">Tartozék</span><span id="sort_icon_tartozek" class="text-slate-500 text-[10px]">↕</span></div></th>
+                                <th onclick="sortTableBy('pont')" class="p-3 text-right cursor-pointer hover:bg-slate-700 hover:text-white transition group"><div class="flex items-center justify-end gap-1"><span class="text-amber-400 font-bold">Összpont</span><span id="sort_icon_pont" class="text-slate-500 text-[10px]">↕</span></div></th>
                             </tr>
                         </thead>
                         <tbody id="tableBody" class="divide-y divide-slate-700 text-slate-200">
-                            <tr>
-                                <td colspan="14" class="p-4 text-center text-slate-400">Nincs adat betöltve.</td>
-                            </tr>
+                            <tr><td colspan="14" class="p-4 text-center text-slate-400">Nincs adat betöltve.</td></tr>
                         </tbody>
                     </table>
                 </div>
             </section>
-        
-            <!-- 5. CLOUD ADATOK TÖRLÉSE (VISSZAVONÁS) -->
-            <section class="bg-slate-800 p-6 rounded-xl border border-rose-500/30 shadow-lg space-y-5">
-                <div class="border-b border-slate-700 pb-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
-                    <div>
-                        <h2 class="text-lg font-semibold text-rose-400 flex items-center gap-2">
-                            <span>🗑️</span> Hibás Feltöltés Törlése a Felhőből
-                        </h2>
-                        <p class="text-xs text-slate-400 mt-1">Ha véletlenül rossz fájlt húztál be, itt manuálisan is törölheted a hónap adatait a Supabase-ből.</p>
-                    </div>
-                </div>
-
-                <div class="flex flex-col md:flex-row md:items-center gap-4 bg-slate-900/40 p-4 rounded-lg border border-slate-700/50">
-                    <div class="flex items-center gap-3">
-                        <span class="text-xs font-semibold text-slate-300">Törlendő Hónap:</span>
-                        <select id="deleteDataMonth" class="bg-slate-800 text-white text-xs border border-slate-700 rounded-lg px-3 py-2 outline-none">
-                            <option value="2026 október">2026 október</option>
-                        </select>
-                    </div>
-                    
-                    <div class="flex items-center gap-3">
-                        <span class="text-xs font-semibold text-slate-300">Mit töröljünk?</span>
-                        <select id="deleteDataType" class="bg-slate-800 text-white text-xs border border-slate-700 rounded-lg px-3 py-2 outline-none">
-                            <option value="cpr">CPR Tranzakciók (Minden bolt)</option>
-                            <option value="tartozek">Tartozék Eladások (Minden bolt)</option>
-                            <option value="betero">Betérő Ügyfelek / OCR (Minden bolt)</option>
-                            <option value="target">Bolti Havi Targetek (Minden bolt)</option>
-                            <option value="all" class="text-rose-400 font-bold">Minden fenti adat törlése a hónapra!</option>
-                        </select>
-                    </div>
-
-                    <button onclick="executeCloudDelete()" class="bg-rose-900/80 hover:bg-rose-700 text-rose-200 border border-rose-500/50 font-semibold text-xs px-5 py-2 rounded-lg transition shadow mt-3 md:mt-0 md:ml-auto">
-                        Törlés Végrehajtása
-                    </button>
-                </div>
-            </section>
-
         </main>
 
         <!-- 2. FÜL: KÜLÖN FELTÖLTÉS & TARGET ADMIN -->
         <main id="tabUpload" class="hidden space-y-6">
             
-            <!-- CPR Tranzakció Feltöltés -->
+            <!-- 1. CPR Tranzakció Feltöltés -->
             <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-4">
                 <div class="border-b border-slate-700 pb-3">
-                    <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-                        <span>📤</span> CPR Havi Export Feltöltése
-                    </h2>
+                    <h2 class="text-lg font-semibold text-white flex items-center gap-2"><span>📤</span> CPR Havi Export Feltöltése</h2>
                     <p class="text-xs text-slate-400 mt-1">Húzd be a havi tranzakciós fájlt (akár többet is egyszerre).</p>
                 </div>
-
-                <div id="dropZone" onclick="document.getElementById('fileInput').click()" 
-                     ondragover="event.preventDefault(); this.classList.add('border-indigo-400', 'bg-indigo-950/60');"
-                     ondragleave="this.classList.remove('border-indigo-400', 'bg-indigo-950/60');"
-                     ondrop="event.preventDefault(); this.classList.remove('border-indigo-400', 'bg-indigo-950/60'); handleDropFiles(event);"
-                     class="border-2 border-dashed border-indigo-500/50 hover:border-indigo-400 bg-indigo-950/20 hover:bg-indigo-950/40 rounded-xl p-8 text-center cursor-pointer transition">
+                <div id="dropZone" onclick="document.getElementById('fileInput').click()" ondragover="event.preventDefault(); this.classList.add('border-indigo-400', 'bg-indigo-950/60');" ondragleave="this.classList.remove('border-indigo-400', 'bg-indigo-950/60');" ondrop="event.preventDefault(); this.classList.remove('border-indigo-400', 'bg-indigo-950/60'); handleDropFiles(event);" class="border-2 border-dashed border-indigo-500/50 hover:border-indigo-400 bg-indigo-950/20 hover:bg-indigo-950/40 rounded-xl p-8 text-center cursor-pointer transition">
                     <div class="text-4xl mb-3">📁</div>
                     <span id="uploadLabel" class="text-sm text-slate-300 font-medium">Kattints ide vagy húzd ide a CPR Excel fájlokat...</span>
                     <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" multiple class="hidden" onchange="handleFileSelect(event)">
@@ -458,20 +260,13 @@
                 <div id="uploadStatus" class="text-sm font-medium"></div>
             </section>
 
-            <!-- TISZTA TARTOZÉK EXCEL FELTÖLTŐ BOX -->
+            <!-- 2. TARTOZÉK EXCEL FELTÖLTŐ BOX -->
             <section class="bg-slate-800 p-6 rounded-xl border border-pink-500/30 shadow-lg space-y-4">
                 <div class="border-b border-slate-700 pb-3">
-                    <h2 class="text-lg font-semibold text-pink-400 flex items-center gap-2">
-                        <span>🛍️</span> Tartozék Eladások Feltöltése (Értékesítések Excel)
-                    </h2>
-                    <p class="text-xs text-slate-400 mt-1">Húzd be a pénztári / számlázási tartozék exportot (pl. Értékesítések810.xlsx). A rendszer automatikusan hónapokra bontja és elmenti.</p>
+                    <h2 class="text-lg font-semibold text-pink-400 flex items-center gap-2"><span>🛍️</span> Tartozék Eladások Feltöltése (Értékesítések Excel)</h2>
+                    <p class="text-xs text-slate-400 mt-1">Húzd be a pénztári / számlázási tartozék exportot (pl. Értékesítések810.xlsx).</p>
                 </div>
-
-                <div id="dropZoneAccessories" onclick="document.getElementById('accessoryFileInput').click()" 
-                     ondragover="event.preventDefault(); this.classList.add('border-pink-400', 'bg-pink-950/40');"
-                     ondragleave="this.classList.remove('border-pink-400', 'bg-pink-950/40');"
-                     ondrop="event.preventDefault(); this.classList.remove('border-pink-400', 'bg-pink-950/40'); handleAccessoryDrop(event);"
-                     class="border-2 border-dashed border-pink-500/40 hover:border-pink-400 bg-pink-950/10 hover:bg-pink-950/30 rounded-xl p-8 text-center cursor-pointer transition">
+                <div id="dropZoneAccessories" onclick="document.getElementById('accessoryFileInput').click()" ondragover="event.preventDefault(); this.classList.add('border-pink-400', 'bg-pink-950/40');" ondragleave="this.classList.remove('border-pink-400', 'bg-pink-950/40');" ondrop="event.preventDefault(); this.classList.remove('border-pink-400', 'bg-pink-950/40'); handleAccessoryDrop(event);" class="border-2 border-dashed border-pink-500/40 hover:border-pink-400 bg-pink-950/10 hover:bg-pink-950/30 rounded-xl p-8 text-center cursor-pointer transition">
                     <div class="text-4xl mb-3">💳</div>
                     <span id="accessoryUploadLabel" class="text-sm text-slate-300 font-medium">Kattints ide vagy húzd ide a Tartozék Értékesítési Excel fájlt...</span>
                     <input type="file" id="accessoryFileInput" accept=".xlsx, .xls, .csv" multiple class="hidden" onchange="handleAccessorySelect(event)">
@@ -479,21 +274,13 @@
                 <div id="accessoryUploadStatus" class="text-sm font-medium"></div>
             </section>
 
-            <!-- KÉPFELISMERŐ (OCR) BETÉRŐ ÜGYFÉL IMPORTÁLÓ -->
-                        <!-- 3. BETÉRŐ LÁTOGATÓK (FOOTFALL) EXCEL FELTÖLTŐ -->
+            <!-- 3. BETÉRŐ LÁTOGATÓK EXCEL FELTÖLTŐ (OCR HELYETT) -->
             <section class="bg-slate-800 p-6 rounded-xl border border-cyan-500/30 shadow-lg space-y-4">
                 <div class="border-b border-slate-700 pb-3">
-                    <h2 class="text-lg font-semibold text-cyan-400 flex items-center gap-2">
-                        <span>🚶‍♂️</span> Látogatói (Betérő) Excel Feltöltése
-                    </h2>
+                    <h2 class="text-lg font-semibold text-cyan-400 flex items-center gap-2"><span>🚶‍♂️</span> Látogatói (Betérő) Excel Feltöltése</h2>
                     <p class="text-xs text-slate-400 mt-1">Húzd be a boltok napi látogatószámait tartalmazó Excelt (pl. betérő.xlsx). Oszlopok: Dátum, fpk012, fpk007, fpk002.</p>
                 </div>
-
-                <div id="dropZoneFootfall" onclick="document.getElementById('footfallFileInput').click()" 
-                     ondragover="event.preventDefault(); this.classList.add('border-cyan-400', 'bg-cyan-950/40');"
-                     ondragleave="this.classList.remove('border-cyan-400', 'bg-cyan-950/40');"
-                     ondrop="event.preventDefault(); this.classList.remove('border-cyan-400', 'bg-cyan-950/40'); handleFootfallDrop(event);"
-                     class="border-2 border-dashed border-cyan-500/40 hover:border-cyan-400 bg-cyan-950/10 hover:bg-cyan-950/30 rounded-xl p-8 text-center cursor-pointer transition outline-none">
+                <div id="dropZoneFootfall" onclick="document.getElementById('footfallFileInput').click()" ondragover="event.preventDefault(); this.classList.add('border-cyan-400', 'bg-cyan-950/40');" ondragleave="this.classList.remove('border-cyan-400', 'bg-cyan-950/40');" ondrop="event.preventDefault(); this.classList.remove('border-cyan-400', 'bg-cyan-950/40'); handleFootfallDrop(event);" class="border-2 border-dashed border-cyan-500/40 hover:border-cyan-400 bg-cyan-950/10 hover:bg-cyan-950/30 rounded-xl p-8 text-center cursor-pointer transition outline-none">
                     <div class="text-4xl mb-3">📊</div>
                     <span id="footfallUploadLabel" class="text-sm text-slate-300 font-medium">Kattints ide vagy húzd ide a Látogatói (Betérő) Excel fájlt...</span>
                     <input type="file" id="footfallFileInput" accept=".xlsx, .xls, .csv" multiple class="hidden" onchange="handleFootfallSelect(event)">
@@ -501,56 +288,33 @@
                 <div id="footfallUploadStatus" class="text-sm font-medium"></div>
             </section>
 
-            <!-- Target Beállító Box -->
+            <!-- 4. Target Beállító Box -->
             <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-5">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700 pb-3">
                     <div>
-                        <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-                            <span>🎯</span> Bolti Havi Targetek Feltöltése
-                        </h2>
+                        <h2 class="text-lg font-semibold text-white flex items-center gap-2"><span>🎯</span> Bolti Havi Targetek Feltöltése</h2>
                         <p class="text-xs text-slate-400 mt-1">Tölts fel egy Target Excelt, vagy másold be a táblázatból</p>
                     </div>
-
                     <div class="flex items-center gap-2">
-                        <button onclick="document.getElementById('targetFileInput').click()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs px-4 py-2 rounded-lg transition shadow flex items-center gap-1.5">
-                            <span>📥</span> Target Excel Fájl Feltöltése
-                        </button>
+                        <button onclick="document.getElementById('targetFileInput').click()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs px-4 py-2 rounded-lg transition shadow flex items-center gap-1.5"><span>📥</span> Target Excel Fájl Feltöltése</button>
                         <input type="file" id="targetFileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleTargetExcelUpload(event)">
                     </div>
                 </div>
-
                 <div class="flex items-center gap-3 bg-slate-900/40 p-3 rounded-lg border border-slate-700/50">
                     <span class="text-xs font-semibold text-slate-300">Cél Hónap a feltöltéshez:</span>
-                    <select id="targetUploadMonth" class="bg-slate-800 text-white text-xs border border-slate-700 rounded-lg px-3 py-1.5 outline-none">
-                        <option value="2026 október">2026 október</option>
-                    </select>
+                    <select id="targetUploadMonth" class="bg-slate-800 text-white text-xs border border-slate-700 rounded-lg px-3 py-1.5 outline-none"></select>
                 </div>
-
                 <div class="space-y-2">
-                    <label class="text-xs font-semibold text-slate-300 flex items-center gap-1">
-                        <span>📋</span> Másold be ide a táblázat soraidat (Ctrl+C & Ctrl+V):
-                    </label>
-                    <textarea id="targetPasteArea" rows="4" placeholder="FPK002	192	108	81	18	1500	3800	500000&#10;FPK007	217	139	67	38	1550	4350	1000000&#10;FPK012	452	291	172	88	3200	10200	1200000"
-                              class="w-full bg-slate-900 text-slate-200 text-xs font-mono p-3 rounded-xl border border-slate-700 outline-none focus:ring-1 focus:ring-indigo-500"></textarea>
-                    <button onclick="processPastedTargets()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
-                        Beillesztett Sorok Feldolgozása & Mentése
-                    </button>
+                    <label class="text-xs font-semibold text-slate-300 flex items-center gap-1"><span>📋</span> Másold be ide a táblázat soraidat (Ctrl+C & Ctrl+V):</label>
+                    <textarea id="targetPasteArea" rows="4" placeholder="FPK002	192	108	81	18	1500	3800	500000" class="w-full bg-slate-900 text-slate-200 text-xs font-mono p-3 rounded-xl border border-slate-700 outline-none focus:ring-1 focus:ring-indigo-500"></textarea>
+                    <button onclick="processPastedTargets()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">Beillesztett Sorok Feldolgozása & Mentése</button>
                 </div>
-
                 <div class="overflow-x-auto mt-4">
                     <h3 class="text-xs font-semibold text-slate-400 mb-2 uppercase">Aktuálisan Rögzített Bolti Targetek:</h3>
                     <table class="w-full text-left border-collapse text-xs">
                         <thead>
                             <tr class="bg-slate-900/80 text-slate-400 border-b border-slate-700">
-                                <th class="p-2.5">Hónap</th>
-                                <th class="p-2.5">Bolt</th>
-                                <th class="p-2.5 text-center">ACQ</th>
-                                <th class="p-2.5 text-center">Hűség</th>
-                                <th class="p-2.5 text-center">FIX</th>
-                                <th class="p-2.5 text-center">SOHO</th>
-                                <th class="p-2.5 text-center">ACQ Pont</th>
-                                <th class="p-2.5 text-center">Reti Pont</th>
-                                <th class="p-2.5 text-right">Tartozék (Ft)</th>
+                                <th class="p-2.5">Hónap</th><th class="p-2.5">Bolt</th><th class="p-2.5 text-center">ACQ</th><th class="p-2.5 text-center">Hűség</th><th class="p-2.5 text-center">FIX</th><th class="p-2.5 text-center">SOHO</th><th class="p-2.5 text-center">ACQ Pont</th><th class="p-2.5 text-center">Reti Pont</th><th class="p-2.5 text-right">Tartozék (Ft)</th>
                             </tr>
                         </thead>
                         <tbody id="targetTableBody" class="divide-y divide-slate-800 text-slate-300 font-medium">
@@ -559,8 +323,34 @@
                     </table>
                 </div>
             </section>
-        </main>
 
+            <!-- 5. CLOUD ADATOK TÖRLÉSE (VISSZAVONÁS) -->
+            <section class="bg-slate-800 p-6 rounded-xl border border-rose-500/30 shadow-lg space-y-5">
+                <div class="border-b border-slate-700 pb-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-lg font-semibold text-rose-400 flex items-center gap-2"><span>🗑️</span> Hibás Feltöltés Törlése a Felhőből</h2>
+                        <p class="text-xs text-slate-400 mt-1">Ha véletlenül rossz fájlt húztál be, itt manuálisan is törölheted a hónap adatait a Supabase-ből.</p>
+                    </div>
+                </div>
+                <div class="flex flex-col md:flex-row md:items-center gap-4 bg-slate-900/40 p-4 rounded-lg border border-slate-700/50">
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs font-semibold text-slate-300">Törlendő Hónap:</span>
+                        <select id="deleteDataMonth" class="bg-slate-800 text-white text-xs border border-slate-700 rounded-lg px-3 py-2 outline-none"></select>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs font-semibold text-slate-300">Mit töröljünk?</span>
+                        <select id="deleteDataType" class="bg-slate-800 text-white text-xs border border-slate-700 rounded-lg px-3 py-2 outline-none">
+                            <option value="cpr">CPR Tranzakciók (Minden bolt)</option>
+                            <option value="tartozek">Tartozék Eladások (Minden bolt)</option>
+                            <option value="betero">Betérő Ügyfelek (Minden bolt)</option>
+                            <option value="target">Bolti Havi Targetek (Minden bolt)</option>
+                            <option value="all" class="text-rose-400 font-bold">Minden fenti adat törlése a hónapra!</option>
+                        </select>
+                    </div>
+                    <button onclick="executeCloudDelete()" class="bg-rose-900/80 hover:bg-rose-700 text-rose-200 border border-rose-500/50 font-semibold text-xs px-5 py-2 rounded-lg transition shadow mt-3 md:mt-0 md:ml-auto">Törlés Végrehajtása</button>
+                </div>
+            </section>
+        </main>
     </div>
 
     <script>
@@ -609,7 +399,8 @@
                 tabUp.classList.add('hidden');
                 btnDash.className = "px-4 py-2 rounded-lg text-xs font-semibold transition bg-indigo-600 text-white shadow";
                 btnUp.className = "px-4 py-2 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white";
-                updateTargetView();
+                updateAllBoxes();
+                renderData();
             } else {
                 tabDash.classList.add('hidden');
                 tabUp.classList.remove('hidden');
@@ -624,48 +415,12 @@
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let globalTransactions = [];
-        let globalAccessories = []; // Tartozék értékesítések
+        let globalAccessories = [];
         let globalTargets = [];
         let targetChartInstance = null;
 
         let currentSortColumn = 'pont';
         let currentSortDirection = 'desc';
-
-        
-        // =========================================================================
-        // --- KÉPFELISMERŐ (OCR) FELDOLGOZÓ POWER BI KÉPERNYŐKÉPEKHEZ ---
-        // =========================================================================
-        let parsedOcrResults = [];
-
-        // Vágólapról történő beillesztés figyelése (Ctrl+V)
-        
-
-        async function saveOcrDataToCloud() {
-            if (!parsedOcrResults || parsedOcrResults.length === 0) return;
-
-            try {
-                // Upsert a bolti_latogatok táblába
-                const payloads = parsedOcrResults.map(r => ({
-                    honap: r.honap,
-                    bolt: r.bolt,
-                    datum: r.datum,
-                    betero_db: r.betero_db
-                }));
-
-                const { error } = await supabaseClient
-                    .from('bolti_latogatok')
-                    .upsert(payloads, { onConflict: 'bolt,datum' });
-
-                if (error) throw error;
-
-                alert(`Sikeres mentés! ${payloads.length} nap betérő forgalma rögzítve az adatbázisban.`);
-                document.getElementById('ocrPreviewContainer').classList.add('hidden');
-                document.getElementById('ocrProgressBox').classList.add('hidden');
-                document.getElementById('ocrUploadLabel').innerText = "Kész! Új kép beillesztéséhez nyomj Ctrl+V-t.";
-            } catch (err) {
-                alert("Hiba a mentéskor: " + err.message);
-            }
-        }
 
         window.addEventListener('DOMContentLoaded', () => {
             checkAuth();
@@ -674,1306 +429,47 @@
         async function loadAllData() {
             await Promise.all([loadFromSupabase(), loadAccessoriesFromSupabase(), loadTargetsFromSupabase()]);
             populateFilters();
-            updateTargetView();
+            updateAllBoxes();
             renderData();
         }
 
         async function loadFromSupabase() {
-            let allRows = [];
-            let from = 0;
-            const batchSize = 1000;
-            let hasMore = true;
-
+            let allRows = []; let from = 0; const batchSize = 1000; let hasMore = true;
             try {
                 while (hasMore) {
-                    const { data, error } = await supabaseClient
-                        .from('bolti_teljesitesek')
-                        .select('*')
-                        .range(from, from + batchSize - 1);
-
+                    const { data, error } = await supabaseClient.from('bolti_teljesitesek').select('*').range(from, from + batchSize - 1);
                     if (error) throw error;
-                    if (data && data.length > 0) {
-                        allRows = allRows.concat(data);
-                        from += batchSize;
-                        if (data.length < batchSize) hasMore = false;
-                    } else {
-                        hasMore = false;
-                    }
+                    if (data && data.length > 0) { allRows = allRows.concat(data); from += batchSize; if (data.length < batchSize) hasMore = false; } else hasMore = false;
                 }
                 globalTransactions = allRows;
-            } catch (err) {
-                console.error("Hiba a tranzakciók betöltésekor:", err);
-            }
+            } catch (err) { console.error(err); }
         }
 
         async function loadAccessoriesFromSupabase() {
-            let allRows = [];
-            let from = 0;
-            const batchSize = 1000;
-            let hasMore = true;
-
+            let allRows = []; let from = 0; const batchSize = 1000; let hasMore = true;
             try {
                 while (hasMore) {
-                    const { data, error } = await supabaseClient
-                        .from('bolti_tartozekok')
-                        .select('*')
-                        .range(from, from + batchSize - 1);
-
-                    if (error) {
-                        console.warn("bolti_tartozekok tábla még nincs létrehozva:", error);
-                        break;
-                    }
-                    if (data && data.length > 0) {
-                        allRows = allRows.concat(data);
-                        from += batchSize;
-                        if (data.length < batchSize) hasMore = false;
-                    } else {
-                        hasMore = false;
-                    }
+                    const { data, error } = await supabaseClient.from('bolti_tartozekok').select('*').range(from, from + batchSize - 1);
+                    if (error) break;
+                    if (data && data.length > 0) { allRows = allRows.concat(data); from += batchSize; if (data.length < batchSize) hasMore = false; } else hasMore = false;
                 }
                 globalAccessories = allRows;
-            } catch (err) {
-                console.warn("Hiba a tartozékok betöltésekor:", err);
-            }
+            } catch (err) { console.warn(err); }
         }
 
         async function loadTargetsFromSupabase() {
             try {
                 const { data, error } = await supabaseClient.from('havi_targetek').select('*').order('bolt', { ascending: true });
-                if (!error && data) {
-                    globalTargets = data;
-                    renderTargetAdminTable();
-                }
-            } catch (e) {
-                console.warn("Targetek hiba:", e);
-            }
+                if (!error && data) { globalTargets = data; renderTargetAdminTable(); }
+            } catch (e) { console.warn(e); }
         }
 
         function sortMonthsChronological(monthList) {
-            const monthMap = {
-                'január': 1, 'február': 2, 'március': 3, 'április': 4,
-                'május': 5, 'június': 6, 'július': 7, 'augusztus': 8,
-                'szeptember': 9, 'október': 10, 'november': 11, 'december': 12
-            };
-
+            const monthMap = { 'január': 1, 'február': 2, 'március': 3, 'április': 4, 'május': 5, 'június': 6, 'július': 7, 'augusztus': 8, 'szeptember': 9, 'október': 10, 'november': 11, 'december': 12 };
             return monthList.sort((a, b) => {
                 const parseM = (str) => {
                     if (!str) return 0;
-                    const parts = String(str).trim().toLowerCase().split(' ');
-                    const year = parseInt(parts[0], 10) || 2026;
-                    const mName = parts[1] || '';
-                    const mNum = monthMap[mName] || 0;
-                    return year * 100 + mNum;
+                    const p = String(str).trim().toLowerCase().split(' ');
+                    return (parseInt(p[0], 10) || 2026) * 100 + (monthMap[p[1] || ''] || 0);
                 };
-                return parseM(b) - parseM(a);
-            });
-        }
-
-        function populateFilters() {
-            const allMonthsList = [
-                ...globalTransactions.map(t => t.honap),
-                ...globalAccessories.map(a => a.honap)
-            ];
-            const rawMonths = [...new Set(allMonthsList)].filter(Boolean);
-            const months = sortMonthsChronological(rawMonths);
-
-            const allStoresList = [
-                ...globalTransactions.map(t => t.bolt),
-                ...globalAccessories.map(a => a.bolt)
-            ];
-            const stores = [...new Set(allStoresList)].filter(Boolean).sort();
-
-            const allSellersList = [
-                ...globalTransactions.map(t => t.ertekesito),
-                ...globalAccessories.map(a => a.ertekesito)
-            ];
-            const sellers = [...new Set(allSellersList.map(s => String(s || '').trim().replace(/\s+/g, ' ')))].filter(Boolean).sort();
-
-            const monthOptions = months.map(m => `<option value="${m}">${m}</option>`).join('') + '<option value="ALL">Összes Hónap</option>';
-            const storeOptions = '<option value="ALL">Összes Üzlet (Hálózat)</option>' + stores.map(s => `<option value="${s}">${s}</option>`).join('');
-
-            const filterMonth = document.getElementById('filterMonth');
-            const filterStore = document.getElementById('filterStore');
-            const filterSeller = document.getElementById('filterSeller');
-            
-            filterMonth.innerHTML = monthOptions;
-            filterStore.innerHTML = storeOptions;
-            filterSeller.innerHTML = '<option value="ALL">Összes Értékesítő</option>' + sellers.map(s => `<option value="${s}">${s}</option>`).join('');
-
-            const targetViewMonth = document.getElementById('targetViewMonth');
-            const targetViewStore = document.getElementById('targetViewStore');
-            targetViewMonth.innerHTML = monthOptions;
-            targetViewStore.innerHTML = storeOptions;
-
-            const targetUploadMonth = document.getElementById('targetUploadMonth');
-            if (targetUploadMonth && months.length > 0) {
-                targetUploadMonth.innerHTML = months.map(m => `<option value="${m}">${m}</option>`).join('');
-                const delMonthSelect = document.getElementById('deleteDataMonth');
-                if (delMonthSelect) {
-                    delMonthSelect.innerHTML = months.map(m => `<option value="${m}">${m}</option>`).join('');
-                }
-            }
-
-            if (months.length > 0) {
-                filterMonth.value = months[0];
-                targetViewMonth.value = months[0];
-            }
-        }
-
-        // =========================================================================
-        // --- NAPI ÉS HAVI TARGET ÉS TELJESÍTMÉNY KEZELŐ ---
-        // =========================================================================
-        function updateTargetView() {
-            const selectedMonth = document.getElementById('targetViewMonth').value;
-            const selectedStore = document.getElementById('targetViewStore').value;
-            const metricKey = document.getElementById('chartMetricSelect').value;
-
-            // CPR tranzakciók szűrése
-            const filteredCPR = globalTransactions.filter(t => {
-                const mOk = (selectedMonth === 'ALL' || t.honap === selectedMonth);
-                const sOk = (selectedStore === 'ALL' || t.bolt === selectedStore);
-                return mOk && sOk;
-            });
-
-            // Tartozék eladások szűrése
-            const filteredAcc = globalAccessories.filter(a => {
-                const mOk = (selectedMonth === 'ALL' || a.honap === selectedMonth);
-                const sOk = (selectedStore === 'ALL' || a.bolt === selectedStore);
-                return mOk && sOk;
-            });
-
-            // 1. HAVI TÉNYADATOK
-            const actuals = {
-                pont: filteredCPR.reduce((acc, t) => acc + (t.osszpont || 0), 0),
-                acq_pont: filteredCPR.reduce((acc, t) => acc + (t.acq_pont || 0), 0),
-                ret_pont: filteredCPR.reduce((acc, t) => acc + (t.ret_pont || 0), 0),
-                acq_db: filteredCPR.reduce((acc, t) => acc + (t.acq_db || 0), 0),
-                huseg_db: filteredCPR.reduce((acc, t) => acc + (t.huseg_db || 0), 0),
-                fix_db: filteredCPR.reduce((acc, t) => acc + (t.fix_db || 0), 0),
-                soho_db: filteredCPR.filter(t => (t.szegmens && t.szegmens.toLowerCase() === 'soho') && (t.acq_db > 0)).reduce((acc, t) => acc + (t.acq_db || 1), 0),
-                tartozek_ft: filteredAcc.reduce((acc, a) => acc + (Number(a.brutto_ertek) || 0), 0)
-            };
-
-            // 2. HAVI TARGETEK
-            let relevantTargets = globalTargets.filter(t => selectedMonth === 'ALL' || t.honap === selectedMonth);
-            if (selectedStore !== 'ALL') {
-                relevantTargets = relevantTargets.filter(t => t.bolt === selectedStore);
-            }
-
-            const targets = {
-                pont: relevantTargets.reduce((a, b) => a + (b.target_pont || (b.target_acq_pont + b.target_ret_pont) || 0), 0),
-                acq_pont: relevantTargets.reduce((a, b) => a + (b.target_acq_pont || 0), 0),
-                ret_pont: relevantTargets.reduce((a, b) => a + (b.target_ret_pont || 0), 0),
-                acq_db: relevantTargets.reduce((a, b) => a + (b.target_acq_db || 0), 0),
-                huseg_db: relevantTargets.reduce((a, b) => a + (b.target_huseg_db || 0), 0),
-                fix_db: relevantTargets.reduce((a, b) => a + (b.target_fix_db || 0), 0),
-                soho_db: relevantTargets.reduce((a, b) => a + (b.target_soho_db || 0), 0),
-                tartozek_ft: relevantTargets.reduce((a, b) => a + (b.target_tartozek_ft || 0), 0)
-            };
-
-            let currentYear = 2026;
-            let currentMonthIdx = 9;
-            if (selectedMonth && selectedMonth !== 'ALL') {
-                const parts = selectedMonth.split(' ');
-                currentYear = parseInt(parts[0], 10) || 2026;
-                const mNames = ['január', 'február', 'március', 'április', 'május', 'június', 'július', 'augusztus', 'szeptember', 'október', 'november', 'december'];
-                const foundIdx = mNames.indexOf((parts[1] || '').toLowerCase());
-                if (foundIdx !== -1) currentMonthIdx = foundIdx;
-            }
-
-            const daysInMonth = new Date(currentYear, currentMonthIdx + 1, 0).getDate();
-            const now = new Date();
-            const currentDay = (now.getFullYear() === currentYear && now.getMonth() === currentMonthIdx) ? now.getDate() : daysInMonth;
-            const remainingDaysCount = Math.max(1, daysInMonth - currentDay + 1);
-
-            // --- BOLTI ELŐZMÉNY-VEZÉRELT SÚLYOZÓ MOTOR ---
-            function getStoreDailyTargets(storeCode, targetVal) {
-                let storeHistory = globalTransactions.filter(t => t.honap !== selectedMonth);
-                if (storeCode !== 'ALL') {
-                    storeHistory = storeHistory.filter(t => t.bolt === storeCode);
-                }
-                if (storeHistory.length < 10) {
-                    storeHistory = globalTransactions.filter(t => storeCode === 'ALL' || t.bolt === storeCode);
-                }
-
-                const sDowPoints = [0, 0, 0, 0, 0, 0, 0];
-                const sDomPoints = Array(32).fill(0);
-                let sTotalPts = 0;
-
-                storeHistory.forEach(t => {
-                    if (t.szerzodes_datuma) {
-                        const parts = String(t.szerzodes_datuma).split('-');
-                        if (parts.length === 3) {
-                            const y = parseInt(parts[0], 10);
-                            const m = parseInt(parts[1], 10) - 1;
-                            const d = parseInt(parts[2], 10);
-                            const dow = new Date(y, m, d).getDay();
-                            const pts = (t.osszpont || 0);
-
-                            sDowPoints[dow] += pts;
-                            if (d >= 1 && d <= 31) sDomPoints[d] += pts;
-                            sTotalPts += pts;
-                        }
-                    }
-                });
-
-                const sDowWeights = sDowPoints.map(p => sTotalPts > 0 ? (p / sTotalPts) * 7 : 0.0);
-                const sDomWeights = sDomPoints.map(p => sTotalPts > 0 ? (p / sTotalPts) * 30.5 : 1.0);
-
-                function calcDayWeight(dNum) {
-                    const dow = new Date(currentYear, currentMonthIdx, dNum).getDay();
-                    const dowW = sDowWeights[dow] || 0.0;
-                    const domW = sDomWeights[dNum] || 1.0;
-                    return dowW * domW;
-                }
-
-                let sumWeights = 0;
-                for (let d = 1; d <= daysInMonth; d++) {
-                    sumWeights += calcDayWeight(d);
-                }
-
-                const dailyMap = {};
-                for (let d = 1; d <= daysInMonth; d++) {
-                    const w = calcDayWeight(d);
-                    dailyMap[d] = sumWeights > 0 ? (targetVal * (w / sumWeights)) : 0;
-                }
-                return { dailyMap, calcDayWeight, sumWeights };
-            }
-
-            const currentMetricTarget = targets[metricKey] || 0;
-            const isMetricInt = ['acq_db', 'huseg_db', 'fix_db', 'soho_db', 'tartozek_ft'].includes(metricKey);
-            const isMetricCurrency = (metricKey === 'tartozek_ft');
-
-            let storeDailyTargetMap = {};
-            if (selectedStore !== 'ALL') {
-                const res = getStoreDailyTargets(selectedStore, currentMetricTarget);
-                storeDailyTargetMap = res.dailyMap;
-            } else {
-                const allStoreCodes = [...new Set(globalTargets.filter(t => selectedMonth === 'ALL' || t.honap === selectedMonth).map(t => t.bolt))].filter(b => b !== 'ALL');
-                for (let d = 1; d <= daysInMonth; d++) storeDailyTargetMap[d] = 0;
-
-                allStoreCodes.forEach(bCode => {
-                    const bTargetObj = globalTargets.find(t => (selectedMonth === 'ALL' || t.honap === selectedMonth) && t.bolt === bCode);
-                    let bTargetVal = 0;
-                    if (bTargetObj) {
-                        if (metricKey === 'pont') bTargetVal = bTargetObj.target_pont || (bTargetObj.target_acq_pont + bTargetObj.target_ret_pont) || 0;
-                        else if (metricKey === 'acq_pont') bTargetVal = bTargetObj.target_acq_pont || 0;
-                        else if (metricKey === 'ret_pont') bTargetVal = bTargetObj.target_ret_pont || 0;
-                        else if (metricKey === 'acq_db') bTargetVal = bTargetObj.target_acq_db || 0;
-                        else if (metricKey === 'huseg_db') bTargetVal = bTargetObj.target_huseg_db || 0;
-                        else if (metricKey === 'fix_db') bTargetVal = bTargetObj.target_fix_db || 0;
-                        else if (metricKey === 'soho_db') bTargetVal = bTargetObj.target_soho_db || 0;
-                        else if (metricKey === 'tartozek_ft') bTargetVal = bTargetObj.target_tartozek_ft || 0;
-                    }
-                    const bRes = getStoreDailyTargets(bCode, bTargetVal);
-                    for (let d = 1; d <= daysInMonth; d++) {
-                        storeDailyTargetMap[d] += bRes.dailyMap[d];
-                    }
-                });
-            }
-
-            // Napi tények összerakása (CPR vagy Tartozék)
-            const dailyActualMap = Array(daysInMonth + 1).fill(0);
-            if (metricKey === 'tartozek_ft') {
-                filteredAcc.forEach(a => {
-                    if (a.teljesites_datuma) {
-                        const parts = String(a.teljesites_datuma).split('-');
-                        if (parts.length === 3) {
-                            const d = parseInt(parts[2], 10);
-                            if (d >= 1 && d <= daysInMonth) {
-                                dailyActualMap[d] += (Number(a.brutto_ertek) || 0);
-                            }
-                        }
-                    }
-                });
-            } else {
-                filteredCPR.forEach(t => {
-                    if (t.szerzodes_datuma) {
-                        const parts = String(t.szerzodes_datuma).split('-');
-                        if (parts.length === 3) {
-                            const d = parseInt(parts[2], 10);
-                            if (d >= 1 && d <= daysInMonth) {
-                                let val = 0;
-                                if (metricKey === 'pont') val = (t.osszpont || 0);
-                                else if (metricKey === 'acq_pont') val = (t.acq_pont || 0);
-                                else if (metricKey === 'ret_pont') val = (t.ret_pont || 0);
-                                else if (metricKey === 'acq_db') val = (t.acq_db || 0);
-                                else if (metricKey === 'huseg_db') val = (t.huseg_db || 0);
-                                else if (metricKey === 'fix_db') val = (t.fix_db || 0);
-                                else if (metricKey === 'soho_db') val = (t.szegmens && t.szegmens.toLowerCase() === 'soho' && t.acq_db > 0) ? (t.acq_db || 1) : 0;
-                                dailyActualMap[d] += val;
-                            }
-                        }
-                    }
-                });
-            }
-
-            const metricRows = [
-                { key: 'pont', label: 'Összpont', isInt: false, color: 'text-amber-400' },
-                { key: 'acq_pont', label: 'ACQ Pont', isInt: false, color: 'text-sky-400' },
-                { key: 'ret_pont', label: 'Reti Pont', isInt: false, color: 'text-teal-400' },
-                { key: 'acq_db', label: 'ACQ db', isInt: true, color: 'text-indigo-400' },
-                { key: 'huseg_db', label: 'Hűség db', isInt: true, color: 'text-emerald-400' },
-                { key: 'fix_db', label: 'FIX db', isInt: true, color: 'text-purple-400' },
-                { key: 'soho_db', label: 'SOHO db', isInt: true, color: 'text-amber-300' },
-                { key: 'tartozek_ft', label: 'Tartozék (Ft)', isInt: true, isCurrency: true, color: 'text-pink-400' }
-            ];
-
-            // 1. BAL FELSŐ: HAVI TARGETEK
-            const monthlyTbody = document.getElementById('monthlySummaryTableBody');
-            monthlyTbody.innerHTML = metricRows.map(m => {
-                const targetVal = targets[m.key] || 0;
-                const actualVal = actuals[m.key] || 0;
-                const remVal = Math.max(0, targetVal - actualVal);
-                const pct = targetVal > 0 ? (actualVal / targetVal) * 100 : 0;
-
-                let badgeColor = "bg-rose-950/60 text-rose-300 border-rose-800";
-                if (pct >= 100) badgeColor = "bg-emerald-950/60 text-emerald-300 border-emerald-800";
-                else if (pct >= 80) badgeColor = "bg-indigo-950/60 text-indigo-300 border-indigo-800";
-                else if (pct >= 60) badgeColor = "bg-amber-950/60 text-amber-300 border-amber-800";
-
-                const formatVal = (v) => {
-                    if (m.isCurrency) return Math.round(v).toLocaleString('hu-HU') + ' Ft';
-                    if (m.isInt) return Math.round(v) + ' db';
-                    return v.toFixed(1);
-                };
-
-                return `
-                    <tr class="hover:bg-slate-800/40 transition">
-                        <td class="py-2 px-2.5 font-semibold ${m.color}">${m.label}</td>
-                        <td class="py-2 px-2 text-right font-bold text-amber-300 font-mono">${formatVal(targetVal)}</td>
-                        <td class="py-2 px-2 text-right font-bold text-cyan-300 font-mono">${formatVal(actualVal)}</td>
-                        <td class="py-2 px-2 text-right">
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeColor}">
-                                ${pct.toFixed(1)}%
-                            </span>
-                        </td>
-                        <td class="py-2 px-2.5 text-right text-slate-400 font-mono">${formatVal(remVal)}</td>
-                    </tr>
-                `;
-            }).join('');
-
-            document.getElementById('targetDayInfoText').innerText = `${daysInMonth} napos hónap: még ${remainingDaysCount} nap van hátra`;
-            document.getElementById('targetDayRemainingBadge').innerText = `Ma: ${currentDay}-e`;
-
-            // 2. BAL ALSÓ: ADOTT NAPI TARGETEK (MA)
-            const todayDow = new Date(currentYear, currentMonthIdx, currentDay).getDay();
-            const dayNamesLong = ['Vasárnap', 'Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat'];
-            document.getElementById('todayTargetBoxTitle').innerText = `Mai Célok (${currentDay}. ${dayNamesLong[todayDow]})`;
-            document.getElementById('todayDateBadge').innerText = `${currentDay}. ${dayNamesLong[todayDow]}`;
-
-            const todayTbody = document.getElementById('todayTargetTableBody');
-            todayTbody.innerHTML = metricRows.map(m => {
-                const mTarget = targets[m.key] || 0;
-
-                let mTodayTarget = 0;
-                if (selectedStore !== 'ALL') {
-                    const r = getStoreDailyTargets(selectedStore, mTarget);
-                    mTodayTarget = r.dailyMap[currentDay] || 0;
-                } else {
-                    const allStoreCodes = [...new Set(globalTargets.filter(t => selectedMonth === 'ALL' || t.honap === selectedMonth).map(t => t.bolt))].filter(b => b !== 'ALL');
-                    allStoreCodes.forEach(bCode => {
-                        const bObj = globalTargets.find(t => (selectedMonth === 'ALL' || t.honap === selectedMonth) && t.bolt === bCode);
-                        let bVal = bObj ? (bObj[m.key === 'pont' ? 'target_pont' : `target_${m.key}`] || 0) : 0;
-                        const r = getStoreDailyTargets(bCode, bVal);
-                        mTodayTarget += (r.dailyMap[currentDay] || 0);
-                    });
-                }
-
-                let mTodayActual = 0;
-                if (m.key === 'tartozek_ft') {
-                    filteredAcc.forEach(a => {
-                        if (a.teljesites_datuma) {
-                            const p = String(a.teljesites_datuma).split('-');
-                            if (p.length === 3 && parseInt(p[2], 10) === currentDay) {
-                                mTodayActual += (Number(a.brutto_ertek) || 0);
-                            }
-                        }
-                    });
-                } else {
-                    filteredCPR.forEach(t => {
-                        if (t.szerzodes_datuma) {
-                            const p = String(t.szerzodes_datuma).split('-');
-                            if (p.length === 3 && parseInt(p[2], 10) === currentDay) {
-                                if (m.key === 'pont') mTodayActual += (t.osszpont || 0);
-                                else if (m.key === 'acq_pont') mTodayActual += (t.acq_pont || 0);
-                                else if (m.key === 'ret_pont') mTodayActual += (t.ret_pont || 0);
-                                else if (m.key === 'acq_db') mTodayActual += (t.acq_db || 0);
-                                else if (m.key === 'huseg_db') mTodayActual += (t.huseg_db || 0);
-                                else if (m.key === 'fix_db') mTodayActual += (t.fix_db || 0);
-                                else if (m.key === 'soho_db') mTodayActual += (t.szegmens && t.szegmens.toLowerCase() === 'soho' && t.acq_db > 0) ? (t.acq_db || 1) : 0;
-                            }
-                        }
-                    });
-                }
-
-                const isClosed = (mTodayTarget === 0);
-                const diff = mTodayActual - mTodayTarget;
-                const pct = mTodayTarget > 0 ? (mTodayActual / mTodayTarget) * 100 : (mTodayActual > 0 ? 100 : 0);
-
-                let badgeColor = "bg-rose-950/60 text-rose-300 border-rose-800";
-                if (isClosed) badgeColor = "bg-slate-800 text-slate-400 border-slate-700";
-                else if (pct >= 100) badgeColor = "bg-emerald-950/60 text-emerald-300 border-emerald-800";
-                else if (pct >= 80) badgeColor = "bg-indigo-950/60 text-indigo-300 border-indigo-800";
-                else if (pct >= 60) badgeColor = "bg-amber-950/60 text-amber-300 border-amber-800";
-
-                const formatVal = (v) => {
-                    if (m.isCurrency) return Math.round(v).toLocaleString('hu-HU') + ' Ft';
-                    if (m.isInt) return Math.round(v) + ' db';
-                    return v.toFixed(1);
-                };
-
-                const diffFormatted = isClosed ? '-' : (diff >= 0 ? `+${formatVal(diff)}` : formatVal(diff));
-                const diffColor = isClosed ? 'text-slate-600' : (diff >= 0 ? 'text-emerald-400' : 'text-rose-400');
-
-                return `
-                    <tr class="hover:bg-slate-800/40 transition">
-                        <td class="py-2 px-2.5 font-semibold ${m.color}">${m.label}</td>
-                        <td class="py-2 px-2 text-right font-bold text-amber-300 font-mono">${isClosed ? 'ZÁRVA' : formatVal(mTodayTarget)}</td>
-                        <td class="py-2 px-2 text-right font-bold text-cyan-300 font-mono">${formatVal(mTodayActual)}</td>
-                        <td class="py-2 px-2 text-right">
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeColor}">
-                                ${isClosed ? 'ZÁRVA' : pct.toFixed(0) + '%'}
-                            </span>
-                        </td>
-                        <td class="py-2 px-2.5 text-right font-mono font-bold ${diffColor}">${diffFormatted}</td>
-                    </tr>
-                `;
-            }).join('');
-
-            document.getElementById('storeStatusBadge').innerText = (storeDailyTargetMap[currentDay] === 0) ? 'ZÁRVA' : 'NYITVA';
-            document.getElementById('storeStatusBadge').className = (storeDailyTargetMap[currentDay] === 0) ? 'text-rose-400 font-bold' : 'text-emerald-400 font-semibold';
-            document.getElementById('monthSubtitle').innerText = `${selectedMonth} • ${selectedStore === 'ALL' ? 'Összes Üzlet' : selectedStore}`;
-
-            // 3. JOBB FELSŐ: KOMPAKT NAPI DIAGRAM
-            const metricSelectElem = document.getElementById('chartMetricSelect');
-            const selectedMetricText = metricSelectElem.options[metricSelectElem.selectedIndex].text;
-            document.getElementById('chartMetricLabel').innerText = selectedMetricText;
-
-            const dayNamesShort = ['V', 'H', 'K', 'Sze', 'Cs', 'P', 'Szo'];
-            const dailyTargetValues = [];
-            const dailyActualValues = [];
-            const labels = [];
-
-            for (let d = 1; d <= daysInMonth; d++) {
-                const dailyT = storeDailyTargetMap[d] || 0;
-                const dailyA = dailyActualMap[d];
-
-                dailyTargetValues.push(Number(dailyT.toFixed(1)));
-                labels.push(`${d}.`);
-
-                const hasPassed = (d <= currentDay);
-                if (hasPassed) {
-                    dailyActualValues.push(Number(dailyA.toFixed(1)));
-                } else {
-                    dailyActualValues.push(null);
-                }
-            }
-
-            const ctx = document.getElementById('targetLineChart').getContext('2d');
-            if (targetChartInstance) {
-                targetChartInstance.destroy();
-            }
-
-            targetChartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Napi Súlyozott Target',
-                            data: dailyTargetValues,
-                            borderColor: '#fbbf24',
-                            borderWidth: 2,
-                            borderDash: [4, 4],
-                            pointRadius: 2,
-                            pointBackgroundColor: '#fbbf24',
-                            fill: false,
-                            tension: 0.3
-                        },
-                        {
-                            label: 'Napi Tényleges Teljesítés',
-                            data: dailyActualValues,
-                            borderColor: isMetricCurrency ? '#f472b6' : '#22d3ee',
-                            backgroundColor: isMetricCurrency ? 'rgba(244, 114, 182, 0.12)' : 'rgba(34, 211, 238, 0.12)',
-                            borderWidth: 2,
-                            pointRadius: 2.5,
-                            pointBackgroundColor: isMetricCurrency ? '#f472b6' : '#22d3ee',
-                            fill: true,
-                            tension: 0.2
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: '#0f172a',
-                            titleColor: '#e2e8f0',
-                            bodyColor: '#e2e8f0',
-                            borderColor: '#334155',
-                            borderWidth: 1,
-                            padding: 8
-                        }
-                    },
-                    scales: {
-                        x: {
-                            grid: { color: 'rgba(51, 65, 85, 0.25)' },
-                            ticks: { color: '#94a3b8', font: { size: 9 }, maxTicksLimit: 16 }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            grid: { color: 'rgba(51, 65, 85, 0.25)' },
-                            ticks: { 
-                                color: '#94a3b8', 
-                                font: { size: 9 },
-                                callback: function(value) {
-                                    return isMetricCurrency ? (value >= 1000 ? (value/1000).toFixed(0) + 'e Ft' : value + ' Ft') : value;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            // 4. JOBB ALSÓ: 1-31 NAPI BONTÁSÚ TÁBLÁZAT
-            const dailyTbody = document.getElementById('targetMetricTableBody');
-            let dailyTableHtml = '';
-
-            for (let d = 1; d <= daysInMonth; d++) {
-                const dailyT = storeDailyTargetMap[d] || 0;
-                const dailyA = dailyActualMap[d];
-                const dow = new Date(currentYear, currentMonthIdx, d).getDay();
-                const dayName = dayNamesShort[dow];
-                const hasPassed = (d <= currentDay);
-
-                const isClosedDay = (dailyT === 0);
-                const diff = dailyA - dailyT;
-                const pct = dailyT > 0 ? (dailyA / dailyT) * 100 : (dailyA > 0 ? 100 : 0);
-
-                let badgeClass = "text-slate-500";
-                let diffText = "-";
-                let pctText = "-";
-
-                if (hasPassed) {
-                    if (isClosedDay) {
-                        pctText = "ZÁRVA";
-                        badgeClass = "text-slate-500 text-[10px]";
-                        diffText = "-";
-                    } else {
-                        pctText = `${pct.toFixed(0)}%`;
-                        const fmtDiffVal = isMetricCurrency ? Math.round(diff).toLocaleString('hu-HU') + ' Ft' : (isMetricInt ? Math.round(diff) : diff.toFixed(1));
-                        diffText = (diff >= 0 ? `+${fmtDiffVal}` : `${fmtDiffVal}`);
-                        if (pct >= 100) badgeClass = "text-emerald-400 font-bold";
-                        else if (pct >= 80) badgeClass = "text-indigo-400";
-                        else badgeClass = "text-rose-400";
-                    }
-                }
-
-                const isToday = (d === currentDay && now.getMonth() === currentMonthIdx);
-                const rowBg = isToday ? "bg-indigo-950/40 border-l-2 border-indigo-400 font-semibold" : "hover:bg-slate-800/40";
-                const fmt = (v) => isMetricCurrency ? Math.round(v).toLocaleString('hu-HU') + ' Ft' : (isMetricInt ? Math.round(v) : v.toFixed(1));
-
-                dailyTableHtml += `
-                    <tr class="${rowBg} transition text-[11px]">
-                        <td class="py-1.5 px-2.5">
-                            <span class="${isToday ? 'text-indigo-300 font-bold' : (dow === 0 ? 'text-rose-400/80 font-semibold' : 'text-slate-300')}">${d}. ${dayName}</span>
-                            ${isToday ? '<span class="text-[9px] bg-indigo-500/20 text-indigo-300 px-1 rounded ml-1">MA</span>' : ''}
-                        </td>
-                        <td class="py-1.5 px-2 text-right text-amber-300 font-mono">${isClosedDay ? 'ZÁRVA' : fmt(dailyT)}</td>
-                        <td class="py-1.5 px-2 text-right font-bold ${hasPassed ? (isMetricCurrency ? 'text-pink-300' : 'text-cyan-300') : 'text-slate-600'} font-mono">${hasPassed ? fmt(dailyA) : '-'}</td>
-                        <td class="py-1.5 px-2 text-right ${badgeClass}">${pctText}</td>
-                        <td class="py-1.5 px-2.5 text-right font-mono ${diff >= 0 && hasPassed && !isClosedDay ? 'text-emerald-400' : (hasPassed && !isClosedDay ? 'text-rose-400' : 'text-slate-600')}">${diffText}</td>
-                    </tr>
-                `;
-            }
-
-            dailyTbody.innerHTML = dailyTableHtml;
-        }
-
-        // --- SZŰRŐK ÉS TÁBLÁZAT KEZELÉSE ---
-        function onFilterChange() {
-            renderData();
-        }
-
-        function sortTableBy(columnKey) {
-            if (currentSortColumn === columnKey) {
-                currentSortDirection = currentSortDirection === 'desc' ? 'asc' : 'desc';
-            } else {
-                currentSortColumn = columnKey;
-                currentSortDirection = ['honap', 'bolt', 'ertekesito'].includes(columnKey) ? 'asc' : 'desc';
-            }
-            renderData();
-        }
-
-        function updateSortHeaderIcons() {
-            const allKeys = ['honap', 'bolt', 'ertekesito', 'count', 'acq', 'acq_hs', 'acq_tablet', 'huseg', 'fix', 'soho', 'acq_pont', 'ret_pont', 'tartozek', 'pont'];
-            allKeys.forEach(k => {
-                const iconElem = document.getElementById(`sort_icon_${k}`);
-                if (!iconElem) return;
-
-                if (k === currentSortColumn) {
-                    iconElem.innerText = currentSortDirection === 'desc' ? '▼' : '▲';
-                    iconElem.className = "text-indigo-400 font-bold text-[11px]";
-                } else {
-                    iconElem.innerText = '↕';
-                    iconElem.className = "text-slate-500 text-[10px] group-hover:text-indigo-400";
-                }
-            });
-        }
-
-        function renderData() {
-            const selectedMonth = document.getElementById('filterMonth').value;
-            const selectedStore = document.getElementById('filterStore').value;
-            const selectedSeller = document.getElementById('filterSeller').value;
-
-            const filteredCPR = globalTransactions.filter(t => {
-                const monthOk = (selectedMonth === 'ALL' || t.honap === selectedMonth);
-                const storeOk = (selectedStore === 'ALL' || t.bolt === selectedStore);
-                const sellerOk = (selectedSeller === 'ALL' || t.ertekesito === selectedSeller);
-                return monthOk && storeOk && sellerOk;
-            });
-
-            const filteredAcc = globalAccessories.filter(a => {
-                const monthOk = (selectedMonth === 'ALL' || a.honap === selectedMonth);
-                const storeOk = (selectedStore === 'ALL' || a.bolt === selectedStore);
-                const sellerOk = (selectedSeller === 'ALL' || a.ertekesito === selectedSeller);
-                return monthOk && storeOk && sellerOk;
-            });
-
-            const summaryMap = {};
-
-            // 1. CPR tranzakciók összesítése
-            filteredCPR.forEach(t => {
-                const cleanSeller = String(t.ertekesito || '').trim().replace(/\s+/g, ' ');
-                const key = (selectedStore === 'ALL')
-                    ? `${t.honap}___${cleanSeller}`
-                    : `${t.honap}___${t.bolt}___${cleanSeller}`;
-
-                if (!summaryMap[key]) {
-                    summaryMap[key] = { 
-                        honap: t.honap, 
-                        bolt: t.bolt, 
-                        stores: new Set([t.bolt]),
-                        ertekesito: cleanSeller, 
-                        count: 0, 
-                        acq: 0, 
-                        acq_hs: 0, 
-                        acq_tablet: 0, 
-                        huseg: 0, 
-                        fix: 0, 
-                        soho: 0, 
-                        acq_pont: 0, 
-                        ret_pont: 0, 
-                        tartozek: 0,
-                        pont: 0 
-                    };
-                }
-                if (t.bolt) summaryMap[key].stores.add(t.bolt);
-                summaryMap[key].count += 1;
-                summaryMap[key].acq += (t.acq_db || 0);
-                summaryMap[key].acq_hs += (t.acq_hs || 0);
-                summaryMap[key].acq_tablet += (t.acq_tablet || 0);
-                summaryMap[key].huseg += (t.huseg_db || 0);
-                summaryMap[key].fix += (t.fix_db || 0);
-                if (t.szegmens && t.szegmens.toLowerCase() === 'soho' && t.acq_db > 0) {
-                    summaryMap[key].soho += (t.acq_db || 1);
-                }
-                summaryMap[key].acq_pont += (t.acq_pont || 0);
-                summaryMap[key].ret_pont += (t.ret_pont || 0);
-                summaryMap[key].pont += (t.osszpont || 0);
-            });
-
-            // 2. Tartozékok hozzáadása ugyanahhoz a kulcshoz
-            filteredAcc.forEach(a => {
-                const cleanSellerAcc = String(a.ertekesito || '').trim().replace(/\s+/g, ' ');
-                const key = (selectedStore === 'ALL')
-                    ? `${a.honap}___${cleanSellerAcc}`
-                    : `${a.honap}___${a.bolt}___${cleanSellerAcc}`;
-
-                if (!summaryMap[key]) {
-                    summaryMap[key] = { 
-                        honap: a.honap, 
-                        bolt: a.bolt, 
-                        stores: new Set([a.bolt]),
-                        ertekesito: cleanSellerAcc, 
-                        count: 0, 
-                        acq: 0, 
-                        acq_hs: 0, 
-                        acq_tablet: 0, 
-                        huseg: 0, 
-                        fix: 0, 
-                        soho: 0, 
-                        acq_pont: 0, 
-                        ret_pont: 0, 
-                        tartozek: 0,
-                        pont: 0 
-                    };
-                }
-                if (a.bolt) summaryMap[key].stores.add(a.bolt);
-                summaryMap[key].tartozek += (Number(a.brutto_ertek) || 0);
-            });
-
-            // Rendezés
-            const summaryList = Object.values(summaryMap).sort((a, b) => {
-                let valA = a[currentSortColumn];
-                let valB = b[currentSortColumn];
-
-                if (typeof valA === 'string') {
-                    valA = valA.toLowerCase();
-                    valB = String(valB).toLowerCase();
-                    return currentSortDirection === 'asc' ? valA.localeCompare(valB, 'hu') : valB.localeCompare(valA, 'hu');
-                } else {
-                    valA = Number(valA || 0);
-                    valB = Number(valB || 0);
-                    return currentSortDirection === 'asc' ? valA - valB : valB - valA;
-                }
-            });
-
-            updateSortHeaderIcons();
-
-            document.getElementById('kpiCount').innerText = `${filteredCPR.length} db`;
-            document.getElementById('kpiACQ').innerText = `${summaryList.reduce((acc, s) => acc + s.acq, 0)} db`;
-            document.getElementById('kpiACQHS').innerText = `${summaryList.reduce((acc, s) => acc + s.acq_hs, 0)} db`;
-            document.getElementById('kpiACQTab').innerText = `${summaryList.reduce((acc, s) => acc + s.acq_tablet, 0)} db`;
-            document.getElementById('kpiHuseg').innerText = `${summaryList.reduce((acc, s) => acc + s.huseg, 0)} db`;
-            document.getElementById('kpiFix').innerText = `${summaryList.reduce((acc, s) => acc + s.fix, 0)} db`;
-            document.getElementById('kpiSoho').innerText = `${summaryList.reduce((acc, s) => acc + s.soho, 0)} db`;
-            document.getElementById('kpiACQPont').innerText = summaryList.reduce((acc, s) => acc + s.acq_pont, 0).toFixed(1);
-            document.getElementById('kpiRETPont').innerText = summaryList.reduce((acc, s) => acc + s.ret_pont, 0).toFixed(1);
-            document.getElementById('kpiTartozek').innerText = `${Math.round(summaryList.reduce((acc, s) => acc + s.tartozek, 0)).toLocaleString('hu-HU')} Ft`;
-
-            const tbody = document.getElementById('tableBody');
-            if (summaryList.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="14" class="p-4 text-center text-slate-400">Nincs a szűrésnek megfelelő adat.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = summaryList.map(s => {
-                const storeBadgeHtml = (selectedStore === 'ALL' && s.stores)
-                    ? Array.from(s.stores).sort().map(b => `<span class="px-1.5 py-0.5 bg-slate-700 text-xs font-semibold rounded mr-1">${b}</span>`).join('')
-                    : `<span class="px-2 py-1 bg-slate-700 text-xs font-semibold rounded">${s.bolt}</span>`;
-
-                return `
-                <tr class="hover:bg-slate-700/30 transition">
-                    <td class="p-3 text-xs text-slate-400">${s.honap}</td>
-                    <td class="p-3">${storeBadgeHtml}</td>
-                    <td class="p-3 font-medium text-white">${s.ertekesito}</td>
-                    <td class="p-3 text-center text-slate-300 font-mono">${s.count}</td>
-                    <td class="p-3 text-center font-bold text-indigo-400 font-mono">${s.acq}</td>
-                    <td class="p-3 text-center text-sky-400 font-medium font-mono">${s.acq_hs}</td>
-                    <td class="p-3 text-center text-teal-400 font-medium font-mono">${s.acq_tablet}</td>
-                    <td class="p-3 text-center text-emerald-400 font-medium font-mono">${s.huseg}</td>
-                    <td class="p-3 text-center text-purple-400 font-medium font-mono">${s.fix}</td>
-                    <td class="p-3 text-center text-amber-400 font-bold font-mono">${s.soho}</td>
-                    <td class="p-3 text-right text-sky-300 font-medium font-mono">${s.acq_pont.toFixed(1)}</td>
-                    <td class="p-3 text-right text-teal-300 font-medium font-mono">${s.ret_pont.toFixed(1)}</td>
-                    <td class="p-3 text-right text-pink-300 font-medium font-mono">${Math.round(s.tartozek).toLocaleString('hu-HU')} Ft</td>
-                    <td class="p-3 text-right font-bold text-amber-400 font-mono">${s.pont.toFixed(2)}</td>
-                </tr>
-                `;
-            }).join('');
-        }
-
-        // =========================================================================
-        // --- 1. CPR EXCEL FELTÖLTÉS (TRANZAKCIÓK) ---
-        // =========================================================================
-        
-        // =========================================================================
-        // --- HIBÁS FELTÖLTÉS TÖRLÉSE (SUPABASE) ---
-        // =========================================================================
-        async function executeCloudDelete() {
-            const delMonth = document.getElementById('deleteDataMonth').value;
-            const delType = document.getElementById('deleteDataType').value;
-            
-            if (!delMonth) {
-                alert("Kérlek válassz egy hónapot a törléshez!");
-                return;
-            }
-
-            const typeNames = {
-                'cpr': 'CPR Tranzakciók',
-                'tartozek': 'Tartozék Eladások',
-                'betero': 'Betérő Ügyfelek',
-                'target': 'Havi Targetek',
-                'all': 'MINDEN (CPR, Tartozék, Betérő, Target)'
-            };
-
-            const confirmMsg = `Biztosan TÖRÖLNI akarod a(z) '${delMonth}' hónap összes '${typeNames[delType]}' adatát a felhőből?
-
-Ez a művelet végleges és azonnali.`;
-            if (!confirm(confirmMsg)) return;
-
-            try {
-                if (delType === 'cpr' || delType === 'all') {
-                    const { error } = await supabaseClient.from('bolti_teljesitesek').delete().eq('honap', delMonth);
-                    if (error) throw error;
-                }
-                if (delType === 'tartozek' || delType === 'all') {
-                    const { error } = await supabaseClient.from('bolti_tartozekok').delete().eq('honap', delMonth);
-                    if (error) throw error;
-                }
-                if (delType === 'betero' || delType === 'all') {
-                    const { error } = await supabaseClient.from('bolti_latogatok').delete().eq('honap', delMonth);
-                    if (error) throw error;
-                }
-                if (delType === 'target' || delType === 'all') {
-                    const { error } = await supabaseClient.from('havi_targetek').delete().eq('honap', delMonth);
-                    if (error) throw error;
-                }
-
-                alert(`Sikeres törlés!
-A(z) ${delMonth} hónaphoz tartozó ${typeNames[delType]} adatok törölve lettek a felhőből.`);
-                await loadAllData();
-            } catch (err) {
-                alert("Hiba történt a törlés során: " + err.message);
-            }
-        }
-
-        function handleDropFiles(e) {
-            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                processFileList(Array.from(e.dataTransfer.files));
-            }
-        }
-
-        function handleFileSelect(e) {
-            const files = Array.from(e.target.files);
-            if (files && files.length > 0) {
-                processFileList(files);
-            }
-        }
-
-        const parseExcelDateClean = (raw) => {
-            if (!raw) return null;
-            if (typeof raw === 'number') {
-                const parsed = XLSX.SSF.parse_date_code(raw);
-                if (parsed && parsed.y && parsed.m && parsed.d) {
-                    const y = parsed.y;
-                    const m = String(parsed.m).padStart(2, '0');
-                    const d = String(parsed.d).padStart(2, '0');
-                    return `${y}-${m}-${d}`;
-                }
-            }
-            if (raw instanceof Date) {
-                if (isNaN(raw.getTime())) return null;
-                const y = raw.getFullYear();
-                const m = String(raw.getMonth() + 1).padStart(2, '0');
-                const d = String(raw.getDate()).padStart(2, '0');
-                return `${y}-${m}-${d}`;
-            }
-            const s = String(raw).trim();
-            const match = s.match(/(\d{4})[.\/-](\d{1,2})[.\/-](\d{1,2})/);
-            if (match) {
-                const y = match[1];
-                const mo = match[2].padStart(2, '0');
-                const da = match[3].padStart(2, '0');
-                return `${y}-${mo}-${da}`;
-            }
-            return null;
-        };
-
-        async function processFileList(files) {
-            const statusDiv = document.getElementById('uploadStatus');
-            const uploadLabel = document.getElementById('uploadLabel');
-            uploadLabel.innerText = `${files.length} db fájl kiválasztva`;
-
-            const parseNum = (val) => {
-                if (!val) return 0;
-                return parseFloat(String(val).replace(',', '.')) || 0;
-            };
-
-            let successCount = 0;
-
-            for (let fIdx = 0; fIdx < files.length; fIdx++) {
-                const file = files[fIdx];
-                statusDiv.className = "text-sm font-medium text-indigo-400";
-                statusDiv.innerText = `[${fIdx + 1}/${files.length}] CPR Feldolgozás: ${file.name}...`;
-
-                try {
-                    const data = await file.arrayBuffer();
-                    const workbook = XLSX.read(new Uint8Array(data), { type: 'array', cellDates: false });
-                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true });
-
-                    if (rows.length < 6) continue;
-
-                    let headerIndex = -1;
-                    const colMap = {};
-                    for (let r = 0; r < Math.min(15, rows.length); r++) {
-                        if (rows[r] && rows[r].some(cell => String(cell).trim() === 'Bolt')) {
-                            headerIndex = r;
-                            rows[r].forEach((colName, idx) => {
-                                if (colName) colMap[String(colName).trim()] = idx;
-                            });
-                            break;
-                        }
-                    }
-
-                    if (headerIndex === -1 || colMap['Bolt'] === undefined) continue;
-
-                    let detectedMonth = null;
-                    for (let r = 0; r < headerIndex; r++) {
-                        if (rows[r]) {
-                            const foundIdx = rows[r].findIndex(cell => String(cell || '').toLowerCase().includes('hónap'));
-                            if (foundIdx !== -1 && rows[r][foundIdx + 2]) {
-                                detectedMonth = String(rows[r][foundIdx + 2]).trim();
-                                break;
-                            }
-                        }
-                    }
-
-                    const parsed = [];
-                    for (let i = headerIndex + 1; i < rows.length; i++) {
-                        const r = rows[i];
-                        if (!r) continue;
-
-                        const boltVal = String(r[colMap['Bolt']] || '').trim();
-                        // Név normalizálása: dupla szóközök szűrése!
-                        const ertekesitoVal = String(r[colMap['Értékesítő']] || '').trim().replace(/\s+/g, ' ');
-
-                        if (!boltVal || !ertekesitoVal || boltVal.toLowerCase().includes('különbözet') || ertekesitoVal.toLowerCase().includes('összesen')) {
-                            continue;
-                        }
-
-                        const szegmens = String(r[colMap['Szegmens']] || '').trim();
-                        const cegnev = String(r[colMap['Cégnév']] || '').trim();
-                        const isSoho = (szegmens.toLowerCase() === 'soho') || (cegnev.length > 0 && szegmens.toLowerCase() !== 'flotta');
-
-                        const rawDate = r[colMap['Szerződés dátuma']];
-                        const parsedDate = parseExcelDateClean(rawDate);
-
-                        const rowMonth = detectedMonth || (parsedDate ? parsedDate.substring(0, 7) : "Aktuális");
-                        const realPont = parseNum(r[colMap['Jutalék pont']]);
-                        const acqPont = parseNum(r[colMap['ACQ pont']]);
-                        const retPont = Math.max(0, realPont - acqPont);
-
-                        parsed.push({
-                            honap: rowMonth,
-                            bolt: boltVal,
-                            ertekesito: ertekesitoVal,
-                            szerzodes_datuma: parsedDate,
-                            szegmens: szegmens || null,
-                            cegnev: isSoho && cegnev ? cegnev : null,
-                            kapcsolattarto: isSoho ? (String(r[colMap['Kapcsolattartó']] || '').trim() || null) : null,
-                            telefonszam: isSoho ? (String(r[colMap['Telefonszám']] || '').trim() || null) : null,
-                            acq_db: parseNum(r[colMap['ACQ']]),
-                            acq_hs: parseNum(r[colMap['ACQ Készülék']] || r[colMap['ACQ HS']] || r[colMap['Készüléket vásárolt']]),
-                            acq_tablet: parseNum(r[colMap['ACQ Tablet']] || r[colMap['Táblagépet vásárolt']]),
-                            huseg_db: parseNum(r[colMap['Hűség']]),
-                            fix_db: parseNum(r[colMap['FIX']]),
-                            acq_pont: acqPont,
-                            ret_pont: retPont,
-                            osszpont: realPont
-                        });
-                    }
-
-                    if (parsed.length > 0) {
-                        const targetMonth = parsed[0].honap;
-                        statusDiv.innerText = `[${fIdx + 1}/${files.length}] CPR Felhő frissítése (${targetMonth})...`;
-                        await supabaseClient.from('bolti_teljesitesek').delete().eq('honap', targetMonth);
-
-                        const chunkSize = 500;
-                        for (let c = 0; c < parsed.length; c += chunkSize) {
-                            const chunk = parsed.slice(c, c + chunkSize);
-                            const { error } = await supabaseClient.from('bolti_teljesitesek').insert(chunk);
-                            if (error) throw error;
-                        }
-                        successCount++;
-                    }
-                } catch (err) {
-                    console.error("Hiba a CPR fájl feltöltésekor:", file.name, err);
-                }
-            }
-
-            statusDiv.className = "text-sm font-medium text-emerald-400";
-            statusDiv.innerText = `Kész! Mind a ${successCount} db CPR fájl feldolgozva és mentve!`;
-            await loadAllData();
-        }
-
-        // =========================================================================
-        // --- 2. TARTOZÉK EXCEL FELTÖLTÉS (ÉRTÉKESÍTÉSEK810) ---
-        // =========================================================================
-        function handleAccessoryDrop(e) {
-            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                processAccessoryFiles(Array.from(e.dataTransfer.files));
-            }
-        }
-
-        function handleAccessorySelect(e) {
-            const files = Array.from(e.target.files);
-            if (files && files.length > 0) {
-                processAccessoryFiles(files);
-            }
-        }
-
-        async function processAccessoryFiles(files) {
-            const statusDiv = document.getElementById('accessoryUploadStatus');
-            const uploadLabel = document.getElementById('accessoryUploadLabel');
-            uploadLabel.innerText = `${files.length} db fájl kiválasztva`;
-
-            const parseNum = (val) => {
-                if (!val) return 0;
-                return parseFloat(String(val).replace(/\s+/g, '').replace(',', '.')) || 0;
-            };
-
-            const monthMapHu = {
-                '01': 'január', '02': 'február', '03': 'március', '04': 'április',
-                '05': 'május', '06': 'június', '07': 'július', '08': 'augusztus',
-                '09': 'szeptember', '10': 'október', '11': 'november', '12': 'december'
-            };
-
-            for (let fIdx = 0; fIdx < files.length; fIdx++) {
-                const file = files[fIdx];
-                statusDiv.className = "text-sm font-medium text-pink-400";
-                statusDiv.innerText = `Tartozék fájl feldolgozása: ${file.name}...`;
-
-                try {
-                    const data = await file.arrayBuffer();
-                    const workbook = XLSX.read(new Uint8Array(data), { type: 'array', cellDates: false });
-                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true });
-
-                    if (rows.length < 2) continue;
-
-                    // Fejléc beazonosítása
-                    let headerIndex = -1;
-                    const colMap = {};
-                    for (let r = 0; r < Math.min(6, rows.length); r++) {
-                        if (rows[r] && rows[r].some(cell => String(cell).trim() === 'Biz.szám' || String(cell).trim() === 'Bruttó érték')) {
-                            headerIndex = r;
-                            rows[r].forEach((colName, idx) => {
-                                if (colName) colMap[String(colName).trim().toLowerCase()] = idx;
-                            });
-                            break;
-                        }
-                    }
-
-                    if (headerIndex === -1) throw new Error("Nem található megfelelő tartozék fejléc (Biz.szám, Bruttó érték stb.)!");
-
-                    const parsedRecords = [];
-                    const touchedMonths = new Set();
-
-                    for (let i = headerIndex + 1; i < rows.length; i++) {
-                        const r = rows[i];
-                        if (!r || !r[0]) continue;
-
-                        const boltVal = String(r[colMap['bolt']] || '').trim();
-                        // Név normalizálása (dupla szóközök nélkül)
-                        const ertekesitoVal = String(r[colMap['értékesítő']] || r[colMap['ertekesito']] || '').trim().replace(/\s+/g, ' ');
-
-                        if (!boltVal || !ertekesitoVal) continue;
-
-                        const rawDate = r[colMap['teljesítés']] || r[colMap['teljesites']] || r[colMap['kiállítva']];
-                        const parsedDate = parseExcelDateClean(rawDate);
-                        if (!parsedDate) continue;
-
-                        // "YYYY-MM-DD" -> "2026 október"
-                        const dParts = parsedDate.split('-');
-                        const yearStr = dParts[0];
-                        const mStr = dParts[1];
-                        const honapNev = `${yearStr} ${monthMapHu[mStr] || mStr}`;
-                        touchedMonths.add(honapNev);
-
-                        parsedRecords.push({
-                            honap: honapNev,
-                            bolt: boltVal,
-                            ertekesito: ertekesitoVal,
-                            biz_szam: String(r[colMap['biz.szám']] || r[colMap['biz.szam']] || '').trim() || null,
-                            teljesites_datuma: parsedDate,
-                            netto_ertek: parseNum(r[colMap['nettó érték']] || r[colMap['netto ertek']]),
-                            afa_osszeg: parseNum(r[colMap['áfa összeg']] || r[colMap['afa osszeg']]),
-                            brutto_ertek: parseNum(r[colMap['bruttó érték']] || r[colMap['brutto ertek']]),
-                            fizetesi_mod: String(r[colMap['fizetési mód']] || r[colMap['fizetesi mod']] || '').trim() || null
-                        });
-                    }
-
-                    if (parsedRecords.length > 0) {
-                        statusDiv.innerText = `Tartozékok mentése a felhőbe (${parsedRecords.length} tétel)...`;
-
-                        // Érintett hónapok törlése és frissítése
-                        for (const mName of touchedMonths) {
-                            await supabaseClient.from('bolti_tartozekok').delete().eq('honap', mName);
-                        }
-
-                        const chunkSize = 500;
-                        for (let c = 0; c < parsedRecords.length; c += chunkSize) {
-                            const chunk = parsedRecords.slice(c, c + chunkSize);
-                            const { error } = await supabaseClient.from('bolti_tartozekok').insert(chunk);
-                            if (error) throw error;
-                        }
-
-                        statusDiv.className = "text-sm font-medium text-emerald-400";
-                        statusDiv.innerText = `Sikeres mentés! ${parsedRecords.length} db tartozék eladás feltöltve (${Array.from(touchedMonths).join(', ')}).`;
-                    }
-                } catch (err) {
-                    statusDiv.className = "text-sm font-medium text-rose-400";
-                    statusDiv.innerText = "Hiba a tartozék fájl feldolgozásakor: " + err.message;
-                }
-            }
-
-            await loadAllData();
-        }
-
-        // =========================================================================
-        // --- 3. TARGET EXCEL FELTÖLTÉS & BEILLESZTÉS ---
-        // =========================================================================
-        function handleTargetExcelUpload(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = async function(evt) {
-                try {
-                    const data = new Uint8Array(evt.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-
-                    if (rows.length < 2) throw new Error("A fájl túl kevés sort tartalmaz!");
-
-                    let headerIndex = -1;
-                    const colMap = {};
-                    for (let r = 0; r < Math.min(6, rows.length); r++) {
-                        if (rows[r] && rows[r].some(cell => String(cell).trim() === 'ACQ' || String(cell).trim() === 'Hűség')) {
-                            headerIndex = r;
-                            rows[r].forEach((colName, idx) => {
-                                if (colName) colMap[String(colName).trim().toLowerCase()] = idx;
-                            });
-                            break;
-                        }
-                    }
-
-                    if (headerIndex === -1) throw new Error("Nem található megfelelő fejléc!");
-
-                    const targetMonth = document.getElementById('targetUploadMonth').value;
-                    const cleanNum = (val) => parseFloat(String(val || 0).replace(/\s+/g, '').replace(',', '.')) || 0;
-
-                    const targetPayloads = [];
-                    for (let i = headerIndex + 1; i < rows.length; i++) {
-                        const r = rows[i];
-                        if (!r || !r[0]) continue;
-
-                        const bolt = String(r[0]).trim();
-                        if (!bolt || bolt.toLowerCase().includes('összesen')) continue;
-
-                        const acq = cleanNum(r[colMap['acq']]);
-                        const huseg = cleanNum(r[colMap['hűség']] || r[colMap['huseg']]);
-                        const fix = cleanNum(r[colMap['fix']]);
-                        const soho = cleanNum(r[colMap['soho']]);
-                        const acq_pont = cleanNum(r[colMap['acq pont']]);
-                        const ret_pont = cleanNum(r[colMap['reti pont']] || r[colMap['ret pont']] || r[colMap['retipont']]);
-                        const tartozek = cleanNum(r[colMap['tartozék']] || r[colMap['tartozek']]);
-
-                        targetPayloads.push({
-                            honap: targetMonth,
-                            bolt: bolt,
-                            target_acq_db: acq,
-                            target_huseg_db: huseg,
-                            target_fix_db: fix,
-                            target_soho_db: soho,
-                            target_acq_pont: acq_pont,
-                            target_ret_pont: ret_pont,
-                            target_pont: acq_pont + ret_pont,
-                            target_tartozek_ft: tartozek
-                        });
-                    }
-
-                    for (const t of targetPayloads) {
-                        await supabaseClient.from('havi_targetek').upsert(t, { onConflict: 'honap,bolt' });
-                    }
-
-                    await loadTargetsFromSupabase();
-                    updateTargetView();
-                    alert(`Sikeresen rögzítve ${targetPayloads.length} bolt targetje!`);
-                } catch (err) {
-                    alert("Hiba a target Excel feldolgozásakor: " + err.message);
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
-        async function processPastedTargets() {
-            const rawText = document.getElementById('targetPasteArea').value.trim();
-            if (!rawText) {
-                alert("Kérlek illeszd be a táblázat sorait!");
-                return;
-            }
-
-            const targetMonth = document.getElementById('targetUploadMonth').value;
-            const lines = rawText.split('\n');
-            const targetPayloads = [];
-            const cleanNum = (val) => parseFloat(String(val || 0).replace(/\s+/g, '').replace(',', '.')) || 0;
-
-            lines.forEach(line => {
-                const parts = line.split('\t').map(p => p.trim());
-                if (parts.length >= 7) {
-                    if (parts[0].toLowerCase().includes('bolt') || parts[1].toLowerCase().includes('acq')) return;
-
-                    const bolt = parts[0];
-                    const acq = cleanNum(parts[1]);
-                    const huseg = cleanNum(parts[2]);
-                    const fix = cleanNum(parts[3]);
-                    const soho = cleanNum(parts[4]);
-                    const acq_pont = cleanNum(parts[5]);
-                    const ret_pont = cleanNum(parts[6]);
-                    const tartozek = parts[7] ? cleanNum(parts[7]) : 0;
-
-                    targetPayloads.push({
-                        honap: targetMonth,
-                        bolt: bolt,
-                        target_acq_db: acq,
-                        target_huseg_db: huseg,
-                        target_fix_db: fix,
-                        target_soho_db: soho,
-                        target_acq_pont: acq_pont,
-                        target_ret_pont: ret_pont,
-                        target_pont: acq_pont + ret_pont,
-                        target_tartozek_ft: tartozek
-                    });
-                }
-            });
-
-            if (targetPayloads.length === 0) {
-                alert("Nem sikerült értelmezni a beillesztett sorokat.");
-                return;
-            }
-
-            for (const t of targetPayloads) {
-                await supabaseClient.from('havi_targetek').upsert(t, { onConflict: 'honap,bolt' });
-            }
-
-            await loadTargetsFromSupabase();
-            updateTargetView();
-            document.getElementById('targetPasteArea').value = '';
-            alert(`Sikeresen elmentve ${targetPayloads.length} bolt targetje!`);
-        }
-
-        function renderTargetAdminTable() {
-            const tbody = document.getElementById('targetTableBody');
-            if (!tbody) return;
-
-            if (globalTargets.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-slate-500">Még nincsenek feltöltött bolti targetek.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = globalTargets.map(t => `
-                <tr class="hover:bg-slate-700/20 transition">
-                    <td class="p-2.5 text-slate-400 font-normal">${t.honap}</td>
-                    <td class="p-2.5"><span class="px-2 py-0.5 bg-slate-800 text-indigo-400 font-bold rounded">${t.bolt}</span></td>
-                    <td class="p-2.5 text-center text-indigo-300">${t.target_acq_db || 0}</td>
-                    <td class="p-2.5 text-center text-emerald-300">${t.target_huseg_db || 0}</td>
-                    <td class="p-2.5 text-center text-purple-300">${t.target_fix_db || 0}</td>
-                    <td class="p-2.5 text-center text-amber-300">${t.target_soho_db || 0}</td>
-                    <td class="p-2.5 text-center text-sky-400">${t.target_acq_pont || 0}</td>
-                    <td class="p-2.5 text-center text-teal-400">${t.target_ret_pont || 0}</td>
-                    <td class="p-2.5 text-right font-mono text-pink-300">${(t.target_tartozek_ft || 0).toLocaleString('hu-HU')} Ft</td>
-                </tr>
-            `).join('');
-        }
-    </script>
-</body>
-</html>
+                return parseM
