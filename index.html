@@ -567,6 +567,17 @@
             }
             const extendedMonths = sortMonthsChronological([...new Set(extendedMonthsRaw)]);
 
+            const mNamesExt = ['január', 'február', 'március', 'április', 'május', 'június', 'július', 'augusztus', 'szeptember', 'október', 'november', 'december'];
+            const dNowExt = new Date();
+            const extendedMonthsRaw = [...rawMonths];
+            
+            // Generáljuk be az elmúlt 6 hónapot és a JÖVŐBELI 12 hónapot a listába!
+            for(let i = -6; i <= 12; i++) {
+                const d = new Date(dNowExt.getFullYear(), dNowExt.getMonth() + i, 1);
+                extendedMonthsRaw.push(`${d.getFullYear()} ${mNamesExt[d.getMonth()]}`);
+            }
+            const extendedMonths = sortMonthsChronological([...new Set(extendedMonthsRaw)]);
+
             if(document.getElementById('targetUploadMonth')) {
                 document.getElementById('targetUploadMonth').innerHTML = extendedMonths.map(m => `<option value="${m}">${m}</option>`).join('');
                 // Legyen az alapértelmezett az aktuális hónap
@@ -576,6 +587,7 @@
             
             if(document.getElementById('deleteDataMonth')) {
                 document.getElementById('deleteDataMonth').innerHTML = extendedMonths.map(m => `<option value="${m}">${m}</option>`).join('');
+            }
             }
 
             ['box1Month', 'box2Month', 'box3Month', 'box4Month'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerHTML = monthOptions; });
