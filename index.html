@@ -11,6 +11,7 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen p-3 md:p-6">
 
+    <!-- 1. JELSZÓVÉDŐ KÉPERNYŐ -->
     <div id="loginScreen" class="fixed inset-0 bg-slate-950 flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl max-w-sm w-full text-center shadow-2xl space-y-5">
             <div class="w-16 h-16 bg-indigo-950/60 border border-indigo-500/40 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-inner">🔒</div>
@@ -26,6 +27,7 @@
         </div>
     </div>
 
+    <!-- 2. FŐ ALKALMAZÁS -->
     <div id="dashboardApp" class="hidden max-w-[1700px] mx-auto space-y-6">
         
         <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-slate-800/90 p-5 rounded-xl border border-slate-700 shadow-lg">
@@ -42,6 +44,7 @@
             </div>
         </header>
 
+        <!-- 1. FÜL: ÁTTEKINTÉS ÉS TARGETEK -->
         <main id="tabDashboard" class="space-y-6">
             <section class="bg-slate-800/95 p-5 md:p-6 rounded-2xl border border-slate-700 shadow-xl space-y-5">
                 <div class="flex items-center gap-3 border-b border-slate-700/80 pb-4">
@@ -54,6 +57,7 @@
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
                     
+                    <!-- 1. Havi Target (BAL FELSŐ) -->
                     <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col justify-between shadow-sm">
                         <div class="flex-1 flex flex-col space-y-3">
                             <div class="flex flex-col xl:flex-row xl:items-center justify-between border-b border-slate-700/60 pb-2.5 gap-3">
@@ -87,6 +91,7 @@
                         </div>
                     </div>
 
+                    <!-- 2. Kombinált Vonal/Oszlop Diagram (JOBB FELSŐ) -->
                     <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
                         <div class="flex flex-col justify-between border-b border-slate-700/60 pb-2.5 mb-2 gap-3">
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -129,6 +134,7 @@
                         </div>
                     </div>
 
+                    <!-- 3. Napi Célok Választóval (BAL ALSÓ) -->
                     <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col justify-between shadow-sm">
                         <div class="flex-1 flex flex-col space-y-3">
                             <div class="flex flex-col xl:flex-row xl:items-center justify-between border-b border-slate-700/60 pb-2.5 gap-3">
@@ -138,6 +144,7 @@
                                 </div>
                                 <div class="flex flex-wrap items-center gap-2">
                                     <select id="box3Month" onchange="updateBox3()" class="bg-slate-800 text-slate-300 text-[11px] font-medium border border-slate-600 rounded px-2 py-1 outline-none"></select>
+                                    <select id="box3Day" onchange="updateBox3()" class="bg-slate-800 text-slate-300 text-[11px] font-medium border border-slate-600 rounded px-2 py-1 outline-none"></select>
                                     <select id="box3Store" onchange="updateBox3()" class="bg-slate-800 text-indigo-300 font-bold text-[11px] border border-indigo-500/50 rounded px-2 py-1 outline-none"><option value="ALL">Összes Üzlet</option></select>
                                 </div>
                             </div>
@@ -146,9 +153,9 @@
                                     <thead>
                                         <tr class="text-slate-400 border-b border-slate-700/80 text-[11px]">
                                             <th class="py-2 px-2.5">Kategória</th>
-                                            <th class="py-2 px-2 text-right text-amber-300 font-semibold">Mai Target</th>
-                                            <th class="py-2 px-2 text-right text-cyan-300 font-semibold">Mai Tény</th>
-                                            <th class="py-2 px-2 text-right">Mai %</th>
+                                            <th class="py-2 px-2 text-right text-amber-300 font-semibold">Cél</th>
+                                            <th class="py-2 px-2 text-right text-cyan-300 font-semibold">Tény</th>
+                                            <th class="py-2 px-2 text-right">%</th>
                                             <th class="py-2 px-2.5 text-right">Eltérés</th>
                                         </tr>
                                     </thead>
@@ -157,11 +164,12 @@
                             </div>
                         </div>
                         <div class="pt-2 border-t border-slate-800 text-[11px] text-slate-400 flex justify-between items-center mt-3">
-                            <span>Mai állapot:</span>
+                            <span>Kiválasztott nap állapota:</span>
                             <span id="box3StatusBadge" class="font-semibold"></span>
                         </div>
                     </div>
 
+                    <!-- 4. Napi Bontás (JOBB ALSÓ) -->
                     <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
                         <div class="flex flex-col xl:flex-row xl:items-center justify-between border-b border-slate-700/60 pb-2.5 mb-2 gap-3">
                             <div class="flex items-center gap-2">
@@ -198,6 +206,7 @@
                 </div>
             </section>
 
+            <!-- ÉRTÉKESÍTŐI RÉSZLETES TÁBLÁZAT -->
             <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-700 pb-4">
                     <div>
@@ -271,7 +280,6 @@
                         <h3 class="text-xs font-semibold text-slate-400 uppercase">Feltöltött CPR Sorok (Részletes Lista):</h3>
                         <select id="previewMonthCpr" onchange="renderUploadPreviews()" class="bg-slate-800 text-slate-300 text-[11px] font-medium border border-slate-600 rounded px-2 py-1 outline-none"></select>
                     </div>
-                    <!-- Görgethető doboz a többezer sornak -->
                     <div class="overflow-y-auto overflow-x-auto max-h-[300px] border border-slate-700/80 rounded-lg">
                         <table class="w-full text-left border-collapse text-[10px]">
                             <thead class="sticky top-0 bg-slate-900 shadow-md z-10">
@@ -564,6 +572,28 @@
                 document.getElementById('filterMonth').value = months[0];
                 ['box1Month', 'box2Month', 'box3Month', 'box4Month'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = months[0]; });
             }
+            
+            // Box 3 Day options generator
+            updateBox3Days();
+        }
+        
+        function updateBox3Days() {
+            const el = document.getElementById('box3Day');
+            if(!el) return;
+            const currentSelected = el.value;
+            let options = "";
+            for(let d=1; d<=31; d++) {
+                options += `<option value="${d}">${d}.</option>`;
+            }
+            el.innerHTML = options;
+            
+            const now = new Date();
+            // Default to today if it's the first time
+            if (!currentSelected || currentSelected === "") {
+                el.value = now.getDate().toString();
+            } else {
+                el.value = currentSelected;
+            }
         }
         
         function renderUploadPreviews() {
@@ -645,7 +675,7 @@
                 }
             }
 
-            // 3. BETÉRŐ TÁBLA (Marad bolti összesített, mert ott naponta csak 1 szám van boltonként)
+            // 3. BETÉRŐ TÁBLA (Marad bolti összesített)
             const footMonth = document.getElementById('previewMonthFoot') ? document.getElementById('previewMonthFoot').value : null;
             const tbFoot = document.getElementById('previewTableFoot');
             if (tbFoot && footMonth) {
@@ -738,7 +768,7 @@
             const now = new Date();
             const currentDay = (now.getFullYear() === currentYear && now.getMonth() === currentMonthIdx) ? now.getDate() : daysInMonth;
 
-                        function getStoreDailyTargets(storeCode, targetVal) {
+            function getStoreDailyTargets(storeCode, targetVal) {
                 let storeHistory = globalTransactions.filter(t => t.honap !== selectedMonth);
                 if (storeCode !== 'ALL') storeHistory = storeHistory.filter(t => t.bolt === storeCode);
                 if (storeHistory.length < 10) storeHistory = globalTransactions.filter(t => storeCode === 'ALL' || t.bolt === storeCode);
@@ -761,15 +791,11 @@
                     }
                 });
 
-                // SZABÁLY: Az FPK007 és FPK012 vasárnap (dow === 0) mindig ZÁRVA van!
-                if (storeCode === 'FPK007' || storeCode === 'FPK012') {
-                    sDowPoints[0] = 0;
-                }
+                if (storeCode === 'FPK007' || storeCode === 'FPK012') { sDowPoints[0] = 0; }
 
                 const sDowWeights = sDowPoints.map(p => sTotalPts > 0 ? (p / sTotalPts) * 7 : 0.0);
                 const sDomWeights = sDomPoints.map(p => sTotalPts > 0 ? (p / sTotalPts) * 30.5 : 1.0);
 
-                // MAGYARORSZÁGI MUNKASZÜNETI NAPOK (2026 - 2027) -> Ahol garantáltan 0 a target!
                 const publicHolidays = [
                     '2026-01-01', '2026-03-15', '2026-04-03', '2026-04-06', '2026-05-01', '2026-05-25', '2026-08-20', '2026-10-23', '2026-11-01', '2026-12-25', '2026-12-26',
                     '2027-01-01', '2027-03-15', '2027-03-26', '2027-03-29', '2027-05-01', '2027-05-17', '2027-08-20', '2027-10-23', '2027-11-01', '2027-12-25', '2027-12-26'
@@ -777,25 +803,19 @@
 
                 const dailyMap = {}; let sumWeights = 0;
                 
-                // 1. lépés: Kiszámoljuk az érvényes napok összsúlyát (ünnepek és fix zárvatartások kihagyásával)
                 for (let d = 1; d <= daysInMonth; d++) {
                     const dateStr = `${currentYear}-${String(currentMonthIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                     const dow = new Date(currentYear, currentMonthIdx, d).getDay();
-                    
-                    if (publicHolidays.includes(dateStr) || (dow === 0 && (storeCode === 'FPK007' || storeCode === 'FPK012'))) {
-                        continue;
-                    }
+                    if (publicHolidays.includes(dateStr) || (dow === 0 && (storeCode === 'FPK007' || storeCode === 'FPK012'))) continue;
                     const w = (sDowWeights[dow] || 0) * (sDomWeights[d] || 1);
                     sumWeights += w;
                 }
                 
-                // 2. lépés: Kiosztjuk a targetet csak a nyitvatartó napokra
                 for (let d = 1; d <= daysInMonth; d++) {
                     const dateStr = `${currentYear}-${String(currentMonthIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                     const dow = new Date(currentYear, currentMonthIdx, d).getDay();
-                    
                     if (publicHolidays.includes(dateStr) || (dow === 0 && (storeCode === 'FPK007' || storeCode === 'FPK012'))) {
-                        dailyMap[d] = 0; // Munkaszüneti nap és fixen zárt vasárnap = 0 target!
+                        dailyMap[d] = 0;
                     } else {
                         const w = (sDowWeights[dow] || 0) * (sDomWeights[d] || 1);
                         dailyMap[d] = sumWeights > 0 ? (targetVal * (w / sumWeights)) : 0;
@@ -995,34 +1015,43 @@
             const m = document.getElementById('box3Month').value;
             const s = document.getElementById('box3Store').value;
             
-            const daysNames = ['Vasárnap', 'Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat'];
-            let currentDayNum = 1; let currentDow = 1;
-            const mockData = fetchBoxData(m, s, 'pont');
-            currentDayNum = mockData.currentDay;
-            currentDow = new Date(mockData.currentYear, mockData.currentMonthIdx, currentDayNum).getDay();
+            const dayEl = document.getElementById('box3Day');
+            let selectedDayNum = dayEl ? parseInt(dayEl.value, 10) : null;
             
-            document.getElementById('box3Title').innerText = `Mai Célok (${currentDayNum}. ${daysNames[currentDow]})`;
+            const dataMock = fetchBoxData(m, s, 'pont');
+            if (!selectedDayNum || selectedDayNum > dataMock.daysInMonth) {
+                selectedDayNum = dataMock.currentDay;
+                if(dayEl) dayEl.value = selectedDayNum;
+            }
+            
+            const daysNames = ['Vasárnap', 'Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat'];
+            const dow = new Date(dataMock.currentYear, dataMock.currentMonthIdx, selectedDayNum).getDay();
+            
+            document.getElementById('box3Title').innerText = `Kiválasztott Nap (${selectedDayNum}. ${daysNames[dow]})`;
             let isOpen = true;
 
             document.getElementById('box3TableBody').innerHTML = metricRows.filter(mr => mr.key !== 'betero_db').map(metric => {
                 const data = fetchBoxData(m, s, metric.key);
-                const mTarget = data.storeDailyTargetMap[data.currentDay] || 0;
-                const mActual = data.dailyActualMap[data.currentDay] || 0;
+                const mTarget = data.storeDailyTargetMap[selectedDayNum] || 0;
                 
-                const isClosed = (mTarget === 0 && data.storeDailyTargetMap[Math.max(1, data.currentDay-1)] > 0); 
+                // Csak akkor mutatunk tényleges adatot, ha az a nap már elmúlt (vagy ma van). Jövőbeninél nulla.
+                const hasPassed = (selectedDayNum <= data.currentDay);
+                const mActual = hasPassed ? (data.dailyActualMap[selectedDayNum] || 0) : 0;
+                
+                const isClosed = (mTarget === 0 && data.storeDailyTargetMap[Math.max(1, selectedDayNum-1)] > 0); 
                 if (isClosed && metric.key==='pont') isOpen = false;
                 
                 const diff = mActual - mTarget;
                 const pct = mTarget > 0 ? (mActual / mTarget) * 100 : (mActual > 0 ? 100 : 0);
                 const bc = getBadgeColor(pct, isClosed);
-                const diffFmt = isClosed ? '-' : (diff >= 0 ? `+${formatVal(diff, metric.isCurrency, metric.isInt)}` : formatVal(diff, metric.isCurrency, metric.isInt));
-                const diffCol = isClosed ? 'text-slate-600' : (diff >= 0 ? 'text-emerald-400' : 'text-rose-400');
+                const diffFmt = isClosed ? '-' : (hasPassed ? (diff >= 0 ? `+${formatVal(diff, metric.isCurrency, metric.isInt)}` : formatVal(diff, metric.isCurrency, metric.isInt)) : '-');
+                const diffCol = isClosed ? 'text-slate-600' : (hasPassed ? (diff >= 0 ? 'text-emerald-400' : 'text-rose-400') : 'text-slate-600');
 
                 return `<tr class="hover:bg-slate-800/40 transition">
                             <td class="py-2 px-2.5 font-semibold ${metric.color}">${metric.label}</td>
                             <td class="py-2 px-2 text-right font-bold text-amber-300 font-mono">${isClosed ? 'ZÁRVA' : formatVal(mTarget, metric.isCurrency, metric.isInt)}</td>
-                            <td class="py-2 px-2 text-right font-bold text-cyan-300 font-mono">${formatVal(mActual, metric.isCurrency, metric.isInt)}</td>
-                            <td class="py-2 px-2 text-right"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold border ${bc}">${isClosed ? 'ZÁRVA' : pct.toFixed(0) + '%'}</span></td>
+                            <td class="py-2 px-2 text-right font-bold ${hasPassed ? 'text-cyan-300' : 'text-slate-500'} font-mono">${hasPassed ? formatVal(mActual, metric.isCurrency, metric.isInt) : '-'}</td>
+                            <td class="py-2 px-2 text-right"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold border ${hasPassed ? bc : 'bg-slate-800 text-slate-500 border-slate-700'}">${isClosed ? 'ZÁRVA' : (hasPassed ? pct.toFixed(0) + '%' : '-')}</span></td>
                             <td class="py-2 px-2.5 text-right font-mono font-bold ${diffCol}">${diffFmt}</td>
                         </tr>`;
             }).join('');
@@ -1158,6 +1187,9 @@
             }).join('');
         }
 
+        // =========================================================================
+        // --- FELTÖLTŐ FÜL FUNKCIÓI ---
+        // =========================================================================
         function handleDropFiles(e) { if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) processFileList(Array.from(e.dataTransfer.files)); }
         function handleFileSelect(e) { const files = Array.from(e.target.files); if (files && files.length > 0) processFileList(files); }
 
