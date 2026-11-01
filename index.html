@@ -8,9 +8,17 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Egyedi gördítősáv a szép megjelenésért */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen p-3 md:p-6">
 
+    <!-- JELSZÓVÉDŐ KÉPERNYŐ -->
     <div id="loginScreen" class="fixed inset-0 bg-slate-950 flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl max-w-sm w-full text-center shadow-2xl space-y-5">
             <div class="w-16 h-16 bg-indigo-950/60 border border-indigo-500/40 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-inner">🔒</div>
@@ -26,6 +34,41 @@
         </div>
     </div>
 
+    <!-- FELUGRÓ ABLAK (MODAL) EGY ADOTT NAP TARGETJEINEK -->
+    <div id="dayModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50 transition-opacity opacity-0 pointer-events-none" style="transition: opacity 0.2s;">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform scale-95 transition-transform" id="dayModalContent" style="transition: transform 0.2s;">
+            <!-- Fejléc -->
+            <div class="flex items-center justify-between p-5 border-b border-slate-700/80 bg-slate-900/50">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-indigo-900/50 border border-indigo-500/30 flex items-center justify-center text-xl shadow-inner">📅</div>
+                    <div>
+                        <h2 class="text-lg font-bold text-white" id="modalTitle">Kiválasztott Nap Targetjei</h2>
+                        <p class="text-xs text-slate-400" id="modalSubtitle">Napi tervezett célszámok</p>
+                    </div>
+                </div>
+                <button onclick="closeDayModal()" class="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 w-8 h-8 rounded-lg flex items-center justify-center transition border border-slate-700">✕</button>
+            </div>
+            
+            <!-- Tartalom (Kártyák) -->
+            <div class="p-6">
+                <div id="modalCardsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    <!-- Ide generálódnak a kártyák -->
+                </div>
+                <div id="modalClosedMsg" class="hidden text-center py-8">
+                    <span class="text-4xl block mb-3">🪧</span>
+                    <h3 class="text-lg font-bold text-slate-300">Ez az üzlet ezen a napon ZÁRVA tart.</h3>
+                    <p class="text-sm text-slate-500 mt-1">Munkaszüneti nap vagy fix vasárnapi zárvatartás.</p>
+                </div>
+            </div>
+            
+            <!-- Lábjegyzet -->
+            <div class="p-4 bg-slate-900/50 border-t border-slate-700/80 text-center">
+                <button onclick="closeDayModal()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold px-6 py-2 rounded-lg transition">Bezárás</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FŐ ALKALMAZÁS -->
     <div id="dashboardApp" class="hidden max-w-[1700px] mx-auto space-y-6">
         
         <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-slate-800/90 p-5 rounded-xl border border-slate-700 shadow-lg">
@@ -129,7 +172,7 @@
                         </div>
                     </div>
 
-                    <!-- 3. Napi Targetek Naptára (BAL ALSÓ) -->
+                    <!-- 3. Napi Targetek Naptára KATTINTHATÓ SOROKKAL (BAL ALSÓ) -->
                     <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
                         <div class="flex flex-col xl:flex-row xl:items-center justify-between border-b border-slate-700/60 pb-2.5 mb-2 gap-3">
                             <div class="flex items-center gap-2">
@@ -141,9 +184,10 @@
                                 <select id="box3Store" onchange="updateBox3()" class="bg-slate-800 text-indigo-300 font-bold text-[11px] border border-indigo-500/50 rounded px-2 py-1 outline-none"><option value="ALL">Összes Üzlet</option></select>
                             </div>
                         </div>
+                        <div class="text-[10px] text-slate-500 mb-2 italic">Kattints egy napra a részletes célszámok megjelenítéséhez!</div>
                         <div class="overflow-y-auto overflow-x-auto flex-1 pr-1 min-h-[250px] relative border border-slate-700/40 rounded-lg">
                             <div class="absolute inset-0">
-                                <table class="w-full text-left border-collapse text-[10px]">
+                                <table class="w-full text-left border-collapse text-[10px] cursor-pointer">
                                     <thead class="sticky top-0 bg-slate-900 shadow z-10">
                                         <tr class="text-slate-400 border-b border-slate-700/80 text-[10px]">
                                             <th class="py-2 px-2">Dátum</th>
@@ -200,6 +244,7 @@
                 </div>
             </section>
 
+            <!-- ÉRTÉKESÍTŐI RÉSZLETES TÁBLÁZAT -->
             <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-700 pb-4">
                     <div>
@@ -475,6 +520,11 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             checkAuth();
+            
+            // Ha a felhasználó a sötét háttérre kattint a modal körül, bezárul a modal
+            document.getElementById('dayModal').addEventListener('click', function(e) {
+                if(e.target === this) closeDayModal();
+            });
         });
 
         async function loadAllData() {
@@ -646,7 +696,7 @@
                 }
             }
 
-            // 3. BETÉRŐ TÁBLA (Marad bolti összesített)
+            // 3. BETÉRŐ TÁBLA
             const footMonth = document.getElementById('previewMonthFoot') ? document.getElementById('previewMonthFoot').value : null;
             const tbFoot = document.getElementById('previewTableFoot');
             if (tbFoot && footMonth) {
@@ -982,16 +1032,94 @@
             });
         }
 
-        // UJ FUNKCIO: Napi Target tervező tábla
+        // ==========================================
+        // FELUGRÓ ABLAK (MODAL) LOGIKÁJA
+        // ==========================================
+        function openDayModal(dayNum) {
+            const m = document.getElementById('box3Month').value;
+            const s = document.getElementById('box3Store').value;
+            
+            const dataMock = fetchBoxData(m, s, 'pont');
+            const dow = new Date(dataMock.currentYear, dataMock.currentMonthIdx, dayNum).getDay();
+            const dayNames = ['Vasárnap', 'Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat'];
+            
+            document.getElementById('modalTitle').innerText = `${dayNum}. ${dayNames[dow]} (${s === 'ALL' ? 'Összes Üzlet' : s})`;
+            
+            // Kártyák generálása
+            const grid = document.getElementById('modalCardsGrid');
+            const closedMsg = document.getElementById('modalClosedMsg');
+            let isClosedDay = false;
+            let cardsHtml = '';
+
+            metricRows.filter(mr => mr.key !== 'betero_db').forEach(metric => {
+                const data = fetchBoxData(m, s, metric.key);
+                const mTarget = data.storeDailyTargetMap[dayNum] || 0;
+                
+                if (mTarget === 0 && data.storeDailyTargetMap[Math.max(1, dayNum-1)] > 0 && metric.key === 'pont') {
+                    isClosedDay = true;
+                }
+                
+                // Milyen színű legyen a kártya felirata
+                let titleColor = '';
+                if(metric.key.includes('pont')) titleColor = 'text-amber-400';
+                if(metric.key.includes('acq')) titleColor = 'text-indigo-400';
+                if(metric.key.includes('huseg')) titleColor = 'text-emerald-400';
+                if(metric.key.includes('fix')) titleColor = 'text-purple-400';
+                if(metric.key.includes('soho')) titleColor = 'text-amber-300';
+                if(metric.key.includes('tartozek')) titleColor = 'text-pink-400';
+
+                cardsHtml += `
+                    <div class="bg-slate-900/80 border border-slate-700/80 p-4 rounded-xl flex flex-col items-center justify-center text-center shadow-lg transform hover:scale-105 transition-transform">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">${metric.label}</span>
+                        <span class="text-2xl font-black font-mono ${titleColor}">${formatVal(mTarget, metric.isCurrency, metric.isInt)}</span>
+                    </div>
+                `;
+            });
+
+            if (isClosedDay) {
+                grid.classList.add('hidden');
+                closedMsg.classList.remove('hidden');
+            } else {
+                grid.innerHTML = cardsHtml;
+                grid.classList.remove('hidden');
+                closedMsg.classList.add('hidden');
+            }
+
+            // Megjelenítés animációval
+            const modal = document.getElementById('dayModal');
+            const content = document.getElementById('dayModalContent');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            // Pici késleltetés, hogy a display: flex érvényesüljön az opacity előtt
+            setTimeout(() => {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                content.classList.remove('scale-95');
+                content.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeDayModal() {
+            const modal = document.getElementById('dayModal');
+            const content = document.getElementById('dayModalContent');
+            
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            content.classList.remove('scale-100');
+            content.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 200);
+        }
+
         function updateBox3() {
             const m = document.getElementById('box3Month').value;
             const s = document.getElementById('box3Store').value;
             
-            // Hogy megtudjuk hány nap van a hónapban, lekérünk egy dummy adatot
             const data = fetchBoxData(m, s, 'pont');
             const dayNamesShort = ['V', 'H', 'K', 'Sze', 'Cs', 'P', 'Szo'];
             
-            // Lekérjük az összes metrikát egyszerre
             const mPont = fetchBoxData(m, s, 'pont');
             const mAcqP = fetchBoxData(m, s, 'acq_pont');
             const mRetP = fetchBoxData(m, s, 'ret_pont');
@@ -1009,15 +1137,15 @@
                 const pt = mPont.storeDailyTargetMap[d] || 0;
                 const isClosed = (pt === 0);
                 
-                const rowBg = isToday ? "bg-amber-950/40 border-l-2 border-amber-400" : "hover:bg-slate-800/40";
+                const rowBg = isToday ? "bg-amber-950/40 border-l-2 border-amber-400" : "hover:bg-slate-800/60";
                 
                 if (isClosed) {
-                    html += `<tr class="${rowBg} transition text-[10px]">
+                    html += `<tr class="${rowBg} transition text-[10px] cursor-pointer" onclick="openDayModal(${d})">
                                 <td class="py-1.5 px-2"><span class="${isToday ? 'text-amber-300 font-bold' : (dow===0 ? 'text-rose-400/80 font-semibold' : 'text-slate-300')}">${d}. ${dayNamesShort[dow]}</span></td>
                                 <td colspan="8" class="py-1.5 px-2 text-center text-slate-500 font-bold tracking-widest">Z Á R V A</td>
                             </tr>`;
                 } else {
-                    html += `<tr class="${rowBg} transition text-[10px]">
+                    html += `<tr class="${rowBg} transition text-[10px] cursor-pointer" onclick="openDayModal(${d})">
                                 <td class="py-1.5 px-2"><span class="${isToday ? 'text-amber-300 font-bold' : (dow===0 ? 'text-rose-400/80 font-semibold' : 'text-slate-300')}">${d}. ${dayNamesShort[dow]}</span></td>
                                 <td class="py-1.5 px-2 text-right text-amber-300 font-bold font-mono">${pt.toFixed(1)}</td>
                                 <td class="py-1.5 px-2 text-right text-sky-400 font-mono">${(mAcqP.storeDailyTargetMap[d]||0).toFixed(1)}</td>
@@ -1160,6 +1288,9 @@
             }).join('');
         }
 
+        // =========================================================================
+        // --- FELTÖLTŐ FÜL FUNKCIÓI ---
+        // =========================================================================
         function handleDropFiles(e) { if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) processFileList(Array.from(e.dataTransfer.files)); }
         function handleFileSelect(e) { const files = Array.from(e.target.files); if (files && files.length > 0) processFileList(files); }
 
