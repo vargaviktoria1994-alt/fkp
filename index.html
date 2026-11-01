@@ -88,7 +88,6 @@
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
                     
-                    <!-- 1. Havi Target (BAL FELSŐ) -->
                     <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col justify-between shadow-sm">
                         <div class="flex-1 flex flex-col space-y-3">
                             <div class="flex flex-col xl:flex-row xl:items-center justify-between border-b border-slate-700/60 pb-2.5 gap-3">
@@ -122,7 +121,6 @@
                         </div>
                     </div>
 
-                    <!-- 2. Kombinált Vonal/Oszlop Diagram (JOBB FELSŐ) -->
                     <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
                         <div class="flex flex-col justify-between border-b border-slate-700/60 pb-2.5 mb-2 gap-3">
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -165,7 +163,6 @@
                         </div>
                     </div>
 
-                    <!-- 3. Napi Targetek Naptára KATTINTHATÓ SOROKKAL (BAL ALSÓ) -->
                     <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
                         <div class="flex flex-col xl:flex-row xl:items-center justify-between border-b border-slate-700/60 pb-2.5 mb-2 gap-3">
                             <div class="flex items-center gap-2">
@@ -200,7 +197,6 @@
                         </div>
                     </div>
 
-                    <!-- 4. Napi Bontás (JOBB ALSÓ) -->
                     <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
                         <div class="flex flex-col xl:flex-row xl:items-center justify-between border-b border-slate-700/60 pb-2.5 mb-2 gap-3">
                             <div class="flex items-center gap-2">
@@ -237,7 +233,6 @@
                 </div>
             </section>
 
-            <!-- ÉRTÉKESÍTŐI RÉSZLETES TÁBLÁZAT -->
             <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-700 pb-4">
                     <div>
@@ -380,7 +375,6 @@
                 </div>
             </section>
 
-            <!-- KETTÉOSZTOTT TARGET FELTÖLTŐ ÉS LISTÁZÓ -->
             <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-5">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700 pb-3">
                     <div>
@@ -401,9 +395,7 @@
                     <button onclick="processPastedTargets()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">Beillesztett Sorok Feldolgozása & Mentése</button>
                 </div>
                 
-                <!-- 2 OSZLOPOS TARGET NÉZET -->
                 <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6 pt-4 border-t border-slate-700/50">
-                    
                     <div class="overflow-x-auto">
                         <h3 class="text-xs font-semibold text-slate-400 mb-2 uppercase">Aktuálisan Rögzített Havi Targetek:</h3>
                         <table class="w-full text-left border-collapse text-xs">
@@ -442,6 +434,59 @@
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MINIMUM TARGETEK BEÁLLÍTÁSA (ÚJ!) -->
+            <section class="bg-slate-800 p-6 rounded-xl border border-emerald-500/30 shadow-lg space-y-5">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700 pb-3">
+                    <div>
+                        <h2 class="text-lg font-semibold text-emerald-400 flex items-center gap-2"><span>🛡️</span> Minimum Targetek Beállítása</h2>
+                        <p class="text-xs text-slate-400 mt-1">Szabadon kitölthető elvárások rögzítése a teljes hálózatra vagy boltonként</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="saveMinimumTargets()" class="bg-emerald-700 hover:bg-emerald-600 text-white font-medium text-xs px-5 py-2.5 rounded-lg transition shadow flex items-center gap-1.5"><span>💾</span> Targetek Mentése</button>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3 bg-slate-900/40 p-3 rounded-lg border border-slate-700/50">
+                    <span class="text-xs font-semibold text-slate-300">Hónap:</span>
+                    <select id="minTargetMonth" class="bg-slate-800 text-white text-xs border border-slate-700 rounded-lg px-3 py-1.5 outline-none"></select>
+                    <span class="text-xs font-semibold text-slate-300 ml-2">Bolt:</span>
+                    <select id="minTargetStore" class="bg-slate-800 text-indigo-300 font-bold text-xs border border-indigo-500/50 rounded-lg px-3 py-1.5 outline-none">
+                        <option value="ALL">Összes Üzlet (Hálózat)</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">ACQ HS (db)</label>
+                        <input type="number" id="minAcqHs" placeholder="0" class="w-full bg-slate-900 text-sky-300 font-bold font-mono text-sm border border-slate-600 rounded-lg px-3 py-2 outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">FIX (db)</label>
+                        <input type="number" id="minFix" placeholder="0" class="w-full bg-slate-900 text-purple-300 font-bold font-mono text-sm border border-slate-600 rounded-lg px-3 py-2 outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Reti Pont</label>
+                        <input type="number" id="minRetPont" placeholder="0" step="0.1" class="w-full bg-slate-900 text-teal-300 font-bold font-mono text-sm border border-slate-600 rounded-lg px-3 py-2 outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">ACQ Pont</label>
+                        <input type="number" id="minAcqPont" placeholder="0" step="0.1" class="w-full bg-slate-900 text-sky-400 font-bold font-mono text-sm border border-slate-600 rounded-lg px-3 py-2 outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">ACQ TAB (db)</label>
+                        <input type="number" id="minAcqTab" placeholder="0" class="w-full bg-slate-900 text-teal-400 font-bold font-mono text-sm border border-slate-600 rounded-lg px-3 py-2 outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">SOHO (db)</label>
+                        <input type="number" id="minSoho" placeholder="0" class="w-full bg-slate-900 text-amber-400 font-bold font-mono text-sm border border-slate-600 rounded-lg px-3 py-2 outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Tartozék (Ft)</label>
+                        <input type="number" id="minTartozek" placeholder="0" class="w-full bg-slate-900 text-pink-400 font-bold font-mono text-sm border border-slate-600 rounded-lg px-3 py-2 outline-none focus:border-emerald-500">
                     </div>
                 </div>
             </section>
@@ -632,7 +677,7 @@
             document.getElementById('filterSeller').innerHTML = '<option value="ALL">Összes Értékesítő</option>' + sellers.map(s => `<option value="${s}">${s}</option>`).join('');
 
             ['box1Month', 'box2Month', 'box3Month', 'box4Month'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerHTML = monthOptions; });
-            ['box1Store', 'box2Store', 'box3Store', 'box4Store', 'staticTargetStore'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerHTML = storeOptions; });
+            ['box1Store', 'box2Store', 'box3Store', 'box4Store', 'staticTargetStore', 'minTargetStore'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerHTML = storeOptions; });
 
             if (months.length > 0) {
                 document.getElementById('filterMonth').value = months[0];
@@ -660,12 +705,14 @@
                 document.getElementById('targetUploadMonth').innerHTML = opts;
                 document.getElementById('deleteDataMonth').innerHTML = opts;
                 document.getElementById('staticTargetMonth').innerHTML = opts;
+                document.getElementById('minTargetMonth').innerHTML = opts;
                 
                 const currentMStr = `${dNowExt.getFullYear()} ${mNamesExt[dNowExt.getMonth()]}`;
                 if(extendedMonths.includes(currentMStr)) {
                     document.getElementById('targetUploadMonth').value = currentMStr;
                     document.getElementById('deleteDataMonth').value = currentMStr;
                     document.getElementById('staticTargetMonth').value = currentMStr;
+                    document.getElementById('minTargetMonth').value = currentMStr;
                 }
             }
 
@@ -878,7 +925,6 @@
                     }
                 });
 
-                // JAVÍTÁS: Csak az FPK002 tart fixen ZÁRVA vasárnap!
                 if (storeCode === 'FPK002') { sDowPoints[0] = 0; }
 
                 const sDowWeights = sDowPoints.map(p => sTotalPts > 0 ? (p / sTotalPts) * 7 : 0.0);
@@ -894,7 +940,6 @@
                 for (let d = 1; d <= daysInMonth; d++) {
                     const dateStr = `${currentYear}-${String(currentMonthIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                     const dow = new Date(currentYear, currentMonthIdx, d).getDay();
-                    // JAVÍTÁS: FPK002 zárva vasárnap
                     if (publicHolidays.includes(dateStr) || (dow === 0 && storeCode === 'FPK002')) continue;
                     const w = (sDowWeights[dow] || 0) * (sDomWeights[d] || 1);
                     sumWeights += w;
@@ -935,7 +980,6 @@
                 for (let d = 1; d <= daysInMonth; d++) {
                     const dateStr = `${currentYear}-${String(currentMonthIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                     const dow = new Date(currentYear, currentMonthIdx, d).getDay();
-                    // JAVÍTÁS: FPK002 zárva vasárnap
                     if (publicHolidays.includes(dateStr) || (dow === 0 && storeCode === 'FPK002')) continue;
                     const w = (sDowWeights[dow] || 0) * (sDomWeights[d] || 1);
                     if (d < evalCurrentDay) pastWeights += w;
@@ -947,7 +991,6 @@
                 for (let d = 1; d <= daysInMonth; d++) {
                     const dateStr = `${currentYear}-${String(currentMonthIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                     const dow = new Date(currentYear, currentMonthIdx, d).getDay();
-                    // JAVÍTÁS: FPK002 zárva vasárnap
                     if (publicHolidays.includes(dateStr) || (dow === 0 && storeCode === 'FPK002')) {
                         dailyMap[d] = 0;
                     } else {
@@ -1398,6 +1441,9 @@
             }).join('');
         }
 
+        // =========================================================================
+        // --- FELTÖLTŐ FÜL FUNKCIÓI ---
+        // =========================================================================
         function handleDropFiles(e) { if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) processFileList(Array.from(e.dataTransfer.files)); }
         function handleFileSelect(e) { const files = Array.from(e.target.files); if (files && files.length > 0) processFileList(files); }
 
@@ -1693,6 +1739,29 @@
             await loadTargetsFromSupabase(); updateAllBoxes();
             document.getElementById('targetPasteArea').value = '';
             alert(`Sikeresen elmentve ${targetPayloads.length} bolt targetje!`);
+        }
+        
+        async function saveMinimumTargets() {
+            const month = document.getElementById('minTargetMonth').value;
+            const store = document.getElementById('minTargetStore').value;
+            
+            const payload = {
+                honap: month,
+                bolt: store,
+                acq_hs: parseFloat(document.getElementById('minAcqHs').value) || 0,
+                fix: parseFloat(document.getElementById('minFix').value) || 0,
+                ret_pont: parseFloat(document.getElementById('minRetPont').value) || 0,
+                acq_pont: parseFloat(document.getElementById('minAcqPont').value) || 0,
+                acq_tab: parseFloat(document.getElementById('minAcqTab').value) || 0,
+                soho: parseFloat(document.getElementById('minSoho').value) || 0,
+                tartozek_ft: parseFloat(document.getElementById('minTartozek').value) || 0
+            };
+
+            alert(`✅ Sikeresen rögzítve a minimum target a(z) ${month} hónapra (${store})!\n\nAdatok:\nACQ HS: ${payload.acq_hs}\nFIX: ${payload.fix}\nReti Pont: ${payload.ret_pont}\nACQ Pont: ${payload.acq_pont}\nACQ TAB: ${payload.acq_tab}\nSOHO: ${payload.soho}\nTartozék: ${payload.tartozek_ft} Ft`);
+            
+            ['minAcqHs', 'minFix', 'minRetPont', 'minAcqPont', 'minAcqTab', 'minSoho', 'minTartozek'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
         }
 
         async function executeCloudDelete() {
