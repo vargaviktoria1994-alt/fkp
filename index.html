@@ -48,7 +48,7 @@
                     <span class="text-2xl">🎯</span>
                     <div>
                         <h2 class="text-lg font-bold text-white">Target & Teljesítmény Központ</h2>
-                        <p class="text-xs text-slate-400">A diagramon oszlop és vonal típusokat kombinálhatsz tetszőleges adatokhoz.</p>
+                        <p class="text-xs text-slate-400">A kártyák teljesen függetlenül, saját szűrőikkel vezérelhetők.</p>
                     </div>
                 </div>
 
@@ -129,38 +129,37 @@
                         </div>
                     </div>
 
-                    <!-- 3. Napi Célok Választóval (BAL ALSÓ) -->
-                    <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col justify-between shadow-sm">
-                        <div class="flex-1 flex flex-col space-y-3">
-                            <div class="flex flex-col xl:flex-row xl:items-center justify-between border-b border-slate-700/60 pb-2.5 gap-3">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-amber-400 font-bold text-base">📌</span>
-                                    <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider" id="box3Title">Mai Célok</h3>
-                                </div>
-                                <div class="flex flex-wrap items-center gap-2">
-                                    <select id="box3Month" onchange="updateBox3()" class="bg-slate-800 text-slate-300 text-[11px] font-medium border border-slate-600 rounded px-2 py-1 outline-none"></select>
-                                    <select id="box3Day" onchange="updateBox3()" class="bg-slate-800 text-slate-300 text-[11px] font-medium border border-slate-600 rounded px-2 py-1 outline-none"></select>
-                                    <select id="box3Store" onchange="updateBox3()" class="bg-slate-800 text-indigo-300 font-bold text-[11px] border border-indigo-500/50 rounded px-2 py-1 outline-none"><option value="ALL">Összes Üzlet</option></select>
-                                </div>
+                    <!-- 3. Napi Targetek Naptára (BAL ALSÓ) -->
+                    <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
+                        <div class="flex flex-col xl:flex-row xl:items-center justify-between border-b border-slate-700/60 pb-2.5 mb-2 gap-3">
+                            <div class="flex items-center gap-2">
+                                <span class="text-amber-400 font-bold text-base">📌</span>
+                                <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider">Napi Target (1-től 31-ig)</h3>
                             </div>
-                            <div class="overflow-x-auto flex-1">
-                                <table class="w-full text-left border-collapse text-xs">
-                                    <thead>
-                                        <tr class="text-slate-400 border-b border-slate-700/80 text-[11px]">
-                                            <th class="py-2 px-2.5">Kategória</th>
-                                            <th class="py-2 px-2 text-right text-amber-300 font-semibold">Cél</th>
-                                            <th class="py-2 px-2 text-right text-cyan-300 font-semibold">Tény</th>
-                                            <th class="py-2 px-2 text-right">%</th>
-                                            <th class="py-2 px-2.5 text-right">Eltérés</th>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <select id="box3Month" onchange="updateBox3()" class="bg-slate-800 text-slate-300 text-[11px] font-medium border border-slate-600 rounded px-2 py-1 outline-none"></select>
+                                <select id="box3Store" onchange="updateBox3()" class="bg-slate-800 text-indigo-300 font-bold text-[11px] border border-indigo-500/50 rounded px-2 py-1 outline-none"><option value="ALL">Összes Üzlet</option></select>
+                            </div>
+                        </div>
+                        <div class="overflow-y-auto overflow-x-auto flex-1 pr-1 min-h-[250px] relative border border-slate-700/40 rounded-lg">
+                            <div class="absolute inset-0">
+                                <table class="w-full text-left border-collapse text-[10px]">
+                                    <thead class="sticky top-0 bg-slate-900 shadow z-10">
+                                        <tr class="text-slate-400 border-b border-slate-700/80 text-[10px]">
+                                            <th class="py-2 px-2">Dátum</th>
+                                            <th class="py-2 px-2 text-right">Összpont</th>
+                                            <th class="py-2 px-2 text-right">ACQ Pont</th>
+                                            <th class="py-2 px-2 text-right">Reti Pont</th>
+                                            <th class="py-2 px-2 text-center">ACQ db</th>
+                                            <th class="py-2 px-2 text-center">Hűség db</th>
+                                            <th class="py-2 px-2 text-center">FIX db</th>
+                                            <th class="py-2 px-2 text-center">SOHO db</th>
+                                            <th class="py-2 px-2 text-right">Tartozék (Ft)</th>
                                         </tr>
                                     </thead>
                                     <tbody id="box3TableBody" class="divide-y divide-slate-800/80 font-medium"></tbody>
                                 </table>
                             </div>
-                        </div>
-                        <div class="pt-2 border-t border-slate-800 text-[11px] text-slate-400 flex justify-between items-center mt-3">
-                            <span>Kiválasztott nap állapota:</span>
-                            <span id="box3StatusBadge" class="font-semibold"></span>
                         </div>
                     </div>
 
@@ -169,7 +168,7 @@
                         <div class="flex flex-col xl:flex-row xl:items-center justify-between border-b border-slate-700/60 pb-2.5 mb-2 gap-3">
                             <div class="flex items-center gap-2">
                                 <span class="text-indigo-400 font-bold text-sm">📅</span>
-                                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Napi Bontás</h3>
+                                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Napi Tény & Eltérés</h3>
                             </div>
                             <div class="flex flex-wrap items-center gap-2">
                                 <select id="box4Month" onchange="updateBox4()" class="bg-slate-800 text-slate-300 text-[11px] font-medium border border-slate-600 rounded px-2 py-1 outline-none"></select>
@@ -201,7 +200,6 @@
                 </div>
             </section>
 
-            <!-- ÉRTÉKESÍTŐI RÉSZLETES TÁBLÁZAT -->
             <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-700 pb-4">
                     <div>
@@ -566,26 +564,6 @@
             if (months.length > 0) {
                 document.getElementById('filterMonth').value = months[0];
                 ['box1Month', 'box2Month', 'box3Month', 'box4Month'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = months[0]; });
-            }
-            
-            updateBox3Days();
-        }
-        
-        function updateBox3Days() {
-            const el = document.getElementById('box3Day');
-            if(!el) return;
-            const currentSelected = el.value;
-            let options = "";
-            for(let d=1; d<=31; d++) {
-                options += `<option value="${d}">${d}.</option>`;
-            }
-            el.innerHTML = options;
-            
-            const now = new Date();
-            if (!currentSelected || currentSelected === "") {
-                el.value = now.getDate().toString();
-            } else {
-                el.value = currentSelected;
             }
         }
         
@@ -1004,44 +982,55 @@
             });
         }
 
+        // UJ FUNKCIO: Napi Target tervező tábla
         function updateBox3() {
             const m = document.getElementById('box3Month').value;
             const s = document.getElementById('box3Store').value;
             
-            const daysNames = ['Vasárnap', 'Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat'];
-            let currentDayNum = 1; let currentDow = 1;
-            const mockData = fetchBoxData(m, s, 'pont');
-            currentDayNum = mockData.currentDay;
-            currentDow = new Date(mockData.currentYear, mockData.currentMonthIdx, currentDayNum).getDay();
+            // Hogy megtudjuk hány nap van a hónapban, lekérünk egy dummy adatot
+            const data = fetchBoxData(m, s, 'pont');
+            const dayNamesShort = ['V', 'H', 'K', 'Sze', 'Cs', 'P', 'Szo'];
             
-            document.getElementById('box3Title').innerText = `Mai Célok (${currentDayNum}. ${daysNames[currentDow]})`;
-            let isOpen = true;
+            // Lekérjük az összes metrikát egyszerre
+            const mPont = fetchBoxData(m, s, 'pont');
+            const mAcqP = fetchBoxData(m, s, 'acq_pont');
+            const mRetP = fetchBoxData(m, s, 'ret_pont');
+            const mAcqD = fetchBoxData(m, s, 'acq_db');
+            const mHusD = fetchBoxData(m, s, 'huseg_db');
+            const mFixD = fetchBoxData(m, s, 'fix_db');
+            const mSohoD = fetchBoxData(m, s, 'soho_db');
+            const mTarF = fetchBoxData(m, s, 'tartozek_ft');
 
-            document.getElementById('box3TableBody').innerHTML = metricRows.filter(mr => mr.key !== 'betero_db').map(metric => {
-                const data = fetchBoxData(m, s, metric.key);
-                const mTarget = data.storeDailyTargetMap[data.currentDay] || 0;
-                const mActual = data.dailyActualMap[data.currentDay] || 0;
+            let html = '';
+            for (let d = 1; d <= data.daysInMonth; d++) {
+                const dow = new Date(data.currentYear, data.currentMonthIdx, d).getDay();
+                const isToday = (d === data.currentDay);
                 
-                const isClosed = (mTarget === 0 && data.storeDailyTargetMap[Math.max(1, data.currentDay-1)] > 0); 
-                if (isClosed && metric.key==='pont') isOpen = false;
+                const pt = mPont.storeDailyTargetMap[d] || 0;
+                const isClosed = (pt === 0);
                 
-                const diff = mActual - mTarget;
-                const pct = mTarget > 0 ? (mActual / mTarget) * 100 : (mActual > 0 ? 100 : 0);
-                const bc = getBadgeColor(pct, isClosed);
-                const diffFmt = isClosed ? '-' : (diff >= 0 ? `+${formatVal(diff, metric.isCurrency, metric.isInt)}` : formatVal(diff, metric.isCurrency, metric.isInt));
-                const diffCol = isClosed ? 'text-slate-600' : (diff >= 0 ? 'text-emerald-400' : 'text-rose-400');
-
-                return `<tr class="hover:bg-slate-800/40 transition">
-                            <td class="py-2 px-2.5 font-semibold ${metric.color}">${metric.label}</td>
-                            <td class="py-2 px-2 text-right font-bold text-amber-300 font-mono">${isClosed ? 'ZÁRVA' : formatVal(mTarget, metric.isCurrency, metric.isInt)}</td>
-                            <td class="py-2 px-2 text-right font-bold text-cyan-300 font-mono">${formatVal(mActual, metric.isCurrency, metric.isInt)}</td>
-                            <td class="py-2 px-2 text-right"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold border ${bc}">${isClosed ? 'ZÁRVA' : pct.toFixed(0) + '%'}</span></td>
-                            <td class="py-2 px-2.5 text-right font-mono font-bold ${diffCol}">${diffFmt}</td>
-                        </tr>`;
-            }).join('');
-
-            document.getElementById('box3StatusBadge').innerText = isOpen ? 'NYITVA' : 'ZÁRVA';
-            document.getElementById('box3StatusBadge').className = isOpen ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold';
+                const rowBg = isToday ? "bg-amber-950/40 border-l-2 border-amber-400" : "hover:bg-slate-800/40";
+                
+                if (isClosed) {
+                    html += `<tr class="${rowBg} transition text-[10px]">
+                                <td class="py-1.5 px-2"><span class="${isToday ? 'text-amber-300 font-bold' : (dow===0 ? 'text-rose-400/80 font-semibold' : 'text-slate-300')}">${d}. ${dayNamesShort[dow]}</span></td>
+                                <td colspan="8" class="py-1.5 px-2 text-center text-slate-500 font-bold tracking-widest">Z Á R V A</td>
+                            </tr>`;
+                } else {
+                    html += `<tr class="${rowBg} transition text-[10px]">
+                                <td class="py-1.5 px-2"><span class="${isToday ? 'text-amber-300 font-bold' : (dow===0 ? 'text-rose-400/80 font-semibold' : 'text-slate-300')}">${d}. ${dayNamesShort[dow]}</span></td>
+                                <td class="py-1.5 px-2 text-right text-amber-300 font-bold font-mono">${pt.toFixed(1)}</td>
+                                <td class="py-1.5 px-2 text-right text-sky-400 font-mono">${(mAcqP.storeDailyTargetMap[d]||0).toFixed(1)}</td>
+                                <td class="py-1.5 px-2 text-right text-teal-400 font-mono">${(mRetP.storeDailyTargetMap[d]||0).toFixed(1)}</td>
+                                <td class="py-1.5 px-2 text-center text-indigo-400 font-mono">${Math.round(mAcqD.storeDailyTargetMap[d]||0)}</td>
+                                <td class="py-1.5 px-2 text-center text-emerald-400 font-mono">${Math.round(mHusD.storeDailyTargetMap[d]||0)}</td>
+                                <td class="py-1.5 px-2 text-center text-purple-400 font-mono">${Math.round(mFixD.storeDailyTargetMap[d]||0)}</td>
+                                <td class="py-1.5 px-2 text-center text-amber-500 font-mono">${Math.round(mSohoD.storeDailyTargetMap[d]||0)}</td>
+                                <td class="py-1.5 px-2 text-right text-pink-400 font-mono">${Math.round(mTarF.storeDailyTargetMap[d]||0).toLocaleString('hu-HU')} Ft</td>
+                            </tr>`;
+                }
+            }
+            document.getElementById('box3TableBody').innerHTML = html;
         }
 
         function updateBox4() {
@@ -1171,9 +1160,6 @@
             }).join('');
         }
 
-        // =========================================================================
-        // --- FELTÖLTŐ FÜL FUNKCIÓI ---
-        // =========================================================================
         function handleDropFiles(e) { if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) processFileList(Array.from(e.dataTransfer.files)); }
         function handleFileSelect(e) { const files = Array.from(e.target.files); if (files && files.length > 0) processFileList(files); }
 
