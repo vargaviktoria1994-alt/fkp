@@ -293,7 +293,6 @@
             </section>
         </main>
 
-        <!-- 2. FÜL: KÜLÖN FELTÖLTÉS & TARGET ADMIN -->
         <main id="tabUpload" class="hidden space-y-6">
             
             <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-4">
@@ -402,10 +401,9 @@
                     <button onclick="processPastedTargets()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">Beillesztett Sorok Feldolgozása & Mentése</button>
                 </div>
                 
-                <!-- 2 OSZLOPOS TARGET NÉZET (Havi nyers vs Statikus Napi Lebontás) -->
+                <!-- 2 OSZLOPOS TARGET NÉZET -->
                 <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6 pt-4 border-t border-slate-700/50">
                     
-                    <!-- Bal oldal: Nyers feltöltött havi targetek -->
                     <div class="overflow-x-auto">
                         <h3 class="text-xs font-semibold text-slate-400 mb-2 uppercase">Aktuálisan Rögzített Havi Targetek:</h3>
                         <table class="w-full text-left border-collapse text-xs">
@@ -420,7 +418,6 @@
                         </table>
                     </div>
 
-                    <!-- Jobb oldal: Eredeti statikus napi targetek (újrakalkuláció nélkül) -->
                     <div class="overflow-x-auto border-l border-slate-700/50 pl-0 xl:pl-6">
                         <div class="flex items-center justify-between mb-2">
                             <h3 class="text-xs font-semibold text-slate-400 uppercase">Eredeti (Statikus) Napi Lebontás:</h3>
@@ -680,7 +677,6 @@
                 });
             }
 
-            // 1. CPR TÁBLA (RÉSZLETES SOROKKAL)
             const cprMonth = document.getElementById('previewMonthCpr') ? document.getElementById('previewMonthCpr').value : null;
             const tbCpr = document.getElementById('previewTableCpr');
             if (tbCpr && cprMonth) {
@@ -703,7 +699,6 @@
                 }
             }
 
-            // 2. TARTOZÉK TÁBLA (RÉSZLETES SOROKKAL)
             const accMonth = document.getElementById('previewMonthAcc') ? document.getElementById('previewMonthAcc').value : null;
             const tbAcc = document.getElementById('previewTableAcc');
             if (tbAcc && accMonth) {
@@ -724,7 +719,6 @@
                 }
             }
 
-            // 3. BETÉRŐ TÁBLA (Marad bolti összesített)
             const footMonth = document.getElementById('previewMonthFoot') ? document.getElementById('previewMonthFoot').value : null;
             const tbFoot = document.getElementById('previewTableFoot');
             if (tbFoot && footMonth) {
@@ -859,7 +853,6 @@
             const now = new Date();
             const currentDay = (now.getFullYear() === currentYear && now.getMonth() === currentMonthIdx) ? now.getDate() : daysInMonth;
             
-            // Ha forceStatic igaz (Jobb oldali tábla), akkor úgy teszünk, mintha minden nap a múltban lenne
             const evalCurrentDay = forceStatic ? 32 : currentDay;
 
             function getStoreDailyTargets(storeCode, targetVal) {
@@ -885,7 +878,8 @@
                     }
                 });
 
-                if (storeCode === 'FPK007' || storeCode === 'FPK012') { sDowPoints[0] = 0; }
+                // JAVÍTÁS: Csak az FPK002 tart fixen ZÁRVA vasárnap!
+                if (storeCode === 'FPK002') { sDowPoints[0] = 0; }
 
                 const sDowWeights = sDowPoints.map(p => sTotalPts > 0 ? (p / sTotalPts) * 7 : 0.0);
                 const sDomWeights = sDomPoints.map(p => sTotalPts > 0 ? (p / sTotalPts) * 30.5 : 1.0);
@@ -900,7 +894,8 @@
                 for (let d = 1; d <= daysInMonth; d++) {
                     const dateStr = `${currentYear}-${String(currentMonthIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                     const dow = new Date(currentYear, currentMonthIdx, d).getDay();
-                    if (publicHolidays.includes(dateStr) || (dow === 0 && (storeCode === 'FPK007' || storeCode === 'FPK012'))) continue;
+                    // JAVÍTÁS: FPK002 zárva vasárnap
+                    if (publicHolidays.includes(dateStr) || (dow === 0 && storeCode === 'FPK002')) continue;
                     const w = (sDowWeights[dow] || 0) * (sDomWeights[d] || 1);
                     sumWeights += w;
                 }
@@ -940,7 +935,8 @@
                 for (let d = 1; d <= daysInMonth; d++) {
                     const dateStr = `${currentYear}-${String(currentMonthIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                     const dow = new Date(currentYear, currentMonthIdx, d).getDay();
-                    if (publicHolidays.includes(dateStr) || (dow === 0 && (storeCode === 'FPK007' || storeCode === 'FPK012'))) continue;
+                    // JAVÍTÁS: FPK002 zárva vasárnap
+                    if (publicHolidays.includes(dateStr) || (dow === 0 && storeCode === 'FPK002')) continue;
                     const w = (sDowWeights[dow] || 0) * (sDomWeights[d] || 1);
                     if (d < evalCurrentDay) pastWeights += w;
                     else futureWeights += w;
@@ -951,7 +947,8 @@
                 for (let d = 1; d <= daysInMonth; d++) {
                     const dateStr = `${currentYear}-${String(currentMonthIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                     const dow = new Date(currentYear, currentMonthIdx, d).getDay();
-                    if (publicHolidays.includes(dateStr) || (dow === 0 && (storeCode === 'FPK007' || storeCode === 'FPK012'))) {
+                    // JAVÍTÁS: FPK002 zárva vasárnap
+                    if (publicHolidays.includes(dateStr) || (dow === 0 && storeCode === 'FPK002')) {
                         dailyMap[d] = 0;
                     } else {
                         const w = (sDowWeights[dow] || 0) * (sDomWeights[d] || 1);
@@ -1401,9 +1398,6 @@
             }).join('');
         }
 
-        // =========================================================================
-        // --- FELTÖLTŐ FÜL FUNKCIÓI ---
-        // =========================================================================
         function handleDropFiles(e) { if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) processFileList(Array.from(e.dataTransfer.files)); }
         function handleFileSelect(e) { const files = Array.from(e.target.files); if (files && files.length > 0) processFileList(files); }
 
