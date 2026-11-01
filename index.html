@@ -11,7 +11,6 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen p-3 md:p-6">
 
-    <!-- 1. JELSZÓVÉDŐ KÉPERNYŐ -->
     <div id="loginScreen" class="fixed inset-0 bg-slate-950 flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl max-w-sm w-full text-center shadow-2xl space-y-5">
             <div class="w-16 h-16 bg-indigo-950/60 border border-indigo-500/40 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-inner">🔒</div>
@@ -27,7 +26,6 @@
         </div>
     </div>
 
-    <!-- 2. FŐ ALKALMAZÁS -->
     <div id="dashboardApp" class="hidden max-w-[1700px] mx-auto space-y-6">
         
         <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-slate-800/90 p-5 rounded-xl border border-slate-700 shadow-lg">
@@ -44,7 +42,6 @@
             </div>
         </header>
 
-        <!-- 1. FÜL: ÁTTEKINTÉS ÉS TARGETEK -->
         <main id="tabDashboard" class="space-y-6">
             <section class="bg-slate-800/95 p-5 md:p-6 rounded-2xl border border-slate-700 shadow-xl space-y-5">
                 <div class="flex items-center gap-3 border-b border-slate-700/80 pb-4">
@@ -57,7 +54,6 @@
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
                     
-                    <!-- 1. Havi Target (BAL FELSŐ) -->
                     <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col justify-between shadow-sm">
                         <div class="flex-1 flex flex-col space-y-3">
                             <div class="flex flex-col xl:flex-row xl:items-center justify-between border-b border-slate-700/60 pb-2.5 gap-3">
@@ -91,7 +87,6 @@
                         </div>
                     </div>
 
-                    <!-- 2. Kombinált Vonal/Oszlop Diagram (JOBB FELSŐ) -->
                     <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
                         <div class="flex flex-col justify-between border-b border-slate-700/60 pb-2.5 mb-2 gap-3">
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -134,7 +129,6 @@
                         </div>
                     </div>
 
-                    <!-- 3. Mai Targetek (BAL ALSÓ) -->
                     <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col justify-between shadow-sm">
                         <div class="flex-1 flex flex-col space-y-3">
                             <div class="flex flex-col xl:flex-row xl:items-center justify-between border-b border-slate-700/60 pb-2.5 gap-3">
@@ -168,7 +162,6 @@
                         </div>
                     </div>
 
-                    <!-- 4. Napi Bontás (JOBB ALSÓ) -->
                     <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
                         <div class="flex flex-col xl:flex-row xl:items-center justify-between border-b border-slate-700/60 pb-2.5 mb-2 gap-3">
                             <div class="flex items-center gap-2">
@@ -205,7 +198,6 @@
                 </div>
             </section>
 
-            <!-- ÉRTÉKESÍTŐI RÉSZLETES TÁBLÁZAT -->
             <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-700 pb-4">
                     <div>
@@ -261,10 +253,8 @@
             </section>
         </main>
 
-        <!-- 2. FÜL: KÜLÖN FELTÖLTÉS & TARGET ADMIN -->
         <main id="tabUpload" class="hidden space-y-6">
             
-            <!-- 1. CPR Tranzakció Feltöltés -->
             <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-4">
                 <div class="border-b border-slate-700 pb-3">
                     <h2 class="text-lg font-semibold text-white flex items-center gap-2"><span>📤</span> CPR Havi Export Feltöltése</h2>
@@ -275,26 +265,29 @@
                     <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" multiple class="hidden" onchange="handleFileSelect(event)">
                 </div>
                 <div id="uploadStatus" class="text-sm font-medium"></div>
-                <div class="overflow-x-auto mt-4 pt-4 border-t border-slate-700/50">
+                
+                <div class="mt-4 pt-4 border-t border-slate-700/50">
                     <div class="flex items-center gap-3 mb-2">
-                        <h3 class="text-xs font-semibold text-slate-400 uppercase">Aktuálisan Rögzített CPR Adatok:</h3>
+                        <h3 class="text-xs font-semibold text-slate-400 uppercase">Feltöltött CPR Sorok (Részletes Lista):</h3>
                         <select id="previewMonthCpr" onchange="renderUploadPreviews()" class="bg-slate-800 text-slate-300 text-[11px] font-medium border border-slate-600 rounded px-2 py-1 outline-none"></select>
                     </div>
-                    <table class="w-full text-left border-collapse text-xs">
-                        <thead>
-                            <tr class="bg-slate-900/80 text-slate-400 border-b border-slate-700">
-                                <th class="p-2.5">Hónap</th><th class="p-2.5">Bolt</th><th class="p-2.5 text-center">Tranzakciók</th><th class="p-2.5 text-center">ACQ</th><th class="p-2.5 text-center">Hűség</th><th class="p-2.5 text-center">FIX</th><th class="p-2.5 text-center">SOHO</th><th class="p-2.5 text-right">Összpont</th>
-                            </tr>
-                        </thead>
-                        <tbody id="previewTableCpr" class="divide-y divide-slate-800 text-slate-300 font-medium"></tbody>
-                    </table>
+                    <!-- Görgethető doboz a többezer sornak -->
+                    <div class="overflow-y-auto overflow-x-auto max-h-[300px] border border-slate-700/80 rounded-lg">
+                        <table class="w-full text-left border-collapse text-[10px]">
+                            <thead class="sticky top-0 bg-slate-900 shadow-md z-10">
+                                <tr class="text-slate-400 border-b border-slate-700">
+                                    <th class="p-2">Dátum</th><th class="p-2">Bolt</th><th class="p-2">Értékesítő</th><th class="p-2">Szegmens</th><th class="p-2 text-center">ACQ</th><th class="p-2 text-center">Hűség</th><th class="p-2 text-center">FIX</th><th class="p-2 text-right">Összpont</th>
+                                </tr>
+                            </thead>
+                            <tbody id="previewTableCpr" class="divide-y divide-slate-800/80 text-slate-300"></tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
-            <!-- 2. TARTOZÉK EXCEL FELTÖLTŐ BOX -->
             <section class="bg-slate-800 p-6 rounded-xl border border-pink-500/30 shadow-lg space-y-4">
                 <div class="border-b border-slate-700 pb-3">
-                    <h2 class="text-lg font-semibold text-pink-400 flex items-center gap-2"><span>🛍️</span> Tartozék Eladások Feltöltése</h2>
+                    <h2 class="text-lg font-semibold text-pink-400 flex items-center gap-2"><span>🛍️</span> Tartozék Eladások Feltöltése (Értékesítések Excel)</h2>
                 </div>
                 <div id="dropZoneAccessories" onclick="document.getElementById('accessoryFileInput').click()" ondragover="event.preventDefault(); this.classList.add('border-pink-400', 'bg-pink-950/40');" ondragleave="this.classList.remove('border-pink-400', 'bg-pink-950/40');" ondrop="event.preventDefault(); this.classList.remove('border-pink-400', 'bg-pink-950/40'); handleAccessoryDrop(event);" class="border-2 border-dashed border-pink-500/40 hover:border-pink-400 bg-pink-950/10 hover:bg-pink-950/30 rounded-xl p-8 text-center cursor-pointer transition">
                     <div class="text-4xl mb-3">💳</div>
@@ -302,23 +295,25 @@
                     <input type="file" id="accessoryFileInput" accept=".xlsx, .xls, .csv" multiple class="hidden" onchange="handleAccessorySelect(event)">
                 </div>
                 <div id="accessoryUploadStatus" class="text-sm font-medium"></div>
-                <div class="overflow-x-auto mt-4 pt-4 border-t border-slate-700/50">
+
+                <div class="mt-4 pt-4 border-t border-slate-700/50">
                     <div class="flex items-center gap-3 mb-2">
-                        <h3 class="text-xs font-semibold text-slate-400 uppercase">Aktuálisan Rögzített Tartozék Adatok:</h3>
+                        <h3 class="text-xs font-semibold text-slate-400 uppercase">Feltöltött Tartozék Sorok (Részletes Lista):</h3>
                         <select id="previewMonthAcc" onchange="renderUploadPreviews()" class="bg-slate-800 text-slate-300 text-[11px] font-medium border border-slate-600 rounded px-2 py-1 outline-none"></select>
                     </div>
-                    <table class="w-full text-left border-collapse text-xs">
-                        <thead>
-                            <tr class="bg-slate-900/80 text-slate-400 border-b border-slate-700">
-                                <th class="p-2.5">Hónap</th><th class="p-2.5">Bolt</th><th class="p-2.5 text-center">Eladások (db)</th><th class="p-2.5 text-right">Összesített Bruttó (Ft)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="previewTableAcc" class="divide-y divide-slate-800 text-slate-300 font-medium"></tbody>
-                    </table>
+                    <div class="overflow-y-auto overflow-x-auto max-h-[300px] border border-slate-700/80 rounded-lg">
+                        <table class="w-full text-left border-collapse text-[10px]">
+                            <thead class="sticky top-0 bg-slate-900 shadow-md z-10">
+                                <tr class="text-slate-400 border-b border-slate-700">
+                                    <th class="p-2">Dátum</th><th class="p-2">Bolt</th><th class="p-2">Értékesítő</th><th class="p-2">Bizonylatszám</th><th class="p-2">Fiz. Mód</th><th class="p-2 text-right">Bruttó Érték</th>
+                                </tr>
+                            </thead>
+                            <tbody id="previewTableAcc" class="divide-y divide-slate-800/80 text-slate-300"></tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
-            <!-- 3. BETÉRŐ LÁTOGATÓK EXCEL FELTÖLTŐ -->
             <section class="bg-slate-800 p-6 rounded-xl border border-cyan-500/30 shadow-lg space-y-4">
                 <div class="border-b border-slate-700 pb-3">
                     <h2 class="text-lg font-semibold text-cyan-400 flex items-center gap-2"><span>🚶‍♂️</span> Látogatói (Betérő) Excel Feltöltése</h2>
@@ -329,9 +324,10 @@
                     <input type="file" id="footfallFileInput" accept=".xlsx, .xls, .csv" multiple class="hidden" onchange="handleFootfallSelect(event)">
                 </div>
                 <div id="footfallUploadStatus" class="text-sm font-medium"></div>
+
                 <div class="overflow-x-auto mt-4 pt-4 border-t border-slate-700/50">
                     <div class="flex items-center gap-3 mb-2">
-                        <h3 class="text-xs font-semibold text-slate-400 uppercase">Aktuálisan Rögzített Betérő Látogatók:</h3>
+                        <h3 class="text-xs font-semibold text-slate-400 uppercase">Aktuálisan Rögzített Betérők (Bolti összesítés):</h3>
                         <select id="previewMonthFoot" onchange="renderUploadPreviews()" class="bg-slate-800 text-slate-300 text-[11px] font-medium border border-slate-600 rounded px-2 py-1 outline-none"></select>
                     </div>
                     <table class="w-full text-left border-collapse text-xs">
@@ -345,7 +341,6 @@
                 </div>
             </section>
 
-            <!-- 4. Target Beállító Box -->
             <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-5">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700 pb-3">
                     <div>
@@ -380,7 +375,6 @@
                 </div>
             </section>
 
-            <!-- 5. CLOUD ADATOK TÖRLÉSE (VISSZAVONÁS) -->
             <section class="bg-slate-800 p-6 rounded-xl border border-rose-500/30 shadow-lg space-y-5">
                 <div class="border-b border-slate-700 pb-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
                     <div>
@@ -607,52 +601,51 @@
                 });
             }
 
-            // 1. CPR TÁBLA
+            // 1. CPR TÁBLA (RÉSZLETES SOROKKAL)
             const cprMonth = document.getElementById('previewMonthCpr') ? document.getElementById('previewMonthCpr').value : null;
             const tbCpr = document.getElementById('previewTableCpr');
             if (tbCpr && cprMonth) {
-                const cprData = globalTransactions.filter(t => t.honap === cprMonth);
+                const cprData = globalTransactions.filter(t => t.honap === cprMonth).sort((a, b) => new Date(a.szerzodes_datuma) - new Date(b.szerzodes_datuma));
                 if (cprData.length === 0) {
                     tbCpr.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-500">Nincs CPR adat a kiválasztott hónapban.</td></tr>`;
                 } else {
-                    const map = {};
-                    cprData.forEach(t => {
-                        if (!map[t.bolt]) map[t.bolt] = { count: 0, acq: 0, huseg: 0, fix: 0, soho: 0, pont: 0 };
-                        map[t.bolt].count++; map[t.bolt].acq += (t.acq_db || 0); map[t.bolt].huseg += (t.huseg_db || 0); map[t.bolt].fix += (t.fix_db || 0);
-                        if (t.szegmens && t.szegmens.toLowerCase() === 'soho' && t.acq_db > 0) map[t.bolt].soho += (t.acq_db || 1);
-                        map[t.bolt].pont += (t.osszpont || 0);
-                    });
-                    tbCpr.innerHTML = Object.keys(map).sort().map(bolt => `
-                        <tr class="hover:bg-slate-700/20 transition">
-                            <td class="p-2.5 text-slate-400 font-normal">${cprMonth}</td><td class="p-2.5"><span class="px-2 py-0.5 bg-slate-800 text-indigo-400 font-bold rounded">${bolt}</span></td>
-                            <td class="p-2.5 text-center text-slate-300 font-mono">${map[bolt].count}</td><td class="p-2.5 text-center text-indigo-300 font-mono">${map[bolt].acq}</td>
-                            <td class="p-2.5 text-center text-emerald-300 font-mono">${map[bolt].huseg}</td><td class="p-2.5 text-center text-purple-300 font-mono">${map[bolt].fix}</td>
-                            <td class="p-2.5 text-center text-amber-300 font-mono">${map[bolt].soho}</td><td class="p-2.5 text-right font-mono font-bold text-amber-400">${map[bolt].pont.toFixed(1)}</td>
+                    tbCpr.innerHTML = cprData.map(t => `
+                        <tr class="hover:bg-slate-700/30 transition">
+                            <td class="p-2 whitespace-nowrap text-slate-400">${t.szerzodes_datuma || '-'}</td>
+                            <td class="p-2"><span class="px-1.5 py-0.5 bg-slate-800 text-indigo-400 font-bold rounded">${t.bolt || ''}</span></td>
+                            <td class="p-2 text-white truncate max-w-[120px]" title="${t.ertekesito}">${t.ertekesito || ''}</td>
+                            <td class="p-2 text-slate-400">${t.szegmens || '-'}</td>
+                            <td class="p-2 text-center text-indigo-300 font-mono">${t.acq_db || 0}</td>
+                            <td class="p-2 text-center text-emerald-300 font-mono">${t.huseg_db || 0}</td>
+                            <td class="p-2 text-center text-purple-300 font-mono">${t.fix_db || 0}</td>
+                            <td class="p-2 text-right font-mono font-bold text-amber-400">${(t.osszpont || 0).toFixed(1)}</td>
                         </tr>
                     `).join('');
                 }
             }
 
-            // 2. TARTOZÉK TÁBLA
+            // 2. TARTOZÉK TÁBLA (RÉSZLETES SOROKKAL)
             const accMonth = document.getElementById('previewMonthAcc') ? document.getElementById('previewMonthAcc').value : null;
             const tbAcc = document.getElementById('previewTableAcc');
             if (tbAcc && accMonth) {
-                const accData = globalAccessories.filter(a => a.honap === accMonth);
+                const accData = globalAccessories.filter(a => a.honap === accMonth).sort((a, b) => new Date(a.teljesites_datuma) - new Date(b.teljesites_datuma));
                 if (accData.length === 0) {
-                    tbAcc.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">Nincs tartozék adat a kiválasztott hónapban.</td></tr>`;
+                    tbAcc.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">Nincs tartozék adat a kiválasztott hónapban.</td></tr>`;
                 } else {
-                    const map = {};
-                    accData.forEach(a => { if (!map[a.bolt]) map[a.bolt] = { count: 0, ft: 0 }; map[a.bolt].count++; map[a.bolt].ft += (Number(a.brutto_ertek) || 0); });
-                    tbAcc.innerHTML = Object.keys(map).sort().map(bolt => `
-                        <tr class="hover:bg-slate-700/20 transition">
-                            <td class="p-2.5 text-slate-400 font-normal">${accMonth}</td><td class="p-2.5"><span class="px-2 py-0.5 bg-slate-800 text-indigo-400 font-bold rounded">${bolt}</span></td>
-                            <td class="p-2.5 text-center text-slate-300 font-mono">${map[bolt].count}</td><td class="p-2.5 text-right font-mono font-bold text-pink-400">${Math.round(map[bolt].ft).toLocaleString('hu-HU')} Ft</td>
+                    tbAcc.innerHTML = accData.map(a => `
+                        <tr class="hover:bg-slate-700/30 transition">
+                            <td class="p-2 whitespace-nowrap text-slate-400">${a.teljesites_datuma || '-'}</td>
+                            <td class="p-2"><span class="px-1.5 py-0.5 bg-slate-800 text-indigo-400 font-bold rounded">${a.bolt || ''}</span></td>
+                            <td class="p-2 text-white truncate max-w-[120px]" title="${a.ertekesito}">${a.ertekesito || ''}</td>
+                            <td class="p-2 text-slate-400 text-[9px] font-mono">${a.biz_szam || '-'}</td>
+                            <td class="p-2 text-slate-400">${a.fizetesi_mod || '-'}</td>
+                            <td class="p-2 text-right font-mono font-bold text-pink-400">${Math.round(Number(a.brutto_ertek)||0).toLocaleString('hu-HU')} Ft</td>
                         </tr>
                     `).join('');
                 }
             }
 
-            // 3. BETÉRŐ TÁBLA
+            // 3. BETÉRŐ TÁBLA (Marad bolti összesített, mert ott naponta csak 1 szám van boltonként)
             const footMonth = document.getElementById('previewMonthFoot') ? document.getElementById('previewMonthFoot').value : null;
             const tbFoot = document.getElementById('previewTableFoot');
             if (tbFoot && footMonth) {
@@ -663,7 +656,7 @@
                     const map = {};
                     footData.forEach(f => { if (!map[f.bolt]) map[f.bolt] = { days: 0, total: 0 }; map[f.bolt].days++; map[f.bolt].total += (f.betero_db || 0); });
                     tbFoot.innerHTML = Object.keys(map).sort().map(bolt => `
-                        <tr class="hover:bg-slate-700/20 transition">
+                        <tr class="hover:bg-slate-700/20 transition text-xs">
                             <td class="p-2.5 text-slate-400 font-normal">${footMonth}</td><td class="p-2.5"><span class="px-2 py-0.5 bg-slate-800 text-indigo-400 font-bold rounded">${bolt}</span></td>
                             <td class="p-2.5 text-center text-slate-300 font-mono">${map[bolt].days} nap</td><td class="p-2.5 text-right font-mono font-bold text-cyan-400">${map[bolt].total} fő</td>
                         </tr>
