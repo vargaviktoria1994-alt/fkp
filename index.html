@@ -9,7 +9,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Egyedi gördítősáv a szép megjelenésért */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
@@ -18,7 +17,6 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen p-3 md:p-6">
 
-    <!-- JELSZÓVÉDŐ KÉPERNYŐ -->
     <div id="loginScreen" class="fixed inset-0 bg-slate-950 flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl max-w-sm w-full text-center shadow-2xl space-y-5">
             <div class="w-16 h-16 bg-indigo-950/60 border border-indigo-500/40 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-inner">🔒</div>
@@ -34,10 +32,9 @@
         </div>
     </div>
 
-    <!-- FELUGRÓ ABLAK (MODAL) EGY ADOTT NAP TARGETJEINEK -->
+    <!-- FELUGRÓ ABLAK (MODAL) -->
     <div id="dayModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50 transition-opacity opacity-0 pointer-events-none" style="transition: opacity 0.2s;">
         <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform scale-95 transition-transform" id="dayModalContent" style="transition: transform 0.2s;">
-            <!-- Fejléc -->
             <div class="flex items-center justify-between p-5 border-b border-slate-700/80 bg-slate-900/50">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-full bg-indigo-900/50 border border-indigo-500/30 flex items-center justify-center text-xl shadow-inner">📅</div>
@@ -48,20 +45,14 @@
                 </div>
                 <button onclick="closeDayModal()" class="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 w-8 h-8 rounded-lg flex items-center justify-center transition border border-slate-700">✕</button>
             </div>
-            
-            <!-- Tartalom (Kártyák) -->
             <div class="p-6">
-                <div id="modalCardsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                    <!-- Ide generálódnak a kártyák -->
-                </div>
+                <div id="modalCardsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
                 <div id="modalClosedMsg" class="hidden text-center py-8">
                     <span class="text-4xl block mb-3">🪧</span>
                     <h3 class="text-lg font-bold text-slate-300">Ez az üzlet ezen a napon ZÁRVA tart.</h3>
                     <p class="text-sm text-slate-500 mt-1">Munkaszüneti nap vagy fix vasárnapi zárvatartás.</p>
                 </div>
             </div>
-            
-            <!-- Lábjegyzet -->
             <div class="p-4 bg-slate-900/50 border-t border-slate-700/80 text-center">
                 <button onclick="closeDayModal()" class="bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold px-6 py-2 rounded-lg transition">Bezárás</button>
             </div>
@@ -91,12 +82,13 @@
                     <span class="text-2xl">🎯</span>
                     <div>
                         <h2 class="text-lg font-bold text-white">Target & Teljesítmény Központ</h2>
-                        <p class="text-xs text-slate-400">A kártyák teljesen függetlenül, saját szűrőikkel vezérelhetők.</p>
+                        <p class="text-xs text-slate-400">Dinamikus (Run-Rate) tervezés: Az elmaradások automatikusan ráterhelődnek a jövőbeli napokra!</p>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
                     
+                    <!-- 1. Havi Target (BAL FELSŐ) -->
                     <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col justify-between shadow-sm">
                         <div class="flex-1 flex flex-col space-y-3">
                             <div class="flex flex-col xl:flex-row xl:items-center justify-between border-b border-slate-700/60 pb-2.5 gap-3">
@@ -130,6 +122,7 @@
                         </div>
                     </div>
 
+                    <!-- 2. Kombinált Vonal/Oszlop Diagram (JOBB FELSŐ) -->
                     <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
                         <div class="flex flex-col justify-between border-b border-slate-700/60 pb-2.5 mb-2 gap-3">
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -177,7 +170,7 @@
                         <div class="flex flex-col xl:flex-row xl:items-center justify-between border-b border-slate-700/60 pb-2.5 mb-2 gap-3">
                             <div class="flex items-center gap-2">
                                 <span class="text-amber-400 font-bold text-base">📌</span>
-                                <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider">Napi Target (1-től 31-ig)</h3>
+                                <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider">Dinamikus Napi Target (1-31)</h3>
                             </div>
                             <div class="flex flex-wrap items-center gap-2">
                                 <select id="box3Month" onchange="updateBox3()" class="bg-slate-800 text-slate-300 text-[11px] font-medium border border-slate-600 rounded px-2 py-1 outline-none"></select>
@@ -300,6 +293,7 @@
             </section>
         </main>
 
+        <!-- 2. FÜL: KÜLÖN FELTÖLTÉS & TARGET ADMIN -->
         <main id="tabUpload" class="hidden space-y-6">
             
             <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-4">
@@ -387,6 +381,7 @@
                 </div>
             </section>
 
+            <!-- KETTÉOSZTOTT TARGET FELTÖLTŐ ÉS LISTÁZÓ -->
             <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-5">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700 pb-3">
                     <div>
@@ -406,18 +401,51 @@
                     <textarea id="targetPasteArea" rows="4" placeholder="FPK002	192	108	81	18	1500	3800	500000" class="w-full bg-slate-900 text-slate-200 text-xs font-mono p-3 rounded-xl border border-slate-700 outline-none focus:ring-1 focus:ring-indigo-500"></textarea>
                     <button onclick="processPastedTargets()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">Beillesztett Sorok Feldolgozása & Mentése</button>
                 </div>
-                <div class="overflow-x-auto mt-4">
-                    <h3 class="text-xs font-semibold text-slate-400 mb-2 uppercase">Aktuálisan Rögzített Bolti Targetek:</h3>
-                    <table class="w-full text-left border-collapse text-xs">
-                        <thead>
-                            <tr class="bg-slate-900/80 text-slate-400 border-b border-slate-700">
-                                <th class="p-2.5">Hónap</th><th class="p-2.5">Bolt</th><th class="p-2.5 text-center">ACQ</th><th class="p-2.5 text-center">Hűség</th><th class="p-2.5 text-center">FIX</th><th class="p-2.5 text-center">SOHO</th><th class="p-2.5 text-center">ACQ Pont</th><th class="p-2.5 text-center">Reti Pont</th><th class="p-2.5 text-right">Tartozék (Ft)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="targetTableBody" class="divide-y divide-slate-800 text-slate-300 font-medium">
-                            <tr><td colspan="9" class="p-4 text-center text-slate-500">Még nincsenek feltöltött bolti targetek.</td></tr>
-                        </tbody>
-                    </table>
+                
+                <!-- 2 OSZLOPOS TARGET NÉZET (Havi nyers vs Statikus Napi Lebontás) -->
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6 pt-4 border-t border-slate-700/50">
+                    
+                    <!-- Bal oldal: Nyers feltöltött havi targetek -->
+                    <div class="overflow-x-auto">
+                        <h3 class="text-xs font-semibold text-slate-400 mb-2 uppercase">Aktuálisan Rögzített Havi Targetek:</h3>
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="bg-slate-900/80 text-slate-400 border-b border-slate-700">
+                                    <th class="p-2">Hónap</th><th class="p-2">Bolt</th><th class="p-2 text-center">ACQ</th><th class="p-2 text-center">Hűség</th><th class="p-2 text-center">FIX</th><th class="p-2 text-center">SOHO</th><th class="p-2 text-center">ACQ Pont</th><th class="p-2 text-center">Reti Pont</th><th class="p-2 text-right">Tartozék (Ft)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="targetTableBody" class="divide-y divide-slate-800 text-slate-300 font-medium">
+                                <tr><td colspan="9" class="p-4 text-center text-slate-500">Még nincsenek feltöltött bolti targetek.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Jobb oldal: Eredeti statikus napi targetek (újrakalkuláció nélkül) -->
+                    <div class="overflow-x-auto border-l border-slate-700/50 pl-0 xl:pl-6">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-xs font-semibold text-slate-400 uppercase">Eredeti (Statikus) Napi Lebontás:</h3>
+                            <div class="flex items-center gap-2">
+                                <select id="staticTargetMonth" onchange="renderStaticDailyTargets()" class="bg-slate-800 text-slate-300 text-[10px] border border-slate-600 rounded px-1.5 py-1 outline-none"></select>
+                                <select id="staticTargetStore" onchange="renderStaticDailyTargets()" class="bg-slate-800 text-indigo-300 font-bold text-[10px] border border-indigo-500/50 rounded px-1.5 py-1 outline-none"><option value="ALL">Összes Üzlet</option></select>
+                            </div>
+                        </div>
+                        <div class="overflow-y-auto max-h-[300px] border border-slate-700/80 rounded-lg">
+                            <table class="w-full text-left border-collapse text-[10px]">
+                                <thead class="sticky top-0 bg-slate-900 shadow-md z-10">
+                                    <tr class="text-slate-400 border-b border-slate-700">
+                                        <th class="p-2">Dátum</th>
+                                        <th class="p-2 text-right">Összpont</th>
+                                        <th class="p-2 text-right">ACQ P</th>
+                                        <th class="p-2 text-center">ACQ</th>
+                                        <th class="p-2 text-center">Hűség</th>
+                                        <th class="p-2 text-right">Tartozék</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="staticDailyTargetTableBody" class="divide-y divide-slate-800/80 text-slate-300">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -520,8 +548,6 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             checkAuth();
-            
-            // Ha a felhasználó a sötét háttérre kattint a modal körül, bezárul a modal
             document.getElementById('dayModal').addEventListener('click', function(e) {
                 if(e.target === this) closeDayModal();
             });
@@ -609,7 +635,7 @@
             document.getElementById('filterSeller').innerHTML = '<option value="ALL">Összes Értékesítő</option>' + sellers.map(s => `<option value="${s}">${s}</option>`).join('');
 
             ['box1Month', 'box2Month', 'box3Month', 'box4Month'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerHTML = monthOptions; });
-            ['box1Store', 'box2Store', 'box3Store', 'box4Store'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerHTML = storeOptions; });
+            ['box1Store', 'box2Store', 'box3Store', 'box4Store', 'staticTargetStore'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerHTML = storeOptions; });
 
             if (months.length > 0) {
                 document.getElementById('filterMonth').value = months[0];
@@ -636,11 +662,13 @@
                 const opts = extendedMonths.map(m => `<option value="${m}">${m}</option>`).join('');
                 document.getElementById('targetUploadMonth').innerHTML = opts;
                 document.getElementById('deleteDataMonth').innerHTML = opts;
+                document.getElementById('staticTargetMonth').innerHTML = opts;
                 
                 const currentMStr = `${dNowExt.getFullYear()} ${mNamesExt[dNowExt.getMonth()]}`;
                 if(extendedMonths.includes(currentMStr)) {
                     document.getElementById('targetUploadMonth').value = currentMStr;
                     document.getElementById('deleteDataMonth').value = currentMStr;
+                    document.getElementById('staticTargetMonth').value = currentMStr;
                 }
             }
 
@@ -696,7 +724,7 @@
                 }
             }
 
-            // 3. BETÉRŐ TÁBLA
+            // 3. BETÉRŐ TÁBLA (Marad bolti összesített)
             const footMonth = document.getElementById('previewMonthFoot') ? document.getElementById('previewMonthFoot').value : null;
             const tbFoot = document.getElementById('previewTableFoot');
             if (tbFoot && footMonth) {
@@ -716,20 +744,62 @@
             }
             
             const tbody = document.getElementById('targetTableBody');
-            if (globalTargets.length === 0) { tbody.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-slate-500">Még nincsenek feltöltött bolti targetek.</td></tr>'; return; }
-            tbody.innerHTML = globalTargets.map(t => `
-                <tr class="hover:bg-slate-700/20 transition">
-                    <td class="p-2.5 text-slate-400 font-normal">${t.honap}</td><td class="p-2.5"><span class="px-2 py-0.5 bg-slate-800 text-indigo-400 font-bold rounded">${t.bolt}</span></td>
-                    <td class="p-2.5 text-center text-indigo-300">${t.target_acq_db || 0}</td><td class="p-2.5 text-center text-emerald-300">${t.target_huseg_db || 0}</td>
-                    <td class="p-2.5 text-center text-purple-300">${t.target_fix_db || 0}</td><td class="p-2.5 text-center text-amber-300">${t.target_soho_db || 0}</td>
-                    <td class="p-2.5 text-center text-sky-400">${t.target_acq_pont || 0}</td><td class="p-2.5 text-center text-teal-400">${t.target_ret_pont || 0}</td>
-                    <td class="p-2.5 text-right font-mono text-pink-300">${(t.target_tartozek_ft || 0).toLocaleString('hu-HU')} Ft</td>
-                </tr>
-            `).join('');
+            if (globalTargets.length === 0) { tbody.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-slate-500">Még nincsenek feltöltött bolti targetek.</td></tr>'; }
+            else {
+                tbody.innerHTML = globalTargets.map(t => `
+                    <tr class="hover:bg-slate-700/20 transition">
+                        <td class="p-2.5 text-slate-400 font-normal">${t.honap}</td><td class="p-2.5"><span class="px-2 py-0.5 bg-slate-800 text-indigo-400 font-bold rounded">${t.bolt}</span></td>
+                        <td class="p-2.5 text-center text-indigo-300">${t.target_acq_db || 0}</td><td class="p-2.5 text-center text-emerald-300">${t.target_huseg_db || 0}</td>
+                        <td class="p-2.5 text-center text-purple-300">${t.target_fix_db || 0}</td><td class="p-2.5 text-center text-amber-300">${t.target_soho_db || 0}</td>
+                        <td class="p-2.5 text-center text-sky-400">${t.target_acq_pont || 0}</td><td class="p-2.5 text-center text-teal-400">${t.target_ret_pont || 0}</td>
+                        <td class="p-2.5 text-right font-mono text-pink-300">${(t.target_tartozek_ft || 0).toLocaleString('hu-HU')} Ft</td>
+                    </tr>
+                `).join('');
+            }
+        }
+        
+        function renderStaticDailyTargets() {
+            const m = document.getElementById('staticTargetMonth')?.value;
+            const s = document.getElementById('staticTargetStore')?.value;
+            if(!m) return;
+            
+            const dataMock = fetchBoxData(m, s, 'pont', true);
+            const mPont = fetchBoxData(m, s, 'pont', true);
+            const mAcqP = fetchBoxData(m, s, 'acq_pont', true);
+            const mAcqD = fetchBoxData(m, s, 'acq_db', true);
+            const mHusD = fetchBoxData(m, s, 'huseg_db', true);
+            const mTarF = fetchBoxData(m, s, 'tartozek_ft', true);
+
+            const dayNamesShort = ['V', 'H', 'K', 'Sze', 'Cs', 'P', 'Szo'];
+            let html = '';
+            
+            for (let d = 1; d <= dataMock.daysInMonth; d++) {
+                const dow = new Date(dataMock.currentYear, dataMock.currentMonthIdx, d).getDay();
+                const pt = mPont.storeDailyTargetMap[d] || 0;
+                const isClosed = (pt === 0);
+                
+                if (isClosed) {
+                    html += `<tr class="hover:bg-slate-700/30 transition text-[10px]">
+                                <td class="p-2 text-slate-400">${d}. ${dayNamesShort[dow]}</td>
+                                <td colspan="5" class="p-2 text-center text-slate-600 font-bold tracking-widest">ZÁRVA</td>
+                            </tr>`;
+                } else {
+                    html += `<tr class="hover:bg-slate-700/30 transition text-[10px]">
+                                <td class="p-2 text-slate-400">${d}. ${dayNamesShort[dow]}</td>
+                                <td class="p-2 text-right text-amber-300 font-mono font-bold">${pt.toFixed(1)}</td>
+                                <td class="p-2 text-right text-sky-400 font-mono">${(mAcqP.storeDailyTargetMap[d]||0).toFixed(1)}</td>
+                                <td class="p-2 text-center text-indigo-400 font-mono">${Math.round(mAcqD.storeDailyTargetMap[d]||0)}</td>
+                                <td class="p-2 text-center text-emerald-400 font-mono">${Math.round(mHusD.storeDailyTargetMap[d]||0)}</td>
+                                <td class="p-2 text-right text-pink-400 font-mono">${Math.round(mTarF.storeDailyTargetMap[d]||0).toLocaleString('hu-HU')} Ft</td>
+                            </tr>`;
+                }
+            }
+            document.getElementById('staticDailyTargetTableBody').innerHTML = html;
         }
 
         function renderTargetAdminTable() {
             renderUploadPreviews();
+            renderStaticDailyTargets();
         }
 
         const metricRows = [
@@ -744,7 +814,7 @@
             { key: 'betero_db', label: 'Betérő Ügyfél', isInt: true, color: 'text-cyan-400' }
         ];
 
-        function fetchBoxData(selectedMonth, selectedStore, metricKey) {
+        function fetchBoxData(selectedMonth, selectedStore, metricKey, forceStatic = false) {
             const filteredCPR = globalTransactions.filter(t => (selectedMonth === 'ALL' || t.honap === selectedMonth) && (selectedStore === 'ALL' || t.bolt === selectedStore));
             const filteredAcc = globalAccessories.filter(a => (selectedMonth === 'ALL' || a.honap === selectedMonth) && (selectedStore === 'ALL' || a.bolt === selectedStore));
             const filteredFootfall = globalFootfall.filter(f => (selectedMonth === 'ALL' || f.honap === selectedMonth) && (selectedStore === 'ALL' || f.bolt === selectedStore));
@@ -788,6 +858,9 @@
             const daysInMonth = new Date(currentYear, currentMonthIdx + 1, 0).getDate();
             const now = new Date();
             const currentDay = (now.getFullYear() === currentYear && now.getMonth() === currentMonthIdx) ? now.getDate() : daysInMonth;
+            
+            // Ha forceStatic igaz (Jobb oldali tábla), akkor úgy teszünk, mintha minden nap a múltban lenne
+            const evalCurrentDay = forceStatic ? 32 : currentDay;
 
             function getStoreDailyTargets(storeCode, targetVal) {
                 let storeHistory = globalTransactions.filter(t => t.honap !== selectedMonth);
@@ -832,6 +905,49 @@
                     sumWeights += w;
                 }
                 
+                let actualsDone = 0;
+                if (!forceStatic && metricKey) {
+                    let accSum = 0;
+                    if (metricKey === 'tartozek_ft') {
+                        const mAcc = globalAccessories.filter(a => a.honap === selectedMonth && (storeCode === 'ALL' || a.bolt === storeCode));
+                        mAcc.forEach(a => {
+                            if (a.teljesites_datuma) {
+                                const p = String(a.teljesites_datuma).split('-');
+                                if (p.length === 3 && parseInt(p[2], 10) < evalCurrentDay) accSum += (Number(a.brutto_ertek) || 0);
+                            }
+                        });
+                    } else if (metricKey !== 'betero_db') {
+                        const mCpr = globalTransactions.filter(t => t.honap === selectedMonth && (storeCode === 'ALL' || t.bolt === storeCode));
+                        mCpr.forEach(t => {
+                            if (t.szerzodes_datuma) {
+                                const p = String(t.szerzodes_datuma).split('-');
+                                if (p.length === 3 && parseInt(p[2], 10) < evalCurrentDay) {
+                                    if (metricKey === 'pont') accSum += (t.osszpont || 0);
+                                    else if (metricKey === 'acq_pont') accSum += (t.acq_pont || 0);
+                                    else if (metricKey === 'ret_pont') accSum += (t.ret_pont || 0);
+                                    else if (metricKey === 'acq_db') accSum += (t.acq_db || 0);
+                                    else if (metricKey === 'huseg_db') accSum += (t.huseg_db || 0);
+                                    else if (metricKey === 'fix_db') accSum += (t.fix_db || 0);
+                                    else if (metricKey === 'soho_db') accSum += (t.szegmens && t.szegmens.toLowerCase() === 'soho' && t.acq_db > 0) ? (t.acq_db || 1) : 0;
+                                }
+                            }
+                        });
+                    }
+                    actualsDone = accSum;
+                }
+                
+                let pastWeights = 0; let futureWeights = 0;
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const dateStr = `${currentYear}-${String(currentMonthIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                    const dow = new Date(currentYear, currentMonthIdx, d).getDay();
+                    if (publicHolidays.includes(dateStr) || (dow === 0 && (storeCode === 'FPK007' || storeCode === 'FPK012'))) continue;
+                    const w = (sDowWeights[dow] || 0) * (sDomWeights[d] || 1);
+                    if (d < evalCurrentDay) pastWeights += w;
+                    else futureWeights += w;
+                }
+                
+                let targetRemainingForFuture = Math.max(0, targetVal - actualsDone);
+
                 for (let d = 1; d <= daysInMonth; d++) {
                     const dateStr = `${currentYear}-${String(currentMonthIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                     const dow = new Date(currentYear, currentMonthIdx, d).getDay();
@@ -839,7 +955,11 @@
                         dailyMap[d] = 0;
                     } else {
                         const w = (sDowWeights[dow] || 0) * (sDomWeights[d] || 1);
-                        dailyMap[d] = sumWeights > 0 ? (targetVal * (w / sumWeights)) : 0;
+                        if (d < evalCurrentDay) {
+                            dailyMap[d] = sumWeights > 0 ? (targetVal * (w / sumWeights)) : 0;
+                        } else {
+                            dailyMap[d] = futureWeights > 0 ? (targetRemainingForFuture * (w / futureWeights)) : 0;
+                        }
                     }
                 }
                 return dailyMap;
@@ -863,7 +983,7 @@
             }
 
             const dailyActualMap = Array(daysInMonth + 1).fill(0);
-            if (metricKey) {
+            if (!forceStatic && metricKey) {
                 if (metricKey === 'tartozek_ft') {
                     filteredAcc.forEach(a => {
                         if (a.teljesites_datuma) {
@@ -1032,9 +1152,6 @@
             });
         }
 
-        // ==========================================
-        // FELUGRÓ ABLAK (MODAL) LOGIKÁJA
-        // ==========================================
         function openDayModal(dayNum) {
             const m = document.getElementById('box3Month').value;
             const s = document.getElementById('box3Store').value;
@@ -1045,7 +1162,6 @@
             
             document.getElementById('modalTitle').innerText = `${dayNum}. ${dayNames[dow]} (${s === 'ALL' ? 'Összes Üzlet' : s})`;
             
-            // Kártyák generálása
             const grid = document.getElementById('modalCardsGrid');
             const closedMsg = document.getElementById('modalClosedMsg');
             let isClosedDay = false;
@@ -1059,7 +1175,6 @@
                     isClosedDay = true;
                 }
                 
-                // Milyen színű legyen a kártya felirata
                 let titleColor = '';
                 if(metric.key.includes('pont')) titleColor = 'text-amber-400';
                 if(metric.key.includes('acq')) titleColor = 'text-indigo-400';
@@ -1085,13 +1200,11 @@
                 closedMsg.classList.add('hidden');
             }
 
-            // Megjelenítés animációval
             const modal = document.getElementById('dayModal');
             const content = document.getElementById('dayModalContent');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             
-            // Pici késleltetés, hogy a display: flex érvényesüljön az opacity előtt
             setTimeout(() => {
                 modal.classList.remove('opacity-0', 'pointer-events-none');
                 content.classList.remove('scale-95');
