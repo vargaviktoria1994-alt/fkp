@@ -539,7 +539,7 @@
         }
 
         function populateFilters() {
-            const allMonthsList = [...globalTransactions.map(t => t.honap), ...globalAccessories.map(a => a.honap), ...globalFootfall.map(f => f.honap)];
+            const allMonthsList = [...globalTransactions.map(t => t.honap), ...globalAccessories.map(a => a.honap), ...globalFootfall.map(f => f.honap), ...globalTargets.map(t => t.honap)];
             const rawMonths = [...new Set(allMonthsList)].filter(Boolean);
             const months = sortMonthsChronological(rawMonths);
 
@@ -556,8 +556,27 @@
             document.getElementById('filterStore').innerHTML = storeOptions;
             document.getElementById('filterSeller').innerHTML = '<option value="ALL">Összes Értékesítő</option>' + sellers.map(s => `<option value="${s}">${s}</option>`).join('');
             
-            if(document.getElementById('targetUploadMonth')) document.getElementById('targetUploadMonth').innerHTML = months.map(m => `<option value="${m}">${m}</option>`).join('');
-            if(document.getElementById('deleteDataMonth')) document.getElementById('deleteDataMonth').innerHTML = months.map(m => `<option value="${m}">${m}</option>`).join('');
+            const mNamesExt = ['január', 'február', 'március', 'április', 'május', 'június', 'július', 'augusztus', 'szeptember', 'október', 'november', 'december'];
+            const dNowExt = new Date();
+            const extendedMonthsRaw = [...rawMonths];
+            
+            // Generáljuk be az elmúlt 6 hónapot és a JÖVŐBELI 12 hónapot a listába!
+            for(let i = -6; i <= 12; i++) {
+                const d = new Date(dNowExt.getFullYear(), dNowExt.getMonth() + i, 1);
+                extendedMonthsRaw.push(`${d.getFullYear()} ${mNamesExt[d.getMonth()]}`);
+            }
+            const extendedMonths = sortMonthsChronological([...new Set(extendedMonthsRaw)]);
+
+            if(document.getElementById('targetUploadMonth')) {
+                document.getElementById('targetUploadMonth').innerHTML = extendedMonths.map(m => `<option value="${m}">${m}</option>`).join('');
+                // Legyen az alapértelmezett az aktuális hónap
+                const currentMStr = `${dNowExt.getFullYear()} ${mNamesExt[dNowExt.getMonth()]}`;
+                if(extendedMonths.includes(currentMStr)) document.getElementById('targetUploadMonth').value = currentMStr;
+            }
+            
+            if(document.getElementById('deleteDataMonth')) {
+                document.getElementById('deleteDataMonth').innerHTML = extendedMonths.map(m => `<option value="${m}">${m}</option>`).join('');
+            }
 
             ['box1Month', 'box2Month', 'box3Month', 'box4Month'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerHTML = monthOptions; });
             ['box1Store', 'box2Store', 'box3Store', 'box4Store'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerHTML = storeOptions; });
@@ -1337,7 +1356,7 @@
         
         function renderUploadPreviews() {
             // Dropdown szinkronizáció
-            const allMonthsList = [...globalTransactions.map(t => t.honap), ...globalAccessories.map(a => a.honap), ...globalFootfall.map(f => f.honap)];
+            const allMonthsList = [...globalTransactions.map(t => t.honap), ...globalAccessories.map(a => a.honap), ...globalFootfall.map(f => f.honap), ...globalTargets.map(t => t.honap)];
             const rawMonths = [...new Set(allMonthsList)].filter(Boolean);
             const months = sortMonthsChronological(rawMonths);
             
