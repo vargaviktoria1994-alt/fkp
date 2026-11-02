@@ -17,7 +17,6 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen p-3 md:p-6">
 
-    <!-- JELSZÓVÉDŐ KÉPERNYŐ -->
     <div id="loginScreen" class="fixed inset-0 bg-slate-950 flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl max-w-sm w-full text-center shadow-2xl space-y-5">
             <div class="w-16 h-16 bg-indigo-950/60 border border-indigo-500/40 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-inner">🔒</div>
@@ -123,7 +122,6 @@
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
                     
-                    <!-- 1. Havi Target (BAL FELSŐ) -->
                     <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col justify-between shadow-sm">
                         <div class="flex-1 flex flex-col space-y-3">
                             <div class="flex flex-col xl:flex-row xl:items-center justify-between border-b border-slate-700/60 pb-2.5 gap-3">
@@ -157,7 +155,6 @@
                         </div>
                     </div>
 
-                    <!-- 2. Kombinált Vonal/Oszlop Diagram (JOBB FELSŐ) -->
                     <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
                         <div class="flex flex-col justify-between border-b border-slate-700/60 pb-2.5 mb-2 gap-3">
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -200,7 +197,6 @@
                         </div>
                     </div>
 
-                    <!-- 3. Napi Targetek Naptára KATTINTHATÓ SOROKKAL (BAL ALSÓ) -->
                     <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
                         <div class="flex flex-col xl:flex-row xl:items-center justify-between border-b border-slate-700/60 pb-2.5 mb-2 gap-3">
                             <div class="flex items-center gap-2">
@@ -235,7 +231,6 @@
                         </div>
                     </div>
 
-                    <!-- 4. Napi Bontás (JOBB ALSÓ) -->
                     <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
                         <div class="flex flex-col xl:flex-row xl:items-center justify-between border-b border-slate-700/60 pb-2.5 mb-2 gap-3">
                             <div class="flex items-center gap-2">
@@ -586,8 +581,1505 @@
         </main>
     </div>
 
-    <!-- IDE HÚZZUK BE A JS FÁJLT -->
-    <script src="app.js"></script>
-    
+    <script>
+        const DASHBOARD_PASSWORD = "fpk2026";
+
+        function checkAuth() {
+            if (sessionStorage.getItem('dashboard_authenticated') === 'true') {
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('dashboardApp').classList.remove('hidden');
+                loadAllData();
+            } else {
+                document.getElementById('loginScreen').classList.remove('hidden');
+                document.getElementById('dashboardApp').classList.add('hidden');
+            }
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const inputVal = document.getElementById('passwordInput').value;
+            const errorElem = document.getElementById('loginError');
+
+            if (inputVal === DASHBOARD_PASSWORD) {
+                sessionStorage.setItem('dashboard_authenticated', 'true');
+                errorElem.classList.add('hidden');
+                checkAuth();
+            } else {
+                errorElem.classList.remove('hidden');
+                document.getElementById('passwordInput').value = '';
+                document.getElementById('passwordInput').focus();
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('dashboard_authenticated');
+            location.reload();
+        }
+
+        function switchTab(tabName) {
+            const tabDash = document.getElementById('tabDashboard');
+            const tabUp = document.getElementById('tabUpload');
+            const btnDash = document.getElementById('tabBtnDashboard');
+            const btnUp = document.getElementById('tabBtnUpload');
+
+            if (tabName === 'dashboard') {
+                tabDash.classList.remove('hidden');
+                tabUp.classList.add('hidden');
+                btnDash.className = "px-4 py-2 rounded-lg text-xs font-semibold transition bg-indigo-600 text-white shadow";
+                btnUp.className = "px-4 py-2 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white";
+                updateAllBoxes();
+                renderData();
+            } else {
+                tabDash.classList.add('hidden');
+                tabUp.classList.remove('hidden');
+                btnDash.className = "px-4 py-2 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white";
+                btnUp.className = "px-4 py-2 rounded-lg text-xs font-semibold transition bg-indigo-600 text-white shadow";
+                renderTargetAdminTable();
+            }
+        }
+
+        const SUPABASE_URL = "https://esbezhdyplpqumgrgmtv.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmV6aGR5cGxwcXVtZ3JnbXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyMDkyNTUsImV4cCI6MjEwODc4NTI1NX0.l4LH6uC0YRMLr4N-GlQqI_kEp6piV1zLTk2jLG4jBL0";
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let globalTransactions = [];
+        let globalAccessories = [];
+        let globalFootfall = [];
+        let globalTargets = [];
+        let globalMinTargets = []; 
+        let targetChartInstance = null;
+
+        let currentSortColumn = 'pont';
+        let currentSortDirection = 'desc';
+
+        window.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            document.getElementById('dayModal').addEventListener('click', function(e) { if(e.target === this) closeDayModal(); });
+            document.getElementById('sellerMinModal').addEventListener('click', function(e) { if(e.target === this) closeSellerMinModal(); });
+        });
+
+        async function loadAllData() {
+            try {
+                await Promise.all([
+                    loadFromSupabase(), 
+                    loadAccessoriesFromSupabase(), 
+                    loadFootfallFromSupabase(), 
+                    loadTargetsFromSupabase(),
+                    loadMinTargetsFromSupabase()
+                ]);
+                populateFilters();
+                updateAllBoxes();
+                renderData();
+                renderTargetAdminTable();
+            } catch(e) { console.error("Hiba az adatok letöltésekor", e); }
+        }
+
+        async function loadFromSupabase() {
+            let allRows = []; let from = 0; const batchSize = 1000; let hasMore = true;
+            try {
+                while (hasMore) {
+                    const { data, error } = await supabaseClient.from('bolti_teljesitesek').select('*').range(from, from + batchSize - 1);
+                    if (error) throw error;
+                    if (data && data.length > 0) { allRows = allRows.concat(data); from += batchSize; if (data.length < batchSize) hasMore = false; } else hasMore = false;
+                }
+                globalTransactions = allRows;
+            } catch (err) { console.error(err); }
+        }
+
+        async function loadAccessoriesFromSupabase() {
+            let allRows = []; let from = 0; const batchSize = 1000; let hasMore = true;
+            try {
+                while (hasMore) {
+                    const { data, error } = await supabaseClient.from('bolti_tartozekok').select('*').range(from, from + batchSize - 1);
+                    if (error) break;
+                    if (data && data.length > 0) { allRows = allRows.concat(data); from += batchSize; if (data.length < batchSize) hasMore = false; } else hasMore = false;
+                }
+                globalAccessories = allRows;
+            } catch (err) { console.warn(err); }
+        }
+        
+        async function loadFootfallFromSupabase() {
+            let allRows = []; let from = 0; const batchSize = 1000; let hasMore = true;
+            try {
+                while (hasMore) {
+                    const { data, error } = await supabaseClient.from('bolti_latogatok').select('*').range(from, from + batchSize - 1);
+                    if (error) break;
+                    if (data && data.length > 0) { allRows = allRows.concat(data); from += batchSize; if (data.length < batchSize) hasMore = false; } else hasMore = false;
+                }
+                globalFootfall = allRows;
+            } catch (err) { console.warn(err); }
+        }
+
+        async function loadTargetsFromSupabase() {
+            try {
+                const { data, error } = await supabaseClient.from('havi_targetek').select('*').order('bolt', { ascending: true });
+                if (!error && data) { globalTargets = data; renderTargetAdminTable(); }
+            } catch (e) { console.warn(e); }
+        }
+        
+        async function loadMinTargetsFromSupabase() {
+            try {
+                const { data, error } = await supabaseClient.from('minimum_targetek').select('*');
+                if (!error && data) { globalMinTargets = data; }
+            } catch (e) { console.warn("A minimum targetek tábla még nem jött létre vagy üres.", e); }
+        }
+
+        function sortMonthsChronological(monthList) {
+            const monthMap = { 'január': 1, 'február': 2, 'március': 3, 'április': 4, 'május': 5, 'június': 6, 'július': 7, 'augusztus': 8, 'szeptember': 9, 'október': 10, 'november': 11, 'december': 12 };
+            return monthList.sort((a, b) => {
+                const parseM = (str) => {
+                    if (!str) return 0;
+                    const p = String(str).trim().toLowerCase().split(' ');
+                    return (parseInt(p[0], 10) || 2026) * 100 + (monthMap[p[1] || ''] || 0);
+                };
+                return parseM(b) - parseM(a);
+            });
+        }
+
+        function populateFilters() {
+            const allMonthsList = [...globalTransactions.map(t => t.honap), ...globalAccessories.map(a => a.honap), ...globalFootfall.map(f => f.honap), ...globalTargets.map(t => t.honap)];
+            const rawMonths = [...new Set(allMonthsList)].filter(Boolean);
+            const months = sortMonthsChronological(rawMonths);
+
+            const allStoresList = [...globalTransactions.map(t => t.bolt), ...globalAccessories.map(a => a.bolt)];
+            const stores = [...new Set(allStoresList)].filter(Boolean).sort();
+
+            const allSellersList = [...globalTransactions.map(t => t.ertekesito), ...globalAccessories.map(a => a.ertekesito)];
+            const sellers = [...new Set(allSellersList.map(s => String(s || '').trim().replace(/\s+/g, ' ')))].filter(Boolean).sort();
+
+            const monthOptions = months.map(m => `<option value="${m}">${m}</option>`).join('') + '<option value="ALL">Összes Hónap</option>';
+            const storeOptions = '<option value="ALL">Összes Üzlet (Hálózat)</option>' + stores.map(s => `<option value="${s}">${s}</option>`).join('');
+            const sellerOptions = '<option value="ALL">Összes Értékesítő</option>' + sellers.map(s => `<option value="${s}">${s}</option>`).join('');
+
+            document.getElementById('filterMonth').innerHTML = monthOptions;
+            document.getElementById('filterStore').innerHTML = storeOptions;
+            document.getElementById('filterSeller').innerHTML = sellerOptions;
+
+            ['box1Month', 'box2Month', 'box3Month', 'box4Month'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerHTML = monthOptions; });
+            ['box1Store', 'box2Store', 'box3Store', 'box4Store', 'staticTargetStore'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerHTML = storeOptions; });
+
+            if(document.getElementById('minTargetSeller')) {
+                document.getElementById('minTargetSeller').innerHTML = sellerOptions;
+            }
+
+            if (months.length > 0) {
+                document.getElementById('filterMonth').value = months[0];
+                ['box1Month', 'box2Month', 'box3Month', 'box4Month'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = months[0]; });
+            }
+        }
+        
+        function renderUploadPreviews() {
+            const allMonthsList = [...globalTransactions.map(t => t.honap), ...globalAccessories.map(a => a.honap), ...globalFootfall.map(f => f.honap), ...globalTargets.map(t => t.honap)];
+            const rawMonths = [...new Set(allMonthsList)].filter(Boolean);
+            const months = sortMonthsChronological(rawMonths);
+            
+            const mNamesExt = ['január', 'február', 'március', 'április', 'május', 'június', 'július', 'augusztus', 'szeptember', 'október', 'november', 'december'];
+            const dNowExt = new Date();
+            const extendedMonthsRaw = [...rawMonths];
+            
+            for(let i = -6; i <= 12; i++) {
+                const d = new Date(dNowExt.getFullYear(), dNowExt.getMonth() + i, 1);
+                extendedMonthsRaw.push(`${d.getFullYear()} ${mNamesExt[d.getMonth()]}`);
+            }
+            const extendedMonths = sortMonthsChronological([...new Set(extendedMonthsRaw)]);
+
+            if(document.getElementById('targetUploadMonth') && document.getElementById('targetUploadMonth').options.length === 0) {
+                const opts = extendedMonths.map(m => `<option value="${m}">${m}</option>`).join('');
+                document.getElementById('targetUploadMonth').innerHTML = opts;
+                document.getElementById('deleteDataMonth').innerHTML = opts;
+                document.getElementById('staticTargetMonth').innerHTML = opts;
+                document.getElementById('minTargetMonth').innerHTML = opts;
+                
+                const currentMStr = `${dNowExt.getFullYear()} ${mNamesExt[dNowExt.getMonth()]}`;
+                if(extendedMonths.includes(currentMStr)) {
+                    document.getElementById('targetUploadMonth').value = currentMStr;
+                    document.getElementById('deleteDataMonth').value = currentMStr;
+                    document.getElementById('staticTargetMonth').value = currentMStr;
+                    document.getElementById('minTargetMonth').value = currentMStr;
+                }
+            }
+
+            if(document.getElementById('previewMonthCpr') && document.getElementById('previewMonthCpr').options.length === 0) {
+                const opts = months.map(m => `<option value="${m}">${m}</option>`).join('');
+                ['previewMonthCpr', 'previewMonthAcc', 'previewMonthFoot'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if(el) { el.innerHTML = opts; if(months.length>0) el.value = months[0]; }
+                });
+            }
+
+            const cprMonth = document.getElementById('previewMonthCpr') ? document.getElementById('previewMonthCpr').value : null;
+            const tbCpr = document.getElementById('previewTableCpr');
+            if (tbCpr && cprMonth) {
+                const cprData = globalTransactions.filter(t => t.honap === cprMonth).sort((a, b) => new Date(a.szerzodes_datuma) - new Date(b.szerzodes_datuma));
+                if (cprData.length === 0) {
+                    tbCpr.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-500">Nincs CPR adat a kiválasztott hónapban.</td></tr>`;
+                } else {
+                    tbCpr.innerHTML = cprData.map(t => `
+                        <tr class="hover:bg-slate-700/30 transition">
+                            <td class="p-2 whitespace-nowrap text-slate-400">${t.szerzodes_datuma || '-'}</td>
+                            <td class="p-2"><span class="px-1.5 py-0.5 bg-slate-800 text-indigo-400 font-bold rounded">${t.bolt || ''}</span></td>
+                            <td class="p-2 text-white truncate max-w-[120px]" title="${t.ertekesito}">${t.ertekesito || ''}</td>
+                            <td class="p-2 text-slate-400">${t.szegmens || '-'}</td>
+                            <td class="p-2 text-center text-indigo-300 font-mono">${t.acq_db || 0}</td>
+                            <td class="p-2 text-center text-emerald-300 font-mono">${t.huseg_db || 0}</td>
+                            <td class="p-2 text-center text-purple-300 font-mono">${t.fix_db || 0}</td>
+                            <td class="p-2 text-right font-mono font-bold text-amber-400">${(t.osszpont || 0).toFixed(1)}</td>
+                        </tr>
+                    `).join('');
+                }
+            }
+
+            const accMonth = document.getElementById('previewMonthAcc') ? document.getElementById('previewMonthAcc').value : null;
+            const tbAcc = document.getElementById('previewTableAcc');
+            const tbAccMissing = document.getElementById('previewTableAccMissing');
+            
+            if (tbAcc && tbAccMissing && accMonth) {
+                const accData = globalAccessories.filter(a => a.honap === accMonth).sort((a, b) => new Date(a.teljesites_datuma) - new Date(b.teljesites_datuma));
+                
+                const matchedList = accData.filter(a => (a.darabszam || 0) > 0);
+                const missingList = accData.filter(a => (a.darabszam || 0) === 0);
+
+                if (matchedList.length === 0) {
+                    tbAcc.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">Nincs sikeresen párosított adat.</td></tr>`;
+                } else {
+                    tbAcc.innerHTML = matchedList.map(a => `
+                        <tr class="hover:bg-slate-700/30 transition">
+                            <td class="p-2 whitespace-nowrap text-slate-400">${a.teljesites_datuma || '-'}</td>
+                            <td class="p-2"><span class="px-1.5 py-0.5 bg-slate-800 text-indigo-400 font-bold rounded">${a.bolt || ''}</span></td>
+                            <td class="p-2 text-white truncate max-w-[120px]" title="${a.ertekesito}">${a.ertekesito || ''}</td>
+                            <td class="p-2 text-slate-400 text-[9px] font-mono">${a.biz_szam || '-'}</td>
+                            <td class="p-2 text-center text-cyan-400 font-mono">${a.darabszam || 0} db</td>
+                            <td class="p-2 text-right font-mono font-bold text-pink-400">${Math.round(Number(a.brutto_ertek)||0).toLocaleString('hu-HU')} Ft</td>
+                        </tr>
+                    `).join('');
+                }
+                
+                if (missingList.length === 0) {
+                    tbAccMissing.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-emerald-500">Minden számlaszámhoz találtam darabszámot! 🎉</td></tr>`;
+                } else {
+                    tbAccMissing.innerHTML = missingList.map(a => `
+                        <tr class="hover:bg-rose-950/20 transition">
+                            <td class="p-2 whitespace-nowrap text-slate-400">${a.teljesites_datuma || '-'}</td>
+                            <td class="p-2"><span class="px-1.5 py-0.5 bg-slate-800 text-indigo-400 font-bold rounded">${a.bolt || ''}</span></td>
+                            <td class="p-2 text-white truncate max-w-[120px]" title="${a.ertekesito}">${a.ertekesito || ''}</td>
+                            <td class="p-2 text-rose-400 font-bold text-[10px] font-mono">${a.biz_szam || 'NINCS BIZ.SZÁM'}</td>
+                        </tr>
+                    `).join('');
+                }
+            }
+
+            const footMonth = document.getElementById('previewMonthFoot') ? document.getElementById('previewMonthFoot').value : null;
+            const tbFoot = document.getElementById('previewTableFoot');
+            if (tbFoot && footMonth) {
+                const footData = globalFootfall.filter(f => f.honap === footMonth);
+                if (footData.length === 0) {
+                    tbFoot.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">Nincs betérő adat a kiválasztott hónapban.</td></tr>`;
+                } else {
+                    const map = {};
+                    footData.forEach(f => { if (!map[f.bolt]) map[f.bolt] = { days: 0, total: 0 }; map[f.bolt].days++; map[f.bolt].total += (f.betero_db || 0); });
+                    tbFoot.innerHTML = Object.keys(map).sort().map(bolt => `
+                        <tr class="hover:bg-slate-700/20 transition text-xs">
+                            <td class="p-2.5 text-slate-400 font-normal">${footMonth}</td><td class="p-2.5"><span class="px-2 py-0.5 bg-slate-800 text-indigo-400 font-bold rounded">${bolt}</span></td>
+                            <td class="p-2.5 text-center text-slate-300 font-mono">${map[bolt].days} nap</td><td class="p-2.5 text-right font-mono font-bold text-cyan-400">${map[bolt].total} fő</td>
+                        </tr>
+                    `).join('');
+                }
+            }
+            
+            const tbody = document.getElementById('targetTableBody');
+            if (globalTargets.length === 0) { tbody.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-slate-500">Még nincsenek feltöltött bolti targetek.</td></tr>'; }
+            else {
+                tbody.innerHTML = globalTargets.map(t => `
+                    <tr class="hover:bg-slate-700/20 transition">
+                        <td class="p-2.5 text-slate-400 font-normal">${t.honap}</td><td class="p-2.5"><span class="px-2 py-0.5 bg-slate-800 text-indigo-400 font-bold rounded">${t.bolt}</span></td>
+                        <td class="p-2.5 text-center text-indigo-300">${t.target_acq_db || 0}</td><td class="p-2.5 text-center text-emerald-300">${t.target_huseg_db || 0}</td>
+                        <td class="p-2.5 text-center text-purple-300">${t.target_fix_db || 0}</td><td class="p-2.5 text-center text-amber-300">${t.target_soho_db || 0}</td>
+                        <td class="p-2.5 text-center text-sky-400">${t.target_acq_pont || 0}</td><td class="p-2.5 text-center text-teal-400">${t.target_ret_pont || 0}</td>
+                        <td class="p-2.5 text-right font-mono text-pink-300">${(t.target_tartozek_ft || 0).toLocaleString('hu-HU')} Ft</td>
+                    </tr>
+                `).join('');
+            }
+        }
+        
+        function renderStaticDailyTargets() {
+            const m = document.getElementById('staticTargetMonth')?.value;
+            const s = document.getElementById('staticTargetStore')?.value;
+            if(!m) return;
+            
+            const dataMock = fetchBoxData(m, s, 'pont', true);
+            const mPont = fetchBoxData(m, s, 'pont', true);
+            const mAcqP = fetchBoxData(m, s, 'acq_pont', true);
+            const mAcqD = fetchBoxData(m, s, 'acq_db', true);
+            const mHusD = fetchBoxData(m, s, 'huseg_db', true);
+            const mTarF = fetchBoxData(m, s, 'tartozek_ft', true);
+
+            const dayNamesShort = ['V', 'H', 'K', 'Sze', 'Cs', 'P', 'Szo'];
+            let html = '';
+            
+            for (let d = 1; d <= dataMock.daysInMonth; d++) {
+                const dow = new Date(dataMock.currentYear, dataMock.currentMonthIdx, d).getDay();
+                const pt = mPont.storeDailyTargetMap[d] || 0;
+                const isClosed = (pt === 0);
+                
+                if (isClosed) {
+                    html += `<tr class="hover:bg-slate-700/30 transition text-[10px]">
+                                <td class="p-2 text-slate-400">${d}. ${dayNamesShort[dow]}</td>
+                                <td colspan="5" class="p-2 text-center text-slate-600 font-bold tracking-widest">ZÁRVA</td>
+                            </tr>`;
+                } else {
+                    html += `<tr class="hover:bg-slate-700/30 transition text-[10px]">
+                                <td class="p-2 text-slate-400">${d}. ${dayNamesShort[dow]}</td>
+                                <td class="p-2 text-right text-amber-300 font-mono font-bold">${pt.toFixed(1)}</td>
+                                <td class="p-2 text-right text-sky-400 font-mono">${(mAcqP.storeDailyTargetMap[d]||0).toFixed(1)}</td>
+                                <td class="p-2 text-center text-indigo-400 font-mono">${Math.round(mAcqD.storeDailyTargetMap[d]||0)}</td>
+                                <td class="p-2 text-center text-emerald-400 font-mono">${Math.round(mHusD.storeDailyTargetMap[d]||0)}</td>
+                                <td class="p-2 text-right text-pink-400 font-mono">${Math.round(mTarF.storeDailyTargetMap[d]||0).toLocaleString('hu-HU')} Ft</td>
+                            </tr>`;
+                }
+            }
+            document.getElementById('staticDailyTargetTableBody').innerHTML = html;
+        }
+
+        function renderTargetAdminTable() {
+            renderUploadPreviews();
+            renderStaticDailyTargets();
+        }
+
+        const metricRows = [
+            { key: 'pont', label: 'Összpont', isInt: false, color: 'text-amber-400' },
+            { key: 'acq_pont', label: 'ACQ Pont', isInt: false, color: 'text-sky-400' },
+            { key: 'ret_pont', label: 'Reti Pont', isInt: false, color: 'text-teal-400' },
+            { key: 'acq_db', label: 'ACQ db', isInt: true, color: 'text-indigo-400' },
+            { key: 'huseg_db', label: 'Hűség db', isInt: true, color: 'text-emerald-400' },
+            { key: 'fix_db', label: 'FIX db', isInt: true, color: 'text-purple-400' },
+            { key: 'soho_db', label: 'SOHO db', isInt: true, color: 'text-amber-300' },
+            { key: 'tartozek_ft', label: 'Tartozék (Ft)', isInt: true, isCurrency: true, color: 'text-pink-400' },
+            { key: 'betero_db', label: 'Betérő Ügyfél', isInt: true, color: 'text-cyan-400' }
+        ];
+
+        function fetchBoxData(selectedMonth, selectedStore, metricKey, forceStatic = false) {
+            const filteredCPR = globalTransactions.filter(t => (selectedMonth === 'ALL' || t.honap === selectedMonth) && (selectedStore === 'ALL' || t.bolt === selectedStore));
+            const filteredAcc = globalAccessories.filter(a => (selectedMonth === 'ALL' || a.honap === selectedMonth) && (selectedStore === 'ALL' || a.bolt === selectedStore));
+            const filteredFootfall = globalFootfall.filter(f => (selectedMonth === 'ALL' || f.honap === selectedMonth) && (selectedStore === 'ALL' || f.bolt === selectedStore));
+
+            const actuals = {
+                pont: filteredCPR.reduce((acc, t) => acc + (t.osszpont || 0), 0),
+                acq_pont: filteredCPR.reduce((acc, t) => acc + (t.acq_pont || 0), 0),
+                ret_pont: filteredCPR.reduce((acc, t) => acc + (t.ret_pont || 0), 0),
+                acq_db: filteredCPR.reduce((acc, t) => acc + (t.acq_db || 0), 0),
+                huseg_db: filteredCPR.reduce((acc, t) => acc + (t.huseg_db || 0), 0),
+                fix_db: filteredCPR.reduce((acc, t) => acc + (t.fix_db || 0), 0),
+                soho_db: filteredCPR.filter(t => (t.szegmens && t.szegmens.toLowerCase() === 'soho') && (t.acq_db > 0)).reduce((acc, t) => acc + (t.acq_db || 1), 0),
+                tartozek_ft: filteredAcc.reduce((acc, a) => acc + (Number(a.brutto_ertek) || 0), 0),
+                betero_db: filteredFootfall.reduce((acc, f) => acc + (f.betero_db || 0), 0)
+            };
+
+            let relevantTargets = globalTargets.filter(t => selectedMonth === 'ALL' || t.honap === selectedMonth);
+            if (selectedStore !== 'ALL') relevantTargets = relevantTargets.filter(t => t.bolt === selectedStore);
+
+            const targets = {
+                pont: relevantTargets.reduce((a, b) => a + (b.target_pont || (b.target_acq_pont + b.target_ret_pont) || 0), 0),
+                acq_pont: relevantTargets.reduce((a, b) => a + (b.target_acq_pont || 0), 0),
+                ret_pont: relevantTargets.reduce((a, b) => a + (b.target_ret_pont || 0), 0),
+                acq_db: relevantTargets.reduce((a, b) => a + (b.target_acq_db || 0), 0),
+                huseg_db: relevantTargets.reduce((a, b) => a + (b.target_huseg_db || 0), 0),
+                fix_db: relevantTargets.reduce((a, b) => a + (b.target_fix_db || 0), 0),
+                soho_db: relevantTargets.reduce((a, b) => a + (b.target_soho_db || 0), 0),
+                tartozek_ft: relevantTargets.reduce((a, b) => a + (b.target_tartozek_ft || 0), 0),
+                betero_db: 0
+            };
+
+            let currentYear = 2026; let currentMonthIdx = 9;
+            if (selectedMonth && selectedMonth !== 'ALL') {
+                const parts = selectedMonth.split(' ');
+                currentYear = parseInt(parts[0], 10) || 2026;
+                const mNames = ['január', 'február', 'március', 'április', 'május', 'június', 'július', 'augusztus', 'szeptember', 'október', 'november', 'december'];
+                const fIdx = mNames.indexOf((parts[1] || '').toLowerCase());
+                if (fIdx !== -1) currentMonthIdx = fIdx;
+            }
+
+            const daysInMonth = new Date(currentYear, currentMonthIdx + 1, 0).getDate();
+            const now = new Date();
+            const currentDay = (now.getFullYear() === currentYear && now.getMonth() === currentMonthIdx) ? now.getDate() : daysInMonth;
+            
+            const evalCurrentDay = forceStatic ? 32 : currentDay;
+
+            function getStoreDailyTargets(storeCode, targetVal) {
+                let storeHistory = globalTransactions.filter(t => t.honap !== selectedMonth);
+                if (storeCode !== 'ALL') storeHistory = storeHistory.filter(t => t.bolt === storeCode);
+                if (storeHistory.length < 10) storeHistory = globalTransactions.filter(t => storeCode === 'ALL' || t.bolt === storeCode);
+
+                const sDowPoints = [0, 0, 0, 0, 0, 0, 0];
+                const sDomPoints = Array(32).fill(0);
+                let sTotalPts = 0;
+
+                storeHistory.forEach(t => {
+                    if (t.szerzodes_datuma) {
+                        const p = String(t.szerzodes_datuma).split('-');
+                        if (p.length === 3) {
+                            const dNum = parseInt(p[2], 10);
+                            const dow = new Date(parseInt(p[0], 10), parseInt(p[1], 10)-1, dNum).getDay();
+                            const pts = (t.osszpont || 0);
+                            sDowPoints[dow] += pts;
+                            if (dNum >= 1 && dNum <= 31) sDomPoints[dNum] += pts;
+                            sTotalPts += pts;
+                        }
+                    }
+                });
+
+                if (storeCode === 'FPK002') { sDowPoints[0] = 0; }
+
+                const sDowWeights = sDowPoints.map(p => sTotalPts > 0 ? (p / sTotalPts) * 7 : 0.0);
+                const sDomWeights = sDomPoints.map(p => sTotalPts > 0 ? (p / sTotalPts) * 30.5 : 1.0);
+
+                const publicHolidays = [
+                    '2026-01-01', '2026-03-15', '2026-04-03', '2026-04-06', '2026-05-01', '2026-05-25', '2026-08-20', '2026-10-23', '2026-11-01', '2026-12-25', '2026-12-26',
+                    '2027-01-01', '2027-03-15', '2027-03-26', '2027-03-29', '2027-05-01', '2027-05-17', '2027-08-20', '2027-10-23', '2027-11-01', '2027-12-25', '2027-12-26'
+                ];
+
+                const dailyMap = {}; let sumWeights = 0;
+                
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const dateStr = `${currentYear}-${String(currentMonthIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                    const dow = new Date(currentYear, currentMonthIdx, d).getDay();
+                    if (publicHolidays.includes(dateStr) || (dow === 0 && storeCode === 'FPK002')) continue;
+                    const w = (sDowWeights[dow] || 0) * (sDomWeights[d] || 1);
+                    sumWeights += w;
+                }
+                
+                let actualsDone = 0;
+                if (!forceStatic && metricKey) {
+                    let accSum = 0;
+                    if (metricKey === 'tartozek_ft') {
+                        const mAcc = globalAccessories.filter(a => a.honap === selectedMonth && (storeCode === 'ALL' || a.bolt === storeCode));
+                        mAcc.forEach(a => {
+                            if (a.teljesites_datuma) {
+                                const p = String(a.teljesites_datuma).split('-');
+                                if (p.length === 3 && parseInt(p[2], 10) < evalCurrentDay) accSum += (Number(a.brutto_ertek) || 0);
+                            }
+                        });
+                    } else if (metricKey !== 'betero_db') {
+                        const mCpr = globalTransactions.filter(t => t.honap === selectedMonth && (storeCode === 'ALL' || t.bolt === storeCode));
+                        mCpr.forEach(t => {
+                            if (t.szerzodes_datuma) {
+                                const p = String(t.szerzodes_datuma).split('-');
+                                if (p.length === 3 && parseInt(p[2], 10) < evalCurrentDay) {
+                                    if (metricKey === 'pont') accSum += (t.osszpont || 0);
+                                    else if (metricKey === 'acq_pont') accSum += (t.acq_pont || 0);
+                                    else if (metricKey === 'ret_pont') accSum += (t.ret_pont || 0);
+                                    else if (metricKey === 'acq_db') accSum += (t.acq_db || 0);
+                                    else if (metricKey === 'huseg_db') accSum += (t.huseg_db || 0);
+                                    else if (metricKey === 'fix_db') accSum += (t.fix_db || 0);
+                                    else if (metricKey === 'soho_db') accSum += (t.szegmens && t.szegmens.toLowerCase() === 'soho' && t.acq_db > 0) ? (t.acq_db || 1) : 0;
+                                }
+                            }
+                        });
+                    }
+                    actualsDone = accSum;
+                }
+                
+                let pastWeights = 0; let futureWeights = 0;
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const dateStr = `${currentYear}-${String(currentMonthIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                    const dow = new Date(currentYear, currentMonthIdx, d).getDay();
+                    if (publicHolidays.includes(dateStr) || (dow === 0 && storeCode === 'FPK002')) continue;
+                    const w = (sDowWeights[dow] || 0) * (sDomWeights[d] || 1);
+                    if (d < evalCurrentDay) pastWeights += w;
+                    else futureWeights += w;
+                }
+                
+                let targetRemainingForFuture = Math.max(0, targetVal - actualsDone);
+
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const dateStr = `${currentYear}-${String(currentMonthIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                    const dow = new Date(currentYear, currentMonthIdx, d).getDay();
+                    if (publicHolidays.includes(dateStr) || (dow === 0 && storeCode === 'FPK002')) {
+                        dailyMap[d] = 0;
+                    } else {
+                        const w = (sDowWeights[dow] || 0) * (sDomWeights[d] || 1);
+                        if (d < evalCurrentDay) {
+                            dailyMap[d] = sumWeights > 0 ? (targetVal * (w / sumWeights)) : 0;
+                        } else {
+                            dailyMap[d] = futureWeights > 0 ? (targetRemainingForFuture * (w / futureWeights)) : 0;
+                        }
+                    }
+                }
+                return dailyMap;
+            }
+
+            let storeDailyTargetMap = {};
+            if (metricKey) {
+                const currentMetricTarget = targets[metricKey] || 0;
+                if (selectedStore !== 'ALL') {
+                    storeDailyTargetMap = getStoreDailyTargets(selectedStore, currentMetricTarget);
+                } else {
+                    const allStoreCodes = [...new Set(globalTargets.filter(t => selectedMonth === 'ALL' || t.honap === selectedMonth).map(t => t.bolt))].filter(b => b !== 'ALL');
+                    for (let d = 1; d <= daysInMonth; d++) storeDailyTargetMap[d] = 0;
+                    allStoreCodes.forEach(bCode => {
+                        const bObj = globalTargets.find(t => (selectedMonth === 'ALL' || t.honap === selectedMonth) && t.bolt === bCode);
+                        let bVal = bObj ? (bObj[metricKey === 'pont' ? 'target_pont' : `target_${metricKey}`] || 0) : 0;
+                        const dMap = getStoreDailyTargets(bCode, bVal);
+                        for (let d = 1; d <= daysInMonth; d++) storeDailyTargetMap[d] += dMap[d];
+                    });
+                }
+            }
+
+            const dailyActualMap = Array(daysInMonth + 1).fill(0);
+            if (!forceStatic && metricKey) {
+                if (metricKey === 'tartozek_ft') {
+                    filteredAcc.forEach(a => {
+                        if (a.teljesites_datuma) {
+                            const p = String(a.teljesites_datuma).split('-');
+                            if (p.length === 3 && parseInt(p[2], 10) >= 1 && parseInt(p[2], 10) <= daysInMonth) dailyActualMap[parseInt(p[2], 10)] += (Number(a.brutto_ertek) || 0);
+                        }
+                    });
+                } else if (metricKey === 'betero_db') {
+                    filteredFootfall.forEach(f => {
+                        if (f.datum) {
+                            const p = String(f.datum).split('-');
+                            if (p.length === 3 && parseInt(p[2], 10) >= 1 && parseInt(p[2], 10) <= daysInMonth) dailyActualMap[parseInt(p[2], 10)] += (f.betero_db || 0);
+                        }
+                    });
+                } else {
+                    filteredCPR.forEach(t => {
+                        if (t.szerzodes_datuma) {
+                            const p = String(t.szerzodes_datuma).split('-');
+                            if (p.length === 3 && parseInt(p[2], 10) >= 1 && parseInt(p[2], 10) <= daysInMonth) {
+                                const dNum = parseInt(p[2], 10);
+                                if (metricKey === 'pont') dailyActualMap[dNum] += (t.osszpont || 0);
+                                else if (metricKey === 'acq_pont') dailyActualMap[dNum] += (t.acq_pont || 0);
+                                else if (metricKey === 'ret_pont') dailyActualMap[dNum] += (t.ret_pont || 0);
+                                else if (metricKey === 'acq_db') dailyActualMap[dNum] += (t.acq_db || 0);
+                                else if (metricKey === 'huseg_db') dailyActualMap[dNum] += (t.huseg_db || 0);
+                                else if (metricKey === 'fix_db') dailyActualMap[dNum] += (t.fix_db || 0);
+                                else if (metricKey === 'soho_db') dailyActualMap[dNum] += (t.szegmens && t.szegmens.toLowerCase() === 'soho' && t.acq_db > 0) ? (t.acq_db || 1) : 0;
+                            }
+                        }
+                    });
+                }
+            }
+
+            return { targets, actuals, daysInMonth, currentDay, currentYear, currentMonthIdx, storeDailyTargetMap, dailyActualMap };
+        }
+
+        const formatVal = (v, isCurrency, isInt) => {
+            if (isCurrency) return Math.round(v).toLocaleString('hu-HU') + ' Ft';
+            if (isInt) return Math.round(v) + ' db';
+            return v.toFixed(1);
+        };
+
+        function getBadgeColor(pct, isClosed=false) {
+            if(isClosed) return "bg-slate-800 text-slate-400 border-slate-700";
+            if (pct >= 100) return "bg-emerald-950/60 text-emerald-300 border-emerald-800";
+            if (pct >= 80) return "bg-indigo-950/60 text-indigo-300 border-indigo-800";
+            if (pct >= 60) return "bg-amber-950/60 text-amber-300 border-amber-800";
+            return "bg-rose-950/60 text-rose-300 border-rose-800";
+        }
+
+        function updateBox1() {
+            const m = document.getElementById('box1Month').value;
+            const s = document.getElementById('box1Store').value;
+            const data = fetchBoxData(m, s, null);
+            
+            document.getElementById('box1TableBody').innerHTML = metricRows.filter(mr => mr.key !== 'betero_db').map(metric => {
+                const targetVal = data.targets[metric.key] || 0;
+                const actualVal = data.actuals[metric.key] || 0;
+                const remVal = Math.max(0, targetVal - actualVal);
+                const pct = targetVal > 0 ? (actualVal / targetVal) * 100 : (actualVal > 0 ? 100 : 0);
+                const bc = getBadgeColor(pct);
+
+                return `<tr class="hover:bg-slate-800/40 transition">
+                            <td class="py-2 px-2.5 font-semibold ${metric.color}">${metric.label}</td>
+                            <td class="py-2 px-2 text-right font-bold text-amber-300 font-mono">${formatVal(targetVal, metric.isCurrency, metric.isInt)}</td>
+                            <td class="py-2 px-2 text-right font-bold text-cyan-300 font-mono">${formatVal(actualVal, metric.isCurrency, metric.isInt)}</td>
+                            <td class="py-2 px-2 text-right"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold border ${bc}">${pct.toFixed(1)}%</span></td>
+                            <td class="py-2 px-2.5 text-right text-slate-400 font-mono">${formatVal(remVal, metric.isCurrency, metric.isInt)}</td>
+                        </tr>`;
+            }).join('');
+            
+            const remDays = Math.max(1, data.daysInMonth - data.currentDay + 1);
+            document.getElementById('box1Info').innerText = `${data.daysInMonth} napos hónap: ${remDays} nap van hátra`;
+            document.getElementById('box1Remaining').innerText = `Ma: ${data.currentDay}-e`;
+        }
+
+        function updateBox2() {
+            const m = document.getElementById('box2Month').value;
+            const s = document.getElementById('box2Store').value;
+            const m1 = document.getElementById('box2Metric1').value;
+            const t1 = document.getElementById('box2Type1').value;
+            const m2 = document.getElementById('box2Metric2').value;
+            const t2 = document.getElementById('box2Type2').value;
+
+            const data1 = fetchBoxData(m, s, m1);
+            let data2 = null;
+            if (m2 !== 'none') data2 = fetchBoxData(m, s, m2);
+
+            const labels = [];
+            const act1 = []; const tar1 = []; const act2 = [];
+
+            for (let d = 1; d <= data1.daysInMonth; d++) {
+                labels.push(`${d}.`);
+                tar1.push(Number((data1.storeDailyTargetMap[d] || 0).toFixed(1)));
+                if (d <= data1.currentDay) {
+                    act1.push(Number((data1.dailyActualMap[d] || 0).toFixed(1)));
+                    if (data2) act2.push(Number((data2.dailyActualMap[d] || 0).toFixed(1)));
+                } else {
+                    act1.push(null);
+                    if (data2) act2.push(null);
+                }
+            }
+
+            const getLabel = (key) => metricRows.find(x => x.key === key)?.label || key;
+            const datasets = [];
+
+            datasets.push({
+                type: t1,
+                label: getLabel(m1) + ' (Tény)',
+                data: act1,
+                borderColor: '#fbbf24',
+                backgroundColor: t1 === 'bar' ? 'rgba(251, 191, 36, 0.7)' : 'rgba(251, 191, 36, 0.2)',
+                borderWidth: 2,
+                yAxisID: 'y',
+                fill: t1 === 'line',
+                tension: 0.2
+            });
+
+            if (m2 === 'none' && m1 !== 'betero_db') {
+                datasets.push({
+                    type: 'line',
+                    label: getLabel(m1) + ' (Target)',
+                    data: tar1,
+                    borderColor: 'rgba(251, 191, 36, 0.5)',
+                    borderDash: [4, 4],
+                    borderWidth: 2,
+                    pointRadius: 1,
+                    yAxisID: 'y',
+                    fill: false
+                });
+            }
+
+            if (data2) {
+                datasets.push({
+                    type: t2,
+                    label: getLabel(m2) + ' (Tény)',
+                    data: act2,
+                    borderColor: '#22d3ee',
+                    backgroundColor: t2 === 'bar' ? 'rgba(34, 211, 238, 0.7)' : 'rgba(34, 211, 238, 0.2)',
+                    borderWidth: 2,
+                    yAxisID: 'y1',
+                    fill: t2 === 'line',
+                    tension: 0.2
+                });
+            }
+
+            if (targetChartInstance) targetChartInstance.destroy();
+            const ctx = document.getElementById('targetLineChart').getContext('2d');
+            
+            const yScales = {
+                y: { type: 'linear', display: true, position: 'left', grid: { color: 'rgba(51, 65, 85, 0.25)' }, ticks: { color: '#fbbf24', font: { size: 9 } } }
+            };
+            
+            if (data2) {
+                yScales.y1 = { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#22d3ee', font: { size: 9 } } };
+            }
+
+            targetChartInstance = new Chart(ctx, {
+                data: { labels, datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: { legend: { display: true, labels: { color: '#cbd5e1', font: {size: 10}, boxWidth: 12 } } },
+                    scales: { x: { grid: { color: 'rgba(51, 65, 85, 0.25)' }, ticks: { color: '#94a3b8', font: { size: 9 } } }, ...yScales }
+                }
+            });
+        }
+
+        function openDayModal(dayNum) {
+            const m = document.getElementById('box3Month').value;
+            const s = document.getElementById('box3Store').value;
+            
+            const dataMock = fetchBoxData(m, s, 'pont');
+            const dow = new Date(dataMock.currentYear, dataMock.currentMonthIdx, dayNum).getDay();
+            const dayNames = ['Vasárnap', 'Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat'];
+            
+            document.getElementById('modalTitle').innerText = `${dayNum}. ${dayNames[dow]} (${s === 'ALL' ? 'Összes Üzlet' : s})`;
+            
+            const grid = document.getElementById('modalCardsGrid');
+            const closedMsg = document.getElementById('modalClosedMsg');
+            let isClosedDay = false;
+            let cardsHtml = '';
+
+            metricRows.filter(mr => mr.key !== 'betero_db').forEach(metric => {
+                const data = fetchBoxData(m, s, metric.key);
+                const mTarget = data.storeDailyTargetMap[dayNum] || 0;
+                
+                if (mTarget === 0 && data.storeDailyTargetMap[Math.max(1, dayNum-1)] > 0 && metric.key === 'pont') {
+                    isClosedDay = true;
+                }
+                
+                let titleColor = '';
+                if(metric.key.includes('pont')) titleColor = 'text-amber-400';
+                if(metric.key.includes('acq')) titleColor = 'text-indigo-400';
+                if(metric.key.includes('huseg')) titleColor = 'text-emerald-400';
+                if(metric.key.includes('fix')) titleColor = 'text-purple-400';
+                if(metric.key.includes('soho')) titleColor = 'text-amber-300';
+                if(metric.key.includes('tartozek')) titleColor = 'text-pink-400';
+
+                cardsHtml += `
+                    <div class="bg-slate-900/80 border border-slate-700/80 p-4 rounded-xl flex flex-col items-center justify-center text-center shadow-lg transform hover:scale-105 transition-transform">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">${metric.label}</span>
+                        <span class="text-2xl font-black font-mono ${titleColor}">${formatVal(mTarget, metric.isCurrency, metric.isInt)}</span>
+                    </div>
+                `;
+            });
+
+            if (isClosedDay) {
+                grid.classList.add('hidden');
+                closedMsg.classList.remove('hidden');
+            } else {
+                grid.innerHTML = cardsHtml;
+                grid.classList.remove('hidden');
+                closedMsg.classList.add('hidden');
+            }
+
+            const modal = document.getElementById('dayModal');
+            const content = document.getElementById('dayModalContent');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            setTimeout(() => {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                content.classList.remove('scale-95');
+                content.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeDayModal() {
+            const modal = document.getElementById('dayModal');
+            const content = document.getElementById('dayModalContent');
+            
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            content.classList.remove('scale-100');
+            content.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 200);
+        }
+
+        function openSellerMinModal(sellerName, monthStr, passJson) {
+            document.getElementById('sellerModalTitle').innerText = `${sellerName} elmaradása`;
+            document.getElementById('sellerModalSubtitle').innerText = `${monthStr} - Minimum elvárás vs Tényadatok`;
+            
+            let rowsHtml = '';
+            
+            const checks = [
+                { label: 'ACQ HS (db)', target: passJson.min.acq_hs, actual: passJson.act.acq_hs, isInt: true },
+                { label: 'FIX (db)', target: passJson.min.fix, actual: passJson.act.fix, isInt: true },
+                { label: 'Reti Pont', target: passJson.min.ret_pont, actual: passJson.act.ret_pont, isInt: false },
+                { label: 'ACQ Pont', target: passJson.min.acq_pont, actual: passJson.act.acq_pont, isInt: false },
+                { label: 'ACQ TAB (db)', target: passJson.min.acq_tab, actual: passJson.act.acq_tablet, isInt: true },
+                { label: 'SOHO (db)', target: passJson.min.soho, actual: passJson.act.soho, isInt: true },
+                { label: 'Tartozék (Ft)', target: passJson.min.tartozek_ft, actual: passJson.act.tartozek, isInt: true, isCurrency: true }
+            ];
+
+            checks.forEach(c => {
+                if (c.target > 0 && c.actual < c.target) {
+                    const diff = c.target - c.actual;
+                    rowsHtml += `
+                        <tr class="hover:bg-slate-700/30 transition">
+                            <td class="py-3 px-2.5 font-bold text-slate-300 uppercase text-[10px]">${c.label}</td>
+                            <td class="py-3 px-2 text-right font-bold text-emerald-300 font-mono">${formatVal(c.target, c.isCurrency, c.isInt)}</td>
+                            <td class="py-3 px-2 text-right font-bold text-cyan-300 font-mono">${formatVal(c.actual, c.isCurrency, c.isInt)}</td>
+                            <td class="py-3 px-2.5 text-right font-black text-rose-500 font-mono">- ${formatVal(diff, c.isCurrency, c.isInt)}</td>
+                        </tr>
+                    `;
+                }
+            });
+
+            document.getElementById('sellerMinTableBody').innerHTML = rowsHtml;
+
+            const modal = document.getElementById('sellerMinModal');
+            const content = document.getElementById('sellerMinModalContent');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            setTimeout(() => {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                content.classList.remove('scale-95');
+                content.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeSellerMinModal() {
+            const modal = document.getElementById('sellerMinModal');
+            const content = document.getElementById('sellerMinModalContent');
+            
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            content.classList.remove('scale-100');
+            content.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 200);
+        }
+
+        function updateBox3() {
+            const m = document.getElementById('box3Month').value;
+            const s = document.getElementById('box3Store').value;
+            
+            const data = fetchBoxData(m, s, 'pont');
+            const dayNamesShort = ['V', 'H', 'K', 'Sze', 'Cs', 'P', 'Szo'];
+            
+            const mPont = fetchBoxData(m, s, 'pont');
+            const mAcqP = fetchBoxData(m, s, 'acq_pont');
+            const mRetP = fetchBoxData(m, s, 'ret_pont');
+            const mAcqD = fetchBoxData(m, s, 'acq_db');
+            const mHusD = fetchBoxData(m, s, 'huseg_db');
+            const mFixD = fetchBoxData(m, s, 'fix_db');
+            const mSohoD = fetchBoxData(m, s, 'soho_db');
+            const mTarF = fetchBoxData(m, s, 'tartozek_ft');
+
+            let html = '';
+            for (let d = 1; d <= data.daysInMonth; d++) {
+                const dow = new Date(data.currentYear, data.currentMonthIdx, d).getDay();
+                const isToday = (d === data.currentDay);
+                
+                const pt = mPont.storeDailyTargetMap[d] || 0;
+                const isClosed = (pt === 0);
+                
+                const rowBg = isToday ? "bg-amber-950/40 border-l-2 border-amber-400" : "hover:bg-slate-800/60";
+                
+                if (isClosed) {
+                    html += `<tr class="${rowBg} transition text-[10px] cursor-pointer" onclick="openDayModal(${d})">
+                                <td class="py-1.5 px-2"><span class="${isToday ? 'text-amber-300 font-bold' : (dow===0 ? 'text-rose-400/80 font-semibold' : 'text-slate-300')}">${d}. ${dayNamesShort[dow]}</span></td>
+                                <td colspan="8" class="py-1.5 px-2 text-center text-slate-500 font-bold tracking-widest">Z Á R V A</td>
+                            </tr>`;
+                } else {
+                    html += `<tr class="${rowBg} transition text-[10px] cursor-pointer" onclick="openDayModal(${d})">
+                                <td class="py-1.5 px-2"><span class="${isToday ? 'text-amber-300 font-bold' : (dow===0 ? 'text-rose-400/80 font-semibold' : 'text-slate-300')}">${d}. ${dayNamesShort[dow]}</span></td>
+                                <td class="py-1.5 px-2 text-right text-amber-300 font-bold font-mono">${pt.toFixed(1)}</td>
+                                <td class="py-1.5 px-2 text-right text-sky-400 font-mono">${(mAcqP.storeDailyTargetMap[d]||0).toFixed(1)}</td>
+                                <td class="py-1.5 px-2 text-right text-teal-400 font-mono">${(mRetP.storeDailyTargetMap[d]||0).toFixed(1)}</td>
+                                <td class="py-1.5 px-2 text-center text-indigo-400 font-mono">${Math.round(mAcqD.storeDailyTargetMap[d]||0)}</td>
+                                <td class="py-1.5 px-2 text-center text-emerald-400 font-mono">${Math.round(mHusD.storeDailyTargetMap[d]||0)}</td>
+                                <td class="py-1.5 px-2 text-center text-purple-400 font-mono">${Math.round(mFixD.storeDailyTargetMap[d]||0)}</td>
+                                <td class="py-1.5 px-2 text-center text-amber-500 font-mono">${Math.round(mSohoD.storeDailyTargetMap[d]||0)}</td>
+                                <td class="py-1.5 px-2 text-right text-pink-400 font-mono">${Math.round(mTarF.storeDailyTargetMap[d]||0).toLocaleString('hu-HU')} Ft</td>
+                            </tr>`;
+                }
+            }
+            document.getElementById('box3TableBody').innerHTML = html;
+        }
+
+        function updateBox4() {
+            const m = document.getElementById('box4Month').value;
+            const s = document.getElementById('box4Store').value;
+            const met = document.getElementById('box4Metric').value;
+            const data = fetchBoxData(m, s, met);
+            const isCurrency = met === 'tartozek_ft';
+            const isInt = ['acq_db', 'huseg_db', 'fix_db', 'soho_db', 'tartozek_ft', 'betero_db'].includes(met);
+            const dayNamesShort = ['V', 'H', 'K', 'Sze', 'Cs', 'P', 'Szo'];
+            
+            let html = '';
+            for (let d = 1; d <= data.daysInMonth; d++) {
+                const dailyT = data.storeDailyTargetMap[d] || 0;
+                const dailyA = data.dailyActualMap[d] || 0;
+                const hasPassed = (d <= data.currentDay);
+                const isClosed = (dailyT === 0 && met !== 'betero_db'); 
+                const diff = dailyA - dailyT;
+                const pct = dailyT > 0 ? (dailyA / dailyT) * 100 : (dailyA > 0 ? 100 : 0);
+                
+                let bc = "text-slate-500", pctTxt = "-", diffTxt = "-";
+                if (hasPassed) {
+                    if (isClosed && met !== 'betero_db') { pctTxt = "ZÁRVA"; diffTxt = "-"; }
+                    else {
+                        pctTxt = met === 'betero_db' ? "-" : `${pct.toFixed(0)}%`;
+                        diffTxt = (diff >= 0 ? `+${formatVal(diff, isCurrency, isInt)}` : formatVal(diff, isCurrency, isInt));
+                        bc = pct >= 100 ? "text-emerald-400 font-bold" : (pct >= 80 ? "text-indigo-400" : "text-rose-400");
+                        if(met === 'betero_db') { diffTxt = '-'; bc = "text-cyan-400 font-bold"; }
+                    }
+                }
+                
+                const dow = new Date(data.currentYear, data.currentMonthIdx, d).getDay();
+                const isToday = (d === data.currentDay);
+                const rowBg = isToday ? "bg-indigo-950/40 border-l-2 border-indigo-400" : "hover:bg-slate-800/40";
+                
+                html += `<tr class="${rowBg} transition text-[11px]">
+                            <td class="py-1.5 px-2.5"><span class="${isToday ? 'text-indigo-300 font-bold' : (dow===0 ? 'text-rose-400/80 font-semibold' : 'text-slate-300')}">${d}. ${dayNamesShort[dow]}</span></td>
+                            <td class="py-1.5 px-2 text-right text-amber-300 font-mono">${isClosed ? 'ZÁRVA' : formatVal(dailyT, isCurrency, isInt)}</td>
+                            <td class="py-1.5 px-2 text-right font-bold ${hasPassed ? (isCurrency?'text-pink-300':'text-cyan-300') : 'text-slate-600'} font-mono">${hasPassed ? formatVal(dailyA, isCurrency, isInt) : '-'}</td>
+                            <td class="py-1.5 px-2 text-right ${bc}">${pctTxt}</td>
+                            <td class="py-1.5 px-2.5 text-right font-mono ${diff >= 0 && hasPassed && !isClosed ? 'text-emerald-400' : (hasPassed && !isClosed && met !== 'betero_db' ? 'text-rose-400' : 'text-slate-600')}">${diffTxt}</td>
+                        </tr>`;
+            }
+            document.getElementById('box4TableBody').innerHTML = html;
+        }
+
+        function updateAllBoxes() {
+            if(!document.getElementById('box1Month')) return;
+            updateBox1(); updateBox2(); updateBox3(); updateBox4();
+        }
+
+        function sortTableBy(columnKey) {
+            if (currentSortColumn === columnKey) { currentSortDirection = currentSortDirection === 'desc' ? 'asc' : 'desc'; } 
+            else { currentSortColumn = columnKey; currentSortDirection = ['honap', 'bolt', 'ertekesito'].includes(columnKey) ? 'asc' : 'desc'; }
+            renderData();
+        }
+
+        function updateSortHeaderIcons() {
+            const allKeys = ['honap', 'bolt', 'ertekesito', 'count', 'acq', 'acq_hs', 'acq_tablet', 'huseg', 'fix', 'soho', 'acq_pont', 'ret_pont', 'tartozek', 'tartozek_db', 'pont'];
+            allKeys.forEach(k => {
+                const iconElem = document.getElementById(`sort_icon_${k}`);
+                if (!iconElem) return;
+                if (k === currentSortColumn) { iconElem.innerText = currentSortDirection === 'desc' ? '▼' : '▲'; iconElem.className = "text-indigo-400 font-bold text-[11px]"; } 
+                else { iconElem.innerText = '↕'; iconElem.className = "text-slate-500 text-[10px] group-hover:text-indigo-400"; }
+            });
+        }
+
+        function renderData() {
+            const selectedMonth = document.getElementById('filterMonth').value;
+            const selectedStore = document.getElementById('filterStore').value;
+            const selectedSeller = document.getElementById('filterSeller').value;
+
+            const filteredCPR = globalTransactions.filter(t => (selectedMonth === 'ALL' || t.honap === selectedMonth) && (selectedStore === 'ALL' || t.bolt === selectedStore) && (selectedSeller === 'ALL' || t.ertekesito === selectedSeller));
+            const filteredAcc = globalAccessories.filter(a => (selectedMonth === 'ALL' || a.honap === selectedMonth) && (selectedStore === 'ALL' || a.bolt === selectedStore) && (selectedSeller === 'ALL' || a.ertekesito === selectedSeller));
+
+            const summaryMap = {};
+            filteredCPR.forEach(t => {
+                const cleanSeller = String(t.ertekesito || '').trim().replace(/\s+/g, ' ');
+                const key = (selectedStore === 'ALL') ? `${t.honap}___${cleanSeller}` : `${t.honap}___${t.bolt}___${cleanSeller}`;
+                if (!summaryMap[key]) { summaryMap[key] = { honap: t.honap, bolt: t.bolt, stores: new Set([t.bolt]), ertekesito: cleanSeller, count: 0, acq: 0, acq_hs: 0, acq_tablet: 0, huseg: 0, fix: 0, soho: 0, acq_pont: 0, ret_pont: 0, tartozek: 0, tartozek_db: 0, pont: 0 }; }
+                if (t.bolt) summaryMap[key].stores.add(t.bolt);
+                summaryMap[key].count += 1; summaryMap[key].acq += (t.acq_db || 0); summaryMap[key].acq_hs += (t.acq_hs || 0); summaryMap[key].acq_tablet += (t.acq_tablet || 0); summaryMap[key].huseg += (t.huseg_db || 0); summaryMap[key].fix += (t.fix_db || 0);
+                if (t.szegmens && t.szegmens.toLowerCase() === 'soho' && t.acq_db > 0) { summaryMap[key].soho += (t.acq_db || 1); }
+                summaryMap[key].acq_pont += (t.acq_pont || 0); summaryMap[key].ret_pont += (t.ret_pont || 0); summaryMap[key].pont += (t.osszpont || 0);
+            });
+            filteredAcc.forEach(a => {
+                const cleanSellerAcc = String(a.ertekesito || '').trim().replace(/\s+/g, ' ');
+                const key = (selectedStore === 'ALL') ? `${a.honap}___${cleanSellerAcc}` : `${a.honap}___${a.bolt}___${cleanSellerAcc}`;
+                if (!summaryMap[key]) { summaryMap[key] = { honap: a.honap, bolt: a.bolt, stores: new Set([a.bolt]), ertekesito: cleanSellerAcc, count: 0, acq: 0, acq_hs: 0, acq_tablet: 0, huseg: 0, fix: 0, soho: 0, acq_pont: 0, ret_pont: 0, tartozek: 0, tartozek_db: 0, pont: 0 }; }
+                if (a.bolt) summaryMap[key].stores.add(a.bolt);
+                summaryMap[key].tartozek += (Number(a.brutto_ertek) || 0);
+                summaryMap[key].tartozek_db += (Number(a.darabszam) || 0);
+            });
+
+            const summaryList = Object.values(summaryMap).sort((a, b) => {
+                let valA = a[currentSortColumn]; let valB = b[currentSortColumn];
+                if (typeof valA === 'string') { valA = valA.toLowerCase(); valB = String(valB).toLowerCase(); return currentSortDirection === 'asc' ? valA.localeCompare(valB, 'hu') : valB.localeCompare(valA, 'hu'); } 
+                else { valA = Number(valA || 0); valB = Number(valB || 0); return currentSortDirection === 'asc' ? valA - valB : valB - valA; }
+            });
+
+            updateSortHeaderIcons();
+
+            document.getElementById('kpiCount').innerText = `${filteredCPR.length} db`;
+            document.getElementById('kpiACQ').innerText = `${summaryList.reduce((acc, s) => acc + s.acq, 0)} db`;
+            document.getElementById('kpiACQHS').innerText = `${summaryList.reduce((acc, s) => acc + s.acq_hs, 0)} db`;
+            document.getElementById('kpiACQTab').innerText = `${summaryList.reduce((acc, s) => acc + s.acq_tablet, 0)} db`;
+            document.getElementById('kpiHuseg').innerText = `${summaryList.reduce((acc, s) => acc + s.huseg, 0)} db`;
+            document.getElementById('kpiFix').innerText = `${summaryList.reduce((acc, s) => acc + s.fix, 0)} db`;
+            document.getElementById('kpiSoho').innerText = `${summaryList.reduce((acc, s) => acc + s.soho, 0)} db`;
+            document.getElementById('kpiACQPont').innerText = summaryList.reduce((acc, s) => acc + s.acq_pont, 0).toFixed(1);
+            document.getElementById('kpiRETPont').innerText = summaryList.reduce((acc, s) => acc + s.ret_pont, 0).toFixed(1);
+            document.getElementById('kpiTartozek').innerText = `${Math.round(summaryList.reduce((acc, s) => acc + s.tartozek, 0)).toLocaleString('hu-HU')} Ft`;
+
+            const tbody = document.getElementById('tableBody');
+            if (summaryList.length === 0) { tbody.innerHTML = '<tr><td colspan="15" class="p-4 text-center text-slate-400">Nincs a szűrésnek megfelelő adat.</td></tr>'; return; }
+
+            tbody.innerHTML = summaryList.map(s => {
+                const storeBadgeHtml = (selectedStore === 'ALL' && s.stores) ? Array.from(s.stores).sort().map(b => `<span class="px-1.5 py-0.5 bg-slate-700 text-xs font-semibold rounded mr-1">${b}</span>`).join('') : `<span class="px-2 py-1 bg-slate-700 text-xs font-semibold rounded">${s.bolt}</span>`;
+                
+                let minTargetWarningHtml = '';
+                const minDataObj = globalMinTargets.find(mt => mt.honap === s.honap && mt.ertekesito === s.ertekesito);
+                
+                if (minDataObj) {
+                    if ((minDataObj.acq_hs > 0 && s.acq_hs < minDataObj.acq_hs) ||
+                        (minDataObj.fix > 0 && s.fix < minDataObj.fix) ||
+                        (minDataObj.ret_pont > 0 && s.ret_pont < minDataObj.ret_pont) ||
+                        (minDataObj.acq_pont > 0 && s.acq_pont < minDataObj.acq_pont) ||
+                        (minDataObj.acq_tab > 0 && s.acq_tablet < minDataObj.acq_tab) ||
+                        (minDataObj.soho > 0 && s.soho < minDataObj.soho) ||
+                        (minDataObj.tartozek_ft > 0 && s.tartozek < minDataObj.tartozek_ft)) {
+                            
+                        const passObj = {
+                            min: minDataObj,
+                            act: { acq_hs: s.acq_hs, fix: s.fix, ret_pont: s.ret_pont, acq_pont: s.acq_pont, acq_tablet: s.acq_tablet, soho: s.soho, tartozek: s.tartozek }
+                        };
+                        const passJson = JSON.stringify(passObj).replace(/"/g, '&quot;');
+                        
+                        minTargetWarningHtml = `
+                            <button onclick="openSellerMinModal('${s.ertekesito}', '${s.honap}', ${passJson})" 
+                                    class="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full bg-rose-900/60 border border-rose-500/50 text-rose-400 hover:scale-110 hover:bg-rose-600 hover:text-white transition-all shadow-md"
+                                    title="Kattints a hiányzó minimum targetek megtekintéséhez!">
+                                ⚠️
+                            </button>
+                        `;
+                    }
+                }
+                
+                return `<tr class="hover:bg-slate-700/30 transition">
+                            <td class="p-3 text-xs text-slate-400">${s.honap}</td>
+                            <td class="p-3">${storeBadgeHtml}</td>
+                            <td class="p-3 font-medium text-white flex items-center">
+                                <span class="truncate max-w-[150px]" title="${s.ertekesito}">${s.ertekesito}</span>
+                                ${minTargetWarningHtml}
+                            </td>
+                            <td class="p-3 text-center text-slate-300 font-mono">${s.count}</td><td class="p-3 text-center font-bold text-indigo-400 font-mono">${s.acq}</td>
+                            <td class="p-3 text-center text-sky-400 font-medium font-mono">${s.acq_hs}</td><td class="p-3 text-center text-teal-400 font-medium font-mono">${s.acq_tablet}</td>
+                            <td class="p-3 text-center text-emerald-400 font-medium font-mono">${s.huseg}</td><td class="p-3 text-center text-purple-400 font-medium font-mono">${s.fix}</td>
+                            <td class="p-3 text-center text-amber-400 font-bold font-mono">${s.soho}</td><td class="p-3 text-right text-sky-300 font-medium font-mono">${s.acq_pont.toFixed(1)}</td>
+                            <td class="p-3 text-right text-teal-300 font-medium font-mono">${s.ret_pont.toFixed(1)}</td>
+                            <td class="p-3 text-right text-pink-300 font-medium font-mono">${Math.round(s.tartozek).toLocaleString('hu-HU')} Ft</td>
+                            <td class="p-3 text-right text-pink-400 font-bold font-mono">${s.tartozek_db} db</td>
+                            <td class="p-3 text-right font-bold text-amber-400 font-mono">${s.pont.toFixed(2)}</td>
+                        </tr>`;
+            }).join('');
+        }
+
+        function handleDropFiles(e) { if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) processFileList(Array.from(e.dataTransfer.files)); }
+        function handleFileSelect(e) { const files = Array.from(e.target.files); if (files && files.length > 0) processFileList(files); }
+
+        const parseExcelDateClean = (raw) => {
+            if (!raw) return null;
+            if (typeof raw === 'number') {
+                const parsed = XLSX.SSF.parse_date_code(raw);
+                if (parsed && parsed.y && parsed.m && parsed.d) return `${parsed.y}-${String(parsed.m).padStart(2, '0')}-${String(parsed.d).padStart(2, '0')}`;
+            }
+            if (raw instanceof Date) {
+                if (isNaN(raw.getTime())) return null;
+                return `${raw.getFullYear()}-${String(raw.getMonth() + 1).padStart(2, '0')}-${String(raw.getDate()).padStart(2, '0')}`;
+            }
+            const match = String(raw).trim().match(/(\d{4})[.\/-](\d{1,2})[.\/-](\d{1,2})/);
+            if (match) return `${match[1]}-${match[2].padStart(2, '0')}-${match[3].padStart(2, '0')}`;
+            return null;
+        };
+
+        async function processFileList(files) {
+            const statusDiv = document.getElementById('uploadStatus');
+            document.getElementById('uploadLabel').innerText = `${files.length} db fájl kiválasztva`;
+            const parseNum = (val) => parseFloat(String(val).replace(',', '.')) || 0;
+            let successCount = 0;
+
+            try {
+                for (let fIdx = 0; fIdx < files.length; fIdx++) {
+                    const file = files[fIdx];
+                    statusDiv.className = "text-sm font-medium text-indigo-400";
+                    statusDiv.innerText = `[${fIdx + 1}/${files.length}] CPR Feldolgozás: ${file.name}...`;
+
+                    const data = await file.arrayBuffer();
+                    const workbook = XLSX.read(new Uint8Array(data), { type: 'array', cellDates: false });
+                    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1, raw: true });
+
+                    if (rows.length < 6) continue;
+
+                    let headerIndex = -1; const colMap = {};
+                    for (let r = 0; r < Math.min(15, rows.length); r++) {
+                        if (rows[r] && rows[r].some(cell => String(cell).trim() === 'Bolt')) {
+                            headerIndex = r; rows[r].forEach((colName, idx) => { if (colName) colMap[String(colName).trim()] = idx; }); break;
+                        }
+                    }
+                    if (headerIndex === -1 || colMap['Bolt'] === undefined) continue;
+
+                    let detectedMonth = null;
+                    for (let r = 0; r < headerIndex; r++) {
+                        if (rows[r]) {
+                            const foundIdx = rows[r].findIndex(cell => String(cell || '').toLowerCase().includes('hónap'));
+                            if (foundIdx !== -1 && rows[r][foundIdx + 2]) { detectedMonth = String(rows[r][foundIdx + 2]).trim(); break; }
+                        }
+                    }
+
+                    const parsed = [];
+                    const touchedDates = new Set();
+                    
+                    for (let i = headerIndex + 1; i < rows.length; i++) {
+                        const r = rows[i]; if (!r) continue;
+                        const boltVal = String(r[colMap['Bolt']] || '').trim();
+                        const ertekesitoVal = String(r[colMap['Értékesítő']] || '').trim().replace(/\s+/g, ' ');
+
+                        if (!boltVal || !ertekesitoVal || boltVal.toLowerCase().includes('különbözet') || ertekesitoVal.toLowerCase().includes('összesen')) continue;
+
+                        const szegmens = String(r[colMap['Szegmens']] || '').trim();
+                        const cegnev = String(r[colMap['Cégnév']] || '').trim();
+                        const isSoho = (szegmens.toLowerCase() === 'soho') || (cegnev.length > 0 && szegmens.toLowerCase() !== 'flotta');
+                        const parsedDate = parseExcelDateClean(r[colMap['Szerződés dátuma']]);
+                        const realPont = parseNum(r[colMap['Jutalék pont']]);
+                        const acqPont = parseNum(r[colMap['ACQ pont']]);
+
+                        if (parsedDate) touchedDates.add(parsedDate);
+
+                        parsed.push({
+                            honap: detectedMonth || (parsedDate ? parsedDate.substring(0, 7) : "Aktuális"),
+                            bolt: boltVal, ertekesito: ertekesitoVal, szerzodes_datuma: parsedDate, szegmens: szegmens || null, cegnev: isSoho && cegnev ? cegnev : null,
+                            kapcsolattarto: isSoho ? (String(r[colMap['Kapcsolattartó']] || '').trim() || null) : null,
+                            telefonszam: isSoho ? (String(r[colMap['Telefonszám']] || '').trim() || null) : null,
+                            acq_db: parseNum(r[colMap['ACQ']]), acq_hs: parseNum(r[colMap['ACQ Készülék']] || r[colMap['ACQ HS']] || r[colMap['Készüléket vásárolt']]),
+                            acq_tablet: parseNum(r[colMap['ACQ Tablet']] || r[colMap['Táblagépet vásárolt']]), huseg_db: parseNum(r[colMap['Hűség']]), fix_db: parseNum(r[colMap['FIX']]),
+                            acq_pont: acqPont, ret_pont: Math.max(0, realPont - acqPont), osszpont: realPont
+                        });
+                    }
+
+                    if (parsed.length > 0) {
+                        statusDiv.innerText = `[${fIdx + 1}/${files.length}] Felhő frissítése: Csak a felvitt ${touchedDates.size} db nap felülírása...`;
+                        
+                        const dateArray = Array.from(touchedDates);
+                        for (let ch = 0; ch < dateArray.length; ch += 50) {
+                            const { error: delErr } = await supabaseClient.from('bolti_teljesitesek').delete().in('szerzodes_datuma', dateArray.slice(ch, ch + 50));
+                            if (delErr) throw delErr;
+                        }
+                        
+                        for (let c = 0; c < parsed.length; c += 500) {
+                            const { error: insErr } = await supabaseClient.from('bolti_teljesitesek').insert(parsed.slice(c, c + 500));
+                            if (insErr) throw insErr;
+                        }
+                        successCount++;
+                    }
+                }
+                statusDiv.className = "text-sm font-medium text-emerald-400";
+                statusDiv.innerText = `Kész! Mind a ${successCount} db CPR fájl felülírta a benne szereplő napokat!`;
+                await loadAllData();
+            } catch (err) {
+                statusDiv.className = "text-sm font-medium text-rose-500 font-bold";
+                statusDiv.innerText = `Hiba a feltöltés során: ${err.message || JSON.stringify(err)}`;
+                console.error(err);
+            }
+        }
+
+        function handleAccessoryDrop(e) { if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) processAccessoryFiles(Array.from(e.dataTransfer.files)); }
+        function handleAccessorySelect(e) { const files = Array.from(e.target.files); if (files && files.length > 0) processAccessoryFiles(files); }
+
+        async function processAccessoryFiles(files) {
+            const statusDiv = document.getElementById('accessoryUploadStatus');
+            document.getElementById('accessoryUploadLabel').innerText = `${files.length} db fájl kiválasztva`;
+            statusDiv.className = "text-sm font-medium text-pink-400";
+            statusDiv.innerText = `Tartozék fájlok feldolgozása (Kettős motor)...`;
+            
+            let salesDataRaw = [];
+            let itemsDataRaw = [];
+            
+            try {
+                for (let fIdx = 0; fIdx < files.length; fIdx++) {
+                    const file = files[fIdx];
+                    const data = await file.arrayBuffer();
+                    const workbook = XLSX.read(new Uint8Array(data), { type: 'array', cellDates: false });
+                    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1, raw: true });
+                    if (rows.length < 2) continue;
+
+                    let headerIndex = -1; const colMap = {};
+                    for (let r = 0; r < Math.min(6, rows.length); r++) {
+                        if (rows[r] && (rows[r].some(c => String(c).trim() === 'Biz.szám' || String(c).trim() === 'Bruttó érték') || rows[r].some(c => String(c).trim() === 'Számlaszám' && rows[r].some(c2 => String(c2).trim() === 'Mennyiség')))) {
+                            headerIndex = r; 
+                            rows[r].forEach((colName, idx) => { if (colName) colMap[String(colName).trim().toLowerCase()] = idx; }); 
+                            break;
+                        }
+                    }
+                    if (headerIndex === -1) continue;
+                    
+                    if (colMap['biz.szám'] !== undefined || colMap['biz.szam'] !== undefined || colMap['értékesítő'] !== undefined) {
+                        for(let i = headerIndex + 1; i < rows.length; i++) {
+                            if(rows[i] && rows[i][0]) salesDataRaw.push({ row: rows[i], colMap: colMap });
+                        }
+                    } else if (colMap['számlaszám'] !== undefined || colMap['szamlaszam'] !== undefined) {
+                        for(let i = headerIndex + 1; i < rows.length; i++) {
+                            if(rows[i] && rows[i][0]) itemsDataRaw.push({ row: rows[i], colMap: colMap });
+                        }
+                    }
+                }
+                
+                const invoiceItemCounts = {};
+                itemsDataRaw.forEach(item => {
+                    const sz_col = item.colMap['számlaszám'] !== undefined ? item.colMap['számlaszám'] : item.colMap['szamlaszam'];
+                    const qty_col = item.colMap['mennyiség'] !== undefined ? item.colMap['mennyiség'] : item.colMap['mennyiseg'];
+                    const invNum = String(item.row[sz_col] || '').trim();
+                    const qty = parseFloat(String(item.row[qty_col] || '0').replace(',', '.')) || 0;
+                    if (invNum) {
+                        if(!invoiceItemCounts[invNum]) invoiceItemCounts[invNum] = 0;
+                        invoiceItemCounts[invNum] += qty;
+                    }
+                });
+                
+                const monthMapHu = { '01': 'január', '02': 'február', '03': 'március', '04': 'április', '05': 'május', '06': 'június', '07': 'július', '08': 'augusztus', '09': 'szeptember', '10': 'október', '11': 'november', '12': 'december' };
+                const parsedRecords = []; 
+                const touchedDates = new Set();
+                
+                if (salesDataRaw.length > 0) {
+                    salesDataRaw.forEach(sale => {
+                        const r = sale.row; const cmap = sale.colMap;
+                        const boltVal = String(r[cmap['bolt']] || '').trim();
+                        const ertekesitoVal = String(r[cmap['értékesítő']] || r[cmap['ertekesito']] || '').trim().replace(/\s+/g, ' ');
+                        if (!boltVal || !ertekesitoVal) return;
+
+                        const parsedDate = parseExcelDateClean(r[cmap['teljesítés']] || r[cmap['teljesites']] || r[cmap['kiállítva']]);
+                        if (!parsedDate) return;
+
+                        const dParts = parsedDate.split('-');
+                        const honapNev = `${dParts[0]} ${monthMapHu[dParts[1]] || dParts[1]}`;
+                        touchedDates.add(parsedDate);
+                        
+                        const bizSzam = String(r[cmap['biz.szám']] || r[cmap['biz.szam']] || '').trim();
+                        const parseNumLocal = (val) => parseFloat(String(val || '0').replace(/\s+/g, '').replace(',', '.')) || 0;
+                        
+                        let darabszam = 0;
+                        if (bizSzam && invoiceItemCounts[bizSzam]) {
+                            darabszam = invoiceItemCounts[bizSzam];
+                        }
+
+                        parsedRecords.push({
+                            honap: honapNev, bolt: boltVal, ertekesito: ertekesitoVal, biz_szam: bizSzam || null,
+                            teljesites_datuma: parsedDate, netto_ertek: parseNumLocal(r[cmap['nettó érték']] || r[cmap['netto ertek']]),
+                            afa_osszeg: parseNumLocal(r[cmap['áfa összeg']] || r[cmap['afa osszeg']]), brutto_ertek: parseNumLocal(r[cmap['bruttó érték']] || r[cmap['brutto ertek']]),
+                            fizetesi_mod: String(r[cmap['fizetési mód']] || r[cmap['fizetesi mod']] || '').trim() || null,
+                            darabszam: darabszam
+                        });
+                    });
+
+                    if (parsedRecords.length > 0) {
+                        statusDiv.innerText = `Tartozékok mentése a felhőbe (${parsedRecords.length} tétel, érintett napok felülírása)...`;
+                        
+                        const dateArray = Array.from(touchedDates);
+                        for (let ch = 0; ch < dateArray.length; ch += 50) {
+                            const { error: delErr } = await supabaseClient.from('bolti_tartozekok').delete().in('teljesites_datuma', dateArray.slice(ch, ch + 50));
+                            if (delErr) throw delErr;
+                        }
+                        
+                        for (let c = 0; c < parsedRecords.length; c += 500) {
+                            const { error: insErr } = await supabaseClient.from('bolti_tartozekok').insert(parsedRecords.slice(c, c + 500));
+                            if (insErr) throw insErr;
+                        }
+                        statusDiv.className = "text-sm font-medium text-emerald-400";
+                        statusDiv.innerText = `Sikeres mentés! Csak az érintett napok felülírva (${parsedRecords.length} tétel).`;
+                        await loadAllData();
+                    } else {
+                        statusDiv.className = "text-sm font-medium text-amber-400";
+                        statusDiv.innerText = `Nem találtam feldolgozható értékesítési adatot.`;
+                    }
+
+                } 
+                else if (itemsDataRaw.length > 0) {
+                    statusDiv.innerText = `Úgy látom csak a Darabszámos Excelt töltötted fel. Utólagos szinkronizáció indul a meglévő felhős adatokkal...`;
+                    let updatedCount = 0;
+
+                    for (const bizSzam in invoiceItemCounts) {
+                        const extraDarab = invoiceItemCounts[bizSzam];
+                        if (extraDarab > 0) {
+                            const { error } = await supabaseClient
+                                .from('bolti_tartozekok')
+                                .update({ darabszam: extraDarab })
+                                .eq('biz_szam', bizSzam);
+                            if (error) throw error;
+                            updatedCount++;
+                        }
+                    }
+                    
+                    statusDiv.className = "text-sm font-medium text-emerald-400";
+                    statusDiv.innerText = `Utólagos darabszám szinkronizáció kész! ${updatedCount} db meglévő bizonylat kapott darabszámot!`;
+                    await loadAllData();
+                } else {
+                    statusDiv.className = "text-sm font-medium text-rose-400";
+                    statusDiv.innerText = `A fájl üres vagy hibás formátumú.`;
+                }
+            } catch (err) {
+                statusDiv.className = "text-sm font-medium text-rose-500 font-bold";
+                statusDiv.innerText = `Hiba a felhőbe mentéskor: ${err.message || JSON.stringify(err)}`;
+                console.error(err);
+            }
+        }
+
+        function handleFootfallDrop(e) { if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) processFootfallFiles(Array.from(e.dataTransfer.files)); }
+        function handleFootfallSelect(e) { const files = Array.from(e.target.files); if (files && files.length > 0) processFootfallFiles(files); }
+
+        async function processFootfallFiles(files) {
+            const statusDiv = document.getElementById('footfallUploadStatus');
+            document.getElementById('footfallUploadLabel').innerText = `${files.length} db fájl kiválasztva`;
+            const monthMapHu = { '01': 'január', '02': 'február', '03': 'március', '04': 'április', '05': 'május', '06': 'június', '07': 'július', '08': 'augusztus', '09': 'szeptember', '10': 'október', '11': 'november', '12': 'december' };
+            let totalRecords = 0;
+
+            try {
+                for (let fIdx = 0; fIdx < files.length; fIdx++) {
+                    const file = files[fIdx];
+                    statusDiv.className = "text-sm font-medium text-cyan-400";
+                    statusDiv.innerText = `[${fIdx + 1}/${files.length}] Látogatói adat feldolgozása: ${file.name}...`;
+                    
+                    const data = await file.arrayBuffer();
+                    const workbook = XLSX.read(new Uint8Array(data), { type: 'array', cellDates: false });
+                    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1, raw: true });
+                    if (rows.length < 2) continue;
+
+                    let headerIndex = -1; const colMap = {};
+                    for (let r = 0; r < Math.min(10, rows.length); r++) {
+                        if (rows[r] && rows[r].some(cell => String(cell).trim().toLowerCase() === 'dátum' || String(cell).trim().toLowerCase() === 'datum')) {
+                            headerIndex = r; rows[r].forEach((colName, idx) => { if (colName) colMap[String(colName).trim().toLowerCase()] = idx; }); break;
+                        }
+                    }
+                    if (headerIndex === -1) throw new Error("Nem található 'Dátum' oszlop a fájlban!");
+
+                    const parsedRecords = [];
+                    const storeCols = [];
+                    for (const [colName, colIdx] of Object.entries(colMap)) {
+                        if (colName.includes('fpk') || colName.includes('fkp')) {
+                            storeCols.push({ code: colName.toUpperCase().replace('FKP', 'FPK'), idx: colIdx });
+                        }
+                    }
+                    if (storeCols.length === 0) throw new Error("Nem találhatók bolt kódok (pl. fpk012) a fejlécben!");
+
+                    for (let i = headerIndex + 1; i < rows.length; i++) {
+                        const r = rows[i]; if (!r || !r[colMap['dátum']]) continue;
+                        const parsedDate = parseExcelDateClean(r[colMap['dátum']]);
+                        if (!parsedDate) continue;
+
+                        const dParts = parsedDate.split('-');
+                        const honapNev = `${dParts[0]} ${monthMapHu[dParts[1]] || dParts[1]}`;
+
+                        for (const store of storeCols) {
+                            const val = parseInt(r[store.idx], 10);
+                            if (!isNaN(val) && val >= 0) {
+                                parsedRecords.push({ honap: honapNev, bolt: store.code, datum: parsedDate, betero_db: val });
+                            }
+                        }
+                    }
+
+                    if (parsedRecords.length > 0) {
+                        statusDiv.innerText = `Látogatók mentése a felhőbe (${parsedRecords.length} tétel)...`;
+                        for (let c = 0; c < parsedRecords.length; c += 500) {
+                            const { error } = await supabaseClient.from('bolti_latogatok').upsert(parsedRecords.slice(c, c + 500), { onConflict: 'bolt,datum' });
+                            if (error) throw error;
+                        }
+                        totalRecords += parsedRecords.length;
+                    }
+                }
+                
+                if (totalRecords > 0) {
+                    statusDiv.className = "text-sm font-medium text-emerald-400";
+                    statusDiv.innerText = `Sikeres mentés! Csak az érintett napok lettek felülírva (${totalRecords} db).`;
+                    await loadAllData();
+                }
+            } catch (err) {
+                statusDiv.className = "text-sm font-medium text-rose-500 font-bold";
+                statusDiv.innerText = `Hiba a feldolgozás során: ${err.message || JSON.stringify(err)}`;
+                console.error(err);
+            }
+        }
+
+        function handleTargetExcelUpload(e) {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async function(evt) {
+                try {
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1 });
+                    if (rows.length < 2) throw new Error("A fájl túl kevés sort tartalmaz!");
+
+                    let headerIndex = -1; const colMap = {};
+                    for (let r = 0; r < Math.min(6, rows.length); r++) {
+                        if (rows[r] && rows[r].some(cell => String(cell).trim() === 'ACQ' || String(cell).trim() === 'Hűség')) {
+                            headerIndex = r; rows[r].forEach((colName, idx) => { if (colName) colMap[String(colName).trim().toLowerCase()] = idx; }); break;
+                        }
+                    }
+                    if (headerIndex === -1) throw new Error("Nem található megfelelő fejléc!");
+
+                    const targetMonth = document.getElementById('targetUploadMonth').value;
+                    const cleanNum = (val) => parseFloat(String(val || 0).replace(/\s+/g, '').replace(',', '.')) || 0;
+                    const targetPayloads = [];
+
+                    for (let i = headerIndex + 1; i < rows.length; i++) {
+                        const r = rows[i]; if (!r || !r[0]) continue;
+                        const bolt = String(r[0]).trim(); if (!bolt || bolt.toLowerCase().includes('összesen')) continue;
+
+                        const acq_pont = cleanNum(r[colMap['acq pont']]);
+                        const ret_pont = cleanNum(r[colMap['reti pont']] || r[colMap['ret pont']] || r[colMap['retipont']]);
+                        targetPayloads.push({
+                            honap: targetMonth, bolt: bolt, target_acq_db: cleanNum(r[colMap['acq']]), target_huseg_db: cleanNum(r[colMap['hűség']] || r[colMap['huseg']]),
+                            target_fix_db: cleanNum(r[colMap['fix']]), target_soho_db: cleanNum(r[colMap['soho']]), target_acq_pont: acq_pont, target_ret_pont: ret_pont,
+                            target_pont: acq_pont + ret_pont, target_tartozek_ft: cleanNum(r[colMap['tartozék']] || r[colMap['tartozek']])
+                        });
+                    }
+                    for (const t of targetPayloads) await supabaseClient.from('havi_targetek').upsert(t, { onConflict: 'honap,bolt' });
+                    await loadTargetsFromSupabase(); updateAllBoxes();
+                    alert(`Sikeresen rögzítve ${targetPayloads.length} bolt targetje!`);
+                } catch (err) { alert("Hiba a target Excel feldolgozásakor: " + err.message); }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        async function processPastedTargets() {
+            const rawText = document.getElementById('targetPasteArea').value.trim();
+            if (!rawText) { alert("Kérlek illeszd be a táblázat sorait!"); return; }
+
+            const targetMonth = document.getElementById('targetUploadMonth').value;
+            const targetPayloads = [];
+            const cleanNum = (val) => parseFloat(String(val || 0).replace(/\s+/g, '').replace(',', '.')) || 0;
+
+            rawText.split('\n').forEach(line => {
+                const parts = line.split('\t').map(p => p.trim());
+                if (parts.length >= 7) {
+                    if (parts[0].toLowerCase().includes('bolt') || parts[1].toLowerCase().includes('acq')) return;
+                    const acq_pont = cleanNum(parts[5]); const ret_pont = cleanNum(parts[6]);
+                    targetPayloads.push({
+                        honap: targetMonth, bolt: parts[0], target_acq_db: cleanNum(parts[1]), target_huseg_db: cleanNum(parts[2]), target_fix_db: cleanNum(parts[3]),
+                        target_soho_db: cleanNum(parts[4]), target_acq_pont: acq_pont, target_ret_pont: ret_pont, target_pont: acq_pont + ret_pont, target_tartozek_ft: parts[7] ? cleanNum(parts[7]) : 0
+                    });
+                }
+            });
+
+            if (targetPayloads.length === 0) { alert("Nem sikerült értelmezni a beillesztett sorokat."); return; }
+            for (const t of targetPayloads) await supabaseClient.from('havi_targetek').upsert(t, { onConflict: 'honap,bolt' });
+            await loadTargetsFromSupabase(); updateAllBoxes();
+            document.getElementById('targetPasteArea').value = '';
+            alert(`Sikeresen elmentve ${targetPayloads.length} bolt targetje!`);
+        }
+        
+        async function saveMinimumTargets() {
+            const month = document.getElementById('minTargetMonth').value;
+            const seller = document.getElementById('minTargetSeller').value;
+            
+            if (seller === 'ALL') {
+                alert("Kérlek válassz ki egy konkrét értékesítőt!");
+                return;
+            }
+            
+            const payload = {
+                honap: month,
+                ertekesito: seller,
+                acq_hs: parseFloat(document.getElementById('minAcqHs').value) || 0,
+                fix: parseFloat(document.getElementById('minFix').value) || 0,
+                ret_pont: parseFloat(document.getElementById('minRetPont').value) || 0,
+                acq_pont: parseFloat(document.getElementById('minAcqPont').value) || 0,
+                acq_tab: parseFloat(document.getElementById('minAcqTab').value) || 0,
+                soho: parseFloat(document.getElementById('minSoho').value) || 0,
+                tartozek_ft: parseFloat(document.getElementById('minTartozek').value) || 0
+            };
+            
+            try {
+                const { error } = await supabaseClient.from('minimum_targetek').upsert(payload, { onConflict: 'honap,ertekesito' });
+                if (error) throw error;
+                
+                alert(`✅ Sikeresen rögzítve a minimum target a(z) ${month} hónapra (${seller})!`);
+                await loadMinTargetsFromSupabase(); 
+                renderData(); 
+            } catch (err) {
+                alert(`Hiba történt a minimum target mentésekor: ${err.message}\n\nFigyelem: Létrehoztad a 'minimum_targetek' táblát a Supabase-ben a megfelelő oszlopokkal?`);
+            }
+        }
+
+        async function executeCloudDelete() {
+            const delMonth = document.getElementById('deleteDataMonth').value;
+            const delType = document.getElementById('deleteDataType').value;
+            if (!delMonth) { alert("Kérlek válassz egy hónapot a törléshez!"); return; }
+            const typeNames = { 'cpr': 'CPR Tranzakciók', 'tartozek': 'Tartozék Eladások', 'betero': 'Betérő Ügyfelek', 'target': 'Havi Targetek', 'all': 'MINDEN' };
+            if (!confirm(`Biztosan TÖRÖLNI akarod a(z) '${delMonth}' hónap összes '${typeNames[delType]}' adatát a felhőből?\n\nEz a művelet végleges és azonnali.`)) return;
+
+            try {
+                if (delType === 'cpr' || delType === 'all') await supabaseClient.from('bolti_teljesitesek').delete().eq('honap', delMonth);
+                if (delType === 'tartozek' || delType === 'all') await supabaseClient.from('bolti_tartozekok').delete().eq('honap', delMonth);
+                if (delType === 'betero' || delType === 'all') await supabaseClient.from('bolti_latogatok').delete().eq('honap', delMonth);
+                if (delType === 'target' || delType === 'all') await supabaseClient.from('havi_targetek').delete().eq('honap', delMonth);
+
+                alert(`Sikeres törlés!`);
+                await loadAllData();
+            } catch (err) { alert("Hiba történt a törlés során: " + err.message); }
+        }
+    </script>
 </body>
 </html>
