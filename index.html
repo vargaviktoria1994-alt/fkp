@@ -83,7 +83,6 @@
                         </tr>
                     </thead>
                     <tbody id="sellerMinTableBody" class="divide-y divide-slate-800/80 font-medium">
-                        <!-- Ide jön a táblázat tartalma -->
                     </tbody>
                 </table>
             </div>
@@ -734,6 +733,31 @@
                 };
                 return parseM(b) - parseM(a);
             });
+        }
+
+        function getEffectiveMinTarget(seller, targetMonthStr) {
+            const parseM = (str) => {
+                if (!str) return 0;
+                const monthMap = { 'január': 1, 'február': 2, 'március': 3, 'április': 4, 'május': 5, 'június': 6, 'július': 7, 'augusztus': 8, 'szeptember': 9, 'október': 10, 'november': 11, 'december': 12 };
+                const p = String(str).trim().toLowerCase().split(' ');
+                return (parseInt(p[0], 10) || 2026) * 100 + (monthMap[p[1] || ''] || 0);
+            };
+            
+            const targetVal = parseM(targetMonthStr);
+            let bestMatch = null;
+            let bestVal = 0;
+            
+            globalMinTargets.forEach(mt => {
+                if (mt.ertekesito === seller) {
+                    const mtVal = parseM(mt.honap);
+                    if (mtVal <= targetVal && mtVal > bestVal) {
+                        bestVal = mtVal;
+                        bestMatch = mt;
+                    }
+                }
+            });
+            
+            return bestMatch;
         }
 
         function populateFilters() {
@@ -1591,8 +1615,9 @@
             tbody.innerHTML = summaryList.map(s => {
                 const storeBadgeHtml = (selectedStore === 'ALL' && s.stores) ? Array.from(s.stores).sort().map(b => `<span class="px-1.5 py-0.5 bg-slate-700 text-xs font-semibold rounded mr-1">${b}</span>`).join('') : `<span class="px-2 py-1 bg-slate-700 text-xs font-semibold rounded">${s.bolt}</span>`;
                 
+                let hasMissedMinTarget = false;
                 let minTargetWarningHtml = '';
-                const minDataObj = globalMinTargets.find(mt => mt.honap === s.honap && mt.ertekesito === s.ertekesito);
+                const minDataObj = getEffectiveMinTarget(s.ertekesito, s.honap);
                 
                 if (minDataObj) {
                     if ((minDataObj.acq_hs > 0 && s.acq_hs < minDataObj.acq_hs) ||
@@ -1603,6 +1628,8 @@
                         (minDataObj.soho > 0 && s.soho < minDataObj.soho) ||
                         (minDataObj.tartozek_ft > 0 && s.tartozek < minDataObj.tartozek_ft)) {
                             
+                        hasMissedMinTarget = true;
+                        
                         const passObj = {
                             min: minDataObj,
                             act: { acq_hs: s.acq_hs, fix: s.fix, ret_pont: s.ret_pont, acq_pont: s.acq_pont, acq_tablet: s.acq_tablet, soho: s.soho, tartozek: s.tartozek }
@@ -1610,9 +1637,9 @@
                         const passJson = JSON.stringify(passObj).replace(/"/g, '&quot;');
                         
                         minTargetWarningHtml = `
-                            <button onclick="openSellerMinModal('${s.ertekesito}', '${s.honap}', ${passJson})" 
+                            <button onclick="openSellerMinModal('${s.ertekesito}', '${s.honap} (Elvárás alapja: ${minDataObj.honap})', ${passJson})" 
                                     class="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full bg-rose-900/60 border border-rose-500/50 text-rose-400 hover:scale-110 hover:bg-rose-600 hover:text-white transition-all shadow-md"
-                                    title="Kattints a hiányzó minimum targetek megtekintéséhez!">
+                                    title="Elmaradás! Számonkért target hónapja: ${minDataObj.honap}">
                                 ⚠️
                             </button>
                         `;
@@ -2032,34 +2059,56 @@
         
         async function saveMinimumTargets() {
             const month = document.getElementById('minTargetMonth').value;
-            const seller = document.getElementById('minTargetSeller').value;
+            const sellerDropdown = document.getElementById('minTargetSeller');
+            const selectedSeller = sellerDropdown.value;
             
-            if (seller === 'ALL') {
-                alert("Kérlek válassz ki egy konkrét értékesítőt!");
-                return;
-            }
-            
-            const payload = {
-                honap: month,
-                ertekesito: seller,
-                acq_hs: parseFloat(document.getElementById('minAcqHs').value) || 0,
-                fix: parseFloat(document.getElementById('minFix').value) || 0,
-                ret_pont: parseFloat(document.getElementById('minRetPont').value) || 0,
-                acq_pont: parseFloat(document.getElementById('minAcqPont').value) || 0,
-                acq_tab: parseFloat(document.getElementById('minAcqTab').value) || 0,
-                soho: parseFloat(document.getElementById('minSoho').value) || 0,
-                tartozek_ft: parseFloat(document.getElementById('minTartozek').value) || 0
-            };
-            
+            const minAcqHs = parseFloat(document.getElementById('minAcqHs').value) || 0;
+            const minFix = parseFloat(document.getElementById('minFix').value) || 0;
+            const minRetPont = parseFloat(document.getElementById('minRetPont').value) || 0;
+            const minAcqPont = parseFloat(document.getElementById('minAcqPont').value) || 0;
+            const minAcqTab = parseFloat(document.getElementById('minAcqTab').value) || 0;
+            const minSoho = parseFloat(document.getElementById('minSoho').value) || 0;
+            const minTartozek = parseFloat(document.getElementById('minTartozek').value) || 0;
+
             try {
-                const { error } = await supabaseClient.from('minimum_targetek').upsert(payload, { onConflict: 'honap,ertekesito' });
-                if (error) throw error;
+                if (selectedSeller === 'ALL') {
+                    // TÖMEGES MENTÉS: Minden létező értékesítőre elmenti ugyanazt!
+                    const allSellers = Array.from(sellerDropdown.options).map(o => o.value).filter(v => v !== 'ALL');
+                    if(allSellers.length === 0) {
+                        alert("Még nincs egyetlen értékesítő sem a rendszerben (tölts fel egy CPR Excelt előbb)!");
+                        return;
+                    }
+                    
+                    const payloads = allSellers.map(sName => ({
+                        honap: month,
+                        ertekesito: sName,
+                        acq_hs: minAcqHs, fix: minFix, ret_pont: minRetPont,
+                        acq_pont: minAcqPont, acq_tab: minAcqTab, soho: minSoho, tartozek_ft: minTartozek
+                    }));
+                    
+                    const { error } = await supabaseClient.from('minimum_targetek').upsert(payloads, { onConflict: 'honap,ertekesito' });
+                    if (error) throw error;
+                    
+                    alert(`✅ Sikeresen rögzítve az egyenletes minimum target a(z) ${month} hónapra MIND A(Z) ${allSellers.length} ÉRTÉKESÍTŐNEK!`);
+                    
+                } else {
+                    // SZINGLI MENTÉS: Csak a kiválasztott emberkének menti
+                    const payload = {
+                        honap: month, ertekesito: selectedSeller,
+                        acq_hs: minAcqHs, fix: minFix, ret_pont: minRetPont,
+                        acq_pont: minAcqPont, acq_tab: minAcqTab, soho: minSoho, tartozek_ft: minTartozek
+                    };
+                    
+                    const { error } = await supabaseClient.from('minimum_targetek').upsert(payload, { onConflict: 'honap,ertekesito' });
+                    if (error) throw error;
+                    
+                    alert(`✅ Sikeresen rögzítve a minimum target a(z) ${month} hónapra (${selectedSeller})!`);
+                }
                 
-                alert(`✅ Sikeresen rögzítve a minimum target a(z) ${month} hónapra (${seller})!`);
                 await loadMinTargetsFromSupabase(); 
                 renderData(); 
             } catch (err) {
-                alert(`Hiba történt a minimum target mentésekor: ${err.message}\n\nFigyelem: Létrehoztad a 'minimum_targetek' táblát a Supabase-ben a megfelelő oszlopokkal?`);
+                alert(`Hiba történt a minimum target mentésekor: ${err.message}\n\nFigyelem: Ne felejtsd el lefuttatni a DISABLE ROW LEVEL SECURITY parancsot a Supabase-ben!`);
             }
         }
 
