@@ -1615,7 +1615,6 @@
             tbody.innerHTML = summaryList.map(s => {
                 const storeBadgeHtml = (selectedStore === 'ALL' && s.stores) ? Array.from(s.stores).sort().map(b => `<span class="px-1.5 py-0.5 bg-slate-700 text-xs font-semibold rounded mr-1">${b}</span>`).join('') : `<span class="px-2 py-1 bg-slate-700 text-xs font-semibold rounded">${s.bolt}</span>`;
                 
-                let hasMissedMinTarget = false;
                 let minTargetWarningHtml = '';
                 const minDataObj = getEffectiveMinTarget(s.ertekesito, s.honap);
                 
@@ -1628,8 +1627,6 @@
                         (minDataObj.soho > 0 && s.soho < minDataObj.soho) ||
                         (minDataObj.tartozek_ft > 0 && s.tartozek < minDataObj.tartozek_ft)) {
                             
-                        hasMissedMinTarget = true;
-                        
                         const passObj = {
                             min: minDataObj,
                             act: { acq_hs: s.acq_hs, fix: s.fix, ret_pont: s.ret_pont, acq_pont: s.acq_pont, acq_tablet: s.acq_tablet, soho: s.soho, tartozek: s.tartozek }
@@ -1678,7 +1675,8 @@
                 if (isNaN(raw.getTime())) return null;
                 return `${raw.getFullYear()}-${String(raw.getMonth() + 1).padStart(2, '0')}-${String(raw.getDate()).padStart(2, '0')}`;
             }
-            const match = String(raw).trim().match(/(\d{4})[.\/-](\d{1,2})[.\/-](\d{1,2})/);
+            // MÓDOSÍTOTT REGEX a szóközös formátumhoz ("2026. 11. 02.")
+            const match = String(raw).trim().match(/(\d{4})[.\/-]\s*(\d{1,2})[.\/-]\s*(\d{1,2})/);
             if (match) return `${match[1]}-${match[2].padStart(2, '0')}-${match[3].padStart(2, '0')}`;
             return null;
         };
@@ -2072,7 +2070,6 @@
 
             try {
                 if (selectedSeller === 'ALL') {
-                    // TÖMEGES MENTÉS: Minden létező értékesítőre elmenti ugyanazt!
                     const allSellers = Array.from(sellerDropdown.options).map(o => o.value).filter(v => v !== 'ALL');
                     if(allSellers.length === 0) {
                         alert("Még nincs egyetlen értékesítő sem a rendszerben (tölts fel egy CPR Excelt előbb)!");
@@ -2092,7 +2089,6 @@
                     alert(`✅ Sikeresen rögzítve az egyenletes minimum target a(z) ${month} hónapra MIND A(Z) ${allSellers.length} ÉRTÉKESÍTŐNEK!`);
                     
                 } else {
-                    // SZINGLI MENTÉS: Csak a kiválasztott emberkének menti
                     const payload = {
                         honap: month, ertekesito: selectedSeller,
                         acq_hs: minAcqHs, fix: minFix, ret_pont: minRetPont,
