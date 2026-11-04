@@ -140,17 +140,17 @@
                     </div>
                     <p id="performanceChartEmpty" class="hidden text-center text-xs text-slate-400 py-8">Napi diagramhoz válassz egy konkrét hónapot.</p>
                     <div id="performanceChartGrid" class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                        <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-3">
-                            <h4 class="text-xs font-bold text-indigo-300 mb-2">ACQ (db)</h4>
-                            <div class="relative h-52"><canvas id="monthlyAcqChart"></canvas></div>
+                        <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
+                            <h4 class="text-xs font-bold text-indigo-300 uppercase tracking-wider border-b border-slate-700/60 pb-2.5 mb-2">ACQ (db)</h4>
+                            <div class="relative w-full flex-1 min-h-[250px]"><canvas id="monthlyAcqChart"></canvas></div>
                         </div>
-                        <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-3">
-                            <h4 class="text-xs font-bold text-emerald-300 mb-2">Hűség (db)</h4>
-                            <div class="relative h-52"><canvas id="monthlyLoyaltyChart"></canvas></div>
+                        <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
+                            <h4 class="text-xs font-bold text-emerald-300 uppercase tracking-wider border-b border-slate-700/60 pb-2.5 mb-2">Hűség (db)</h4>
+                            <div class="relative w-full flex-1 min-h-[250px]"><canvas id="monthlyLoyaltyChart"></canvas></div>
                         </div>
-                        <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-3">
-                            <h4 class="text-xs font-bold text-purple-300 mb-2">FIX (db)</h4>
-                            <div class="relative h-52"><canvas id="monthlyFixChart"></canvas></div>
+                        <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
+                            <h4 class="text-xs font-bold text-purple-300 uppercase tracking-wider border-b border-slate-700/60 pb-2.5 mb-2">FIX (db)</h4>
+                            <div class="relative w-full flex-1 min-h-[250px]"><canvas id="monthlyFixChart"></canvas></div>
                         </div>
                     </div>
                 </section>
@@ -860,7 +860,7 @@
             const chartStoreSelect = document.getElementById('performanceChartStore');
             if (chartStoreSelect) {
                 const previousChartStore = chartStoreSelect.value;
-                const chartStores = [...new Set(globalTransactions.map(t => t.bolt).filter(Boolean))].sort();
+                const chartStores = [...new Set(globalTransactions.map(t => t.bolt).filter(store => store && store !== 'FPK011'))].sort();
                 chartStoreSelect.innerHTML = chartStores.map(store => `<option value="${store}">${store}</option>`).join('');
                 chartStoreSelect.value = chartStores.includes(previousChartStore) ? previousChartStore : (chartStores[0] || '');
             }
@@ -1330,7 +1330,7 @@
             const storeSelect = document.getElementById('performanceChartStore');
             storeSelect.classList.toggle('hidden', mode !== 'single');
 
-            const stores = [...new Set(globalTransactions.map(t => t.bolt).filter(Boolean))].sort();
+            const stores = [...new Set(globalTransactions.map(t => t.bolt).filter(store => store && store !== 'FPK011'))].sort();
             const selectedStore = storeSelect.value || stores[0];
             const daysInMonth = fetchBoxData(selectedMonth, 'ALL', null, true).daysInMonth;
             const labels = Array.from({ length: daysInMonth }, (_, index) => `${index + 1}.`);
@@ -1350,7 +1350,7 @@
                 const datasets = series.map((item, index) => {
                     const dailyValues = Array(daysInMonth).fill(0);
                     globalTransactions.forEach(transaction => {
-                        if (transaction.honap !== selectedMonth || (item.store && transaction.bolt !== item.store)) return;
+                        if (transaction.honap !== selectedMonth || transaction.bolt === 'FPK011' || (item.store && transaction.bolt !== item.store)) return;
                         const dateParts = String(transaction.szerzodes_datuma || '').split('-');
                         const day = Number(dateParts[2]);
                         if (dateParts.length === 3 && Number.isInteger(day) && day >= 1 && day <= daysInMonth) {
