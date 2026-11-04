@@ -234,28 +234,25 @@
                         <div class="flex flex-col xl:flex-row xl:items-center justify-between border-b border-slate-700/60 pb-2.5 mb-2 gap-3">
                             <div class="flex items-center gap-2">
                                 <span class="text-indigo-400 font-bold text-sm">📅</span>
-                                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Napi Tény & Eltérés</h3>
+                                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Mátrix: Tény / Cél (Eltérés)</h3>
                             </div>
                             <div class="flex flex-wrap items-center gap-2">
                                 <select id="box4Month" onchange="updateBox4()" class="bg-slate-800 text-slate-300 text-[11px] font-medium border border-slate-600 rounded px-2 py-1 outline-none"></select>
                                 <select id="box4Store" onchange="updateBox4()" class="bg-slate-800 text-indigo-300 font-bold text-[11px] border border-indigo-500/50 rounded px-2 py-1 outline-none"><option value="ALL">Összes Üzlet</option></select>
-                                <select id="box4Metric" onchange="updateBox4()" class="bg-slate-800 text-amber-400 font-bold text-[11px] border border-amber-500/50 rounded px-2 py-1 outline-none">
-                                    <option value="pont">Összpont</option><option value="acq_pont">ACQ Pont</option><option value="ret_pont">Reti Pont</option>
-                                    <option value="acq_db">ACQ db</option><option value="huseg_db">Hűség db</option><option value="fix_db">FIX db</option>
-                                    <option value="soho_db">SOHO db</option><option value="tartozek_ft">Tartozék</option><option value="betero_db">Betérő Ügyfél</option>
-                                </select>
                             </div>
                         </div>
-                        <div class="overflow-y-auto flex-1 pr-1 min-h-[250px] relative">
+                        <div class="overflow-y-auto overflow-x-auto flex-1 pr-1 min-h-[250px] relative border border-slate-700/40 rounded-lg">
                             <div class="absolute inset-0">
-                                <table class="w-full text-left border-collapse text-xs">
+                                <table class="w-full text-center border-collapse text-[10px]">
                                     <thead class="sticky top-0 bg-slate-900 shadow z-10">
-                                        <tr class="text-slate-400 border-b border-slate-700/80 text-[11px]">
-                                            <th class="py-2 px-2.5">Nap</th>
-                                            <th class="py-2 px-2 text-right">Target</th>
-                                            <th class="py-2 px-2 text-right">Tény</th>
-                                            <th class="py-2 px-2 text-right">%</th>
-                                            <th class="py-2 px-2.5 text-right">Eltérés</th>
+                                        <tr class="text-slate-400 border-b border-slate-700/80 text-[10px]">
+                                            <th class="py-2 px-2 text-left">Nap</th>
+                                            <th class="py-2 px-2 text-indigo-400 font-bold">ACQ db</th>
+                                            <th class="py-2 px-2 text-emerald-400 font-bold">Hűség db</th>
+                                            <th class="py-2 px-2 text-purple-400 font-bold">FIX db</th>
+                                            <th class="py-2 px-2 text-amber-300 font-bold">SOHO db</th>
+                                            <th class="py-2 px-2 text-pink-400 font-bold">Tartozék (Ft)</th>
+                                            <th class="py-2 px-2 text-amber-400 font-bold">Összpont</th>
                                         </tr>
                                     </thead>
                                     <tbody id="box4TableBody" class="divide-y divide-slate-800/80 font-medium"></tbody>
@@ -1501,43 +1498,70 @@
         function updateBox4() {
             const m = document.getElementById('box4Month').value;
             const s = document.getElementById('box4Store').value;
-            const met = document.getElementById('box4Metric').value;
-            const data = fetchBoxData(m, s, met);
-            const isCurrency = met === 'tartozek_ft';
-            const isInt = ['acq_db', 'huseg_db', 'fix_db', 'soho_db', 'tartozek_ft', 'betero_db'].includes(met);
+            
+            const metricsList = [
+                { key: 'acq_db', color: 'text-indigo-400', isCurrency: false, isInt: true },
+                { key: 'huseg_db', color: 'text-emerald-400', isCurrency: false, isInt: true },
+                { key: 'fix_db', color: 'text-purple-400', isCurrency: false, isInt: true },
+                { key: 'soho_db', color: 'text-amber-300', isCurrency: false, isInt: true },
+                { key: 'tartozek_ft', color: 'text-pink-400', isCurrency: true, isInt: true },
+                { key: 'pont', color: 'text-amber-400', isCurrency: false, isInt: false }
+            ];
+
+            const allData = {};
+            metricsList.forEach(met => {
+                allData[met.key] = fetchBoxData(m, s, met.key);
+            });
+
+            const baseData = allData['pont'];
             const dayNamesShort = ['V', 'H', 'K', 'Sze', 'Cs', 'P', 'Szo'];
             
             let html = '';
-            for (let d = 1; d <= data.daysInMonth; d++) {
-                const dailyT = data.storeDailyTargetMap[d] || 0;
-                const dailyA = data.dailyActualMap[d] || 0;
-                const hasPassed = (d <= data.currentDay);
-                const isClosed = (dailyT === 0 && met !== 'betero_db'); 
-                const diff = dailyA - dailyT;
-                const pct = dailyT > 0 ? (dailyA / dailyT) * 100 : (dailyA > 0 ? 100 : 0);
+            for (let d = 1; d <= baseData.daysInMonth; d++) {
+                const dow = new Date(baseData.currentYear, baseData.currentMonthIdx, d).getDay();
+                const isToday = (d === baseData.currentDay);
+                const hasPassed = (d <= baseData.currentDay);
                 
-                let bc = "text-slate-500", pctTxt = "-", diffTxt = "-";
-                if (hasPassed) {
-                    if (isClosed && met !== 'betero_db') { pctTxt = "ZÁRVA"; diffTxt = "-"; }
-                    else {
-                        pctTxt = met === 'betero_db' ? "-" : `${pct.toFixed(0)}%`;
-                        diffTxt = (diff >= 0 ? `+${formatVal(diff, isCurrency, isInt)}` : formatVal(diff, isCurrency, isInt));
-                        bc = pct >= 100 ? "text-emerald-400 font-bold" : (pct >= 80 ? "text-indigo-400" : "text-rose-400");
-                        if(met === 'betero_db') { diffTxt = '-'; bc = "text-cyan-400 font-bold"; }
-                    }
-                }
+                const ptTarget = baseData.storeDailyTargetMap[d] || 0;
+                const isClosed = (ptTarget === 0); 
                 
-                const dow = new Date(data.currentYear, data.currentMonthIdx, d).getDay();
-                const isToday = (d === data.currentDay);
                 const rowBg = isToday ? "bg-indigo-950/40 border-l-2 border-indigo-400" : "hover:bg-slate-800/40";
                 
-                html += `<tr class="${rowBg} transition text-[11px]">
-                            <td class="py-1.5 px-2.5"><span class="${isToday ? 'text-indigo-300 font-bold' : (dow===0 ? 'text-rose-400/80 font-semibold' : 'text-slate-300')}">${d}. ${dayNamesShort[dow]}</span></td>
-                            <td class="py-1.5 px-2 text-right text-amber-300 font-mono">${isClosed ? 'ZÁRVA' : formatVal(dailyT, isCurrency, isInt)}</td>
-                            <td class="py-1.5 px-2 text-right font-bold ${hasPassed ? (isCurrency?'text-pink-300':'text-cyan-300') : 'text-slate-600'} font-mono">${hasPassed ? formatVal(dailyA, isCurrency, isInt) : '-'}</td>
-                            <td class="py-1.5 px-2 text-right ${bc}">${pctTxt}</td>
-                            <td class="py-1.5 px-2.5 text-right font-mono ${diff >= 0 && hasPassed && !isClosed ? 'text-emerald-400' : (hasPassed && !isClosed && met !== 'betero_db' ? 'text-rose-400' : 'text-slate-600')}">${diffTxt}</td>
-                        </tr>`;
+                let rowHtml = `<tr class="${rowBg} transition">
+                                <td class="py-2.5 px-2 text-left whitespace-nowrap align-middle border-r border-slate-700/50">
+                                    <span class="${isToday ? 'text-indigo-300 font-bold text-xs' : (dow===0 ? 'text-rose-400/80 font-semibold text-[10px]' : 'text-slate-300 text-[10px]')}">${d}. ${dayNamesShort[dow]}</span>
+                                </td>`;
+                
+                if (isClosed) {
+                    rowHtml += `<td colspan="6" class="py-2.5 px-2 text-center text-slate-500 font-bold tracking-widest text-[10px]">ZÁRVA</td>`;
+                } else {
+                    metricsList.forEach(met => {
+                        const dailyT = allData[met.key].storeDailyTargetMap[d] || 0;
+                        const dailyA = allData[met.key].dailyActualMap[d] || 0;
+                        const diff = dailyA - dailyT;
+                        
+                        if (!hasPassed) {
+                            rowHtml += `<td class="py-2 px-1 text-center align-middle">
+                                            <div class="text-slate-500 text-[10px] font-mono">${formatVal(dailyT, met.isCurrency, met.isInt)}</div>
+                                            <div class="text-[9px] text-slate-700">-</div>
+                                        </td>`;
+                        } else {
+                            const diffTxt = diff >= 0 ? `+${formatVal(diff, met.isCurrency, met.isInt)}` : formatVal(diff, met.isCurrency, met.isInt);
+                            const diffColor = diff >= 0 ? 'text-emerald-400' : 'text-rose-400';
+                            const targetTxt = formatVal(dailyT, met.isCurrency, met.isInt).replace(' Ft', '').replace(' db', ''); // Rövidítés a perjelhez
+                            const actualTxt = formatVal(dailyA, met.isCurrency, met.isInt).replace(' Ft', '').replace(' db', ''); // Rövidítés a perjelhez
+                            const suffix = met.isCurrency ? ' Ft' : (met.isInt ? ' db' : '');
+                            
+                            rowHtml += `<td class="py-1.5 px-1 text-center align-middle border-r border-slate-700/30 last:border-0">
+                                            <div class="text-[11px] font-bold text-slate-200 font-mono tracking-tighter">${actualTxt} <span class="text-slate-500 text-[9px] font-normal">/ ${targetTxt} ${suffix}</span></div>
+                                            <div class="text-[9px] font-bold ${diffColor} font-mono mt-0.5">${diffTxt}</div>
+                                        </td>`;
+                        }
+                    });
+                }
+                
+                rowHtml += `</tr>`;
+                html += rowHtml;
             }
             document.getElementById('box4TableBody').innerHTML = html;
         }
