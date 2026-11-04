@@ -126,9 +126,11 @@
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <div>
                             <h3 class="text-sm font-bold text-white">Havi napi teljesítmény</h3>
-                            <p class="text-[11px] text-slate-400">ACQ, Hűség és FIX darabszám a havi összegzés kiválasztott hónapjában</p>
+                            <p class="text-[11px] text-slate-400">ACQ, Hűség és FIX napi darabszáma a kiválasztott hónapban</p>
                         </div>
                         <div class="flex flex-wrap items-center gap-2">
+                            <label for="performanceChartMonth" class="text-[11px] text-slate-400">Hónap</label>
+                            <select id="performanceChartMonth" onchange="updateMonthlyPerformanceCharts()" class="bg-slate-900 text-slate-200 text-[11px] border border-slate-600 rounded px-2 py-1.5 outline-none"></select>
                             <label for="performanceChartMode" class="text-[11px] text-slate-400">Üzletnézet</label>
                             <select id="performanceChartMode" onchange="updateMonthlyPerformanceCharts()" class="bg-slate-900 text-slate-200 text-[11px] border border-slate-600 rounded px-2 py-1.5 outline-none">
                                 <option value="network">Összes üzlet együtt</option>
@@ -138,7 +140,7 @@
                             <select id="performanceChartStore" onchange="updateMonthlyPerformanceCharts()" class="hidden bg-slate-900 text-indigo-300 text-[11px] border border-indigo-500/50 rounded px-2 py-1.5 outline-none"></select>
                         </div>
                     </div>
-                    <p id="performanceChartEmpty" class="hidden text-center text-xs text-slate-400 py-8">Napi diagramhoz válassz egy konkrét hónapot.</p>
+                    <p id="performanceChartEmpty" class="hidden text-center text-xs text-slate-400 py-8">A kiválasztott hónapban nincs megjeleníthető teljesítési adat.</p>
                     <div id="performanceChartGrid" class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                         <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
                             <h4 class="text-xs font-bold text-indigo-300 uppercase tracking-wider border-b border-slate-700/60 pb-2.5 mb-2">ACQ (db)</h4>
@@ -859,10 +861,11 @@
             ['box1Store', 'box2Store', 'box3Store', 'box4Store', 'staticTargetStore'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerHTML = storeOptions; });
             const chartStoreSelect = document.getElementById('performanceChartStore');
             if (chartStoreSelect) {
-                const previousChartStore = chartStoreSelect.value;
-                const chartStores = [...new Set(globalTransactions.map(t => t.bolt).filter(store => store && store !== 'FPK011'))].sort();
-                chartStoreSelect.innerHTML = chartStores.map(store => `<option value="${store}">${store}</option>`).join('');
-                chartStoreSelect.value = chartStores.includes(previousChartStore) ? previousChartStore : (chartStores[0] || '');
+                const chartMonths = sortMonthsChronological([...new Set(globalTransactions.map(t => t.honap).filter(Boolean))]);
+                const chartMonthSelect = document.getElementById('performanceChartMonth');
+                const previousChartMonth = chartMonthSelect.value;
+                chartMonthSelect.innerHTML = chartMonths.map(month => `<option value="${month}">${month}</option>`).join('');
+                chartMonthSelect.value = chartMonths.includes(previousChartMonth) ? previousChartMonth : (chartMonths[0] || '');
             }
 
             if(document.getElementById('minTargetSeller')) document.getElementById('minTargetSeller').innerHTML = sellerOptions;
@@ -1313,10 +1316,28 @@
         const monthlyPerformanceCharts = {};
 
         function updateMonthlyPerformanceCharts() {
-            const selectedMonth = document.getElementById('box1Month').value;
+            const selectedMonth = document.getElementById('performanceChartMonth').value;
             const chartGrid = document.getElementById('performanceChartGrid');
             const emptyMessage = document.getElementById('performanceChartEmpty');
-            if (!selectedMonth || selectedMonth === 'ALL') {
+            const monthTransactions = globalTransactions.filter(transaction =>
+                transaction.honap === selectedMonth &&
+                transaction.bolt &&
+                transaction.bolt !== 'FPK011'
+            );
+            const storePerformance = new Map();
+            monthTransactions.forEach(transaction => {
+                const store = transaction.bolt;
+                const totals = storePerformance.get(store) || { acq_db: 0, huseg_db: 0, fix_db: 0 };
+                totals.acq_db += Number(transaction.acq_db) || 0;
+                totals.huseg_db += Number(transaction.huseg_db) || 0;
+                totals.fix_db += Number(transaction.fix_db) || 0;
+                storePerformance.set(store, totals);
+            });
+            const stores = [...storePerformance.keys()]
+                .filter(store => Object.values(storePerformance.get(store)).some(value => value > 0))
+                .sort();
+
+            if (!selectedMonth || stores.length === 0) {
                 chartGrid.classList.add('hidden');
                 emptyMessage.classList.remove('hidden');
                 Object.values(monthlyPerformanceCharts).forEach(chart => chart.destroy());
@@ -1330,8 +1351,10 @@
             const storeSelect = document.getElementById('performanceChartStore');
             storeSelect.classList.toggle('hidden', mode !== 'single');
 
-            const stores = [...new Set(globalTransactions.map(t => t.bolt).filter(store => store && store !== 'FPK011'))].sort();
-            const selectedStore = storeSelect.value || stores[0];
+            const previousStore = storeSelect.value;
+            storeSelect.innerHTML = stores.map(store => `<option value="${store}">${store}</option>`).join('');
+            storeSelect.value = stores.includes(previousStore) ? previousStore : (stores[0] || '');
+            const selectedStore = storeSelect.value;
             const daysInMonth = fetchBoxData(selectedMonth, 'ALL', null, true).daysInMonth;
             const labels = Array.from({ length: daysInMonth }, (_, index) => `${index + 1}.`);
             const series = mode === 'network'
@@ -1348,15 +1371,16 @@
 
             metrics.forEach(metric => {
                 const datasets = series.map((item, index) => {
+                    const relevantTransactions = monthTransactions.filter(transaction => !item.store || transaction.bolt === item.store);
                     const dailyValues = Array(daysInMonth).fill(0);
-                    globalTransactions.forEach(transaction => {
-                        if (transaction.honap !== selectedMonth || transaction.bolt === 'FPK011' || (item.store && transaction.bolt !== item.store)) return;
+                    relevantTransactions.forEach(transaction => {
                         const dateParts = String(transaction.szerzodes_datuma || '').split('-');
                         const day = Number(dateParts[2]);
                         if (dateParts.length === 3 && Number.isInteger(day) && day >= 1 && day <= daysInMonth) {
                             dailyValues[day - 1] += Number(transaction[metric.key]) || 0;
                         }
                     });
+                    if (mode === 'separate' && !dailyValues.some(value => value > 0)) return null;
                     return {
                         label: item.label,
                         data: dailyValues,
@@ -1367,7 +1391,7 @@
                         pointHoverRadius: 4,
                         tension: 0.25
                     };
-                });
+                }).filter(Boolean);
 
                 if (monthlyPerformanceCharts[metric.canvas]) monthlyPerformanceCharts[metric.canvas].destroy();
                 monthlyPerformanceCharts[metric.canvas] = new Chart(document.getElementById(metric.canvas), {
