@@ -580,8 +580,7 @@
         </main>
     </div>
 
-    <script>
-        const DASHBOARD_PASSWORD = "fpk2026";
+   const DASHBOARD_PASSWORD = "fpk2026";
 
         function checkAuth() {
             if (sessionStorage.getItem('dashboard_authenticated') === 'true') {
@@ -671,7 +670,6 @@
         let globalTargets = [];
         let globalMinTargets = []; 
         let targetChartInstance = null;
-
         let currentSortColumn = 'pont';
         let currentSortDirection = 'desc';
 
@@ -744,7 +742,7 @@
             try {
                 const { data, error } = await supabaseClient.from('minimum_targetek').select('*');
                 if (!error && data) { globalMinTargets = data; }
-            } catch (e) { console.warn("A minimum targetek tábla még nem jött létre vagy üres.", e); }
+            } catch (e) { console.warn("A minimum targetek tábla még nem jött létre.", e); }
         }
 
         function sortMonthsChronological(monthList) {
@@ -766,11 +764,9 @@
                 const p = String(str).trim().toLowerCase().split(' ');
                 return (parseInt(p[0], 10) || 2026) * 100 + (monthMap[p[1] || ''] || 0);
             };
-            
             const targetVal = parseM(targetMonthStr);
             let bestMatch = null;
             let bestVal = 0;
-            
             globalMinTargets.forEach(mt => {
                 if (mt.ertekesito === seller) {
                     const mtVal = parseM(mt.honap);
@@ -780,7 +776,6 @@
                     }
                 }
             });
-            
             return bestMatch;
         }
 
@@ -788,10 +783,8 @@
             const allMonthsList = [...globalTransactions.map(t => t.honap), ...globalAccessories.map(a => a.honap), ...globalFootfall.map(f => f.honap), ...globalTargets.map(t => t.honap)];
             const rawMonths = [...new Set(allMonthsList)].filter(Boolean);
             const months = sortMonthsChronological(rawMonths);
-
             const allStoresList = [...globalTransactions.map(t => t.bolt), ...globalAccessories.map(a => a.bolt)];
             const stores = [...new Set(allStoresList)].filter(Boolean).sort();
-
             const allSellersList = [...globalTransactions.map(t => t.ertekesito), ...globalAccessories.map(a => a.ertekesito)];
             const sellers = [...new Set(allSellersList.map(s => String(s || '').trim().replace(/\s+/g, ' ')))].filter(Boolean).sort();
 
@@ -806,9 +799,7 @@
             ['box1Month', 'box2Month', 'box3Month', 'box4Month'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerHTML = monthOptions; });
             ['box1Store', 'box2Store', 'box3Store', 'box4Store', 'staticTargetStore'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerHTML = storeOptions; });
 
-            if(document.getElementById('minTargetSeller')) {
-                document.getElementById('minTargetSeller').innerHTML = sellerOptions;
-            }
+            if(document.getElementById('minTargetSeller')) document.getElementById('minTargetSeller').innerHTML = sellerOptions;
 
             if (months.length > 0) {
                 document.getElementById('filterMonth').value = months[0];
@@ -820,7 +811,6 @@
             const allMonthsList = [...globalTransactions.map(t => t.honap), ...globalAccessories.map(a => a.honap), ...globalFootfall.map(f => f.honap), ...globalTargets.map(t => t.honap)];
             const rawMonths = [...new Set(allMonthsList)].filter(Boolean);
             const months = sortMonthsChronological(rawMonths);
-            
             const mNamesExt = ['január', 'február', 'március', 'április', 'május', 'június', 'július', 'augusztus', 'szeptember', 'október', 'november', 'december'];
             const dNowExt = new Date();
             const extendedMonthsRaw = [...rawMonths];
@@ -883,7 +873,6 @@
             
             if (tbAcc && tbAccMissing && accMonth) {
                 const accData = globalAccessories.filter(a => a.honap === accMonth).sort((a, b) => new Date(a.teljesites_datuma) - new Date(b.teljesites_datuma));
-                
                 const matchedList = accData.filter(a => (a.darabszam || 0) > 0);
                 const missingList = accData.filter(a => (a.darabszam || 0) === 0);
 
@@ -1075,7 +1064,6 @@
                     }
                 });
                 
-                // --- ÚJ RÉSZ: BETÉRŐ ÜGYFELEK TÖRTÉNELME (SÚLYOZÁSHOZ) ---
                 let footfallHistory = globalFootfall.filter(f => f.honap !== selectedMonth);
                 if (storeCode !== 'ALL') footfallHistory = footfallHistory.filter(f => f.bolt === storeCode);
                 if (footfallHistory.length < 10) footfallHistory = globalFootfall.filter(f => storeCode === 'ALL' || f.bolt === storeCode);
@@ -1100,7 +1088,6 @@
 
                 if (storeCode === 'FPK002') { sDowPoints[0] = 0; sDowFootfall[0] = 0; }
 
-                // --- ÚJ RÉSZ: KETTŐS SÚLYOZÁS (Pontok + Betérők 50-50%-ban) ---
                 const sDowWeights = sDowPoints.map((p, idx) => {
                     const wPts = sTotalPts > 0 ? (p / sTotalPts) : (1/7);
                     const wFoot = sTotalFootfall > 0 ? (sDowFootfall[idx] / sTotalFootfall) : wPts;
@@ -1539,7 +1526,7 @@
                                 <td colspan="8" class="py-1.5 px-2 text-center text-slate-500 font-bold tracking-widest">Z Á R V A</td>
                             </tr>`;
                 } else {
-                    html += `<tr class="${rowBg} transition text-[10px] cursor-pointer" onclick="openDayModal(${d})">
+                    html += `<tr class="${rowBg} transition text-[10px] cursor-pointer" onclick="openDayModal(d)">
                                 <td class="py-1.5 px-2"><span class="${isToday ? 'text-amber-300 font-bold' : (dow===0 ? 'text-rose-400/80 font-semibold' : 'text-slate-300')}">${d}. ${dayNamesShort[dow]}</span></td>
                                 <td class="py-1.5 px-2 text-right text-amber-300 font-bold font-mono">${pt.toFixed(1)}</td>
                                 <td class="py-1.5 px-2 text-right text-sky-400 font-mono">${(mAcqP.storeDailyTargetMap[d]||0).toFixed(1)}</td>
@@ -1555,7 +1542,6 @@
             document.getElementById('box3TableBody').innerHTML = html;
         }
 
-        // Új, KOMPAKT BOX 4 Frissítő (Nincs lenyíló, egyből mutat mindent!)
         function updateBox4() {
             const m = document.getElementById('box4Month').value;
             const s = document.getElementById('box4Store').value;
@@ -1719,7 +1705,7 @@
                         const passJson = JSON.stringify(passObj).replace(/"/g, '&quot;');
                         
                         minTargetWarningHtml = `
-                            <button onclick="openSellerMinModal('${s.ertekesito}', '${s.honap} (Elvárás alapja: ${minDataObj.honap})', ${passJson})" 
+                            <button onclick="openSellerMinModal('${s.ertekesito}', '${s.honap} (Elvárás alapja: ${minDataObj.honap})', $passJson)" 
                                     class="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full bg-rose-900/60 border border-rose-500/50 text-rose-400 hover:scale-110 hover:bg-rose-600 hover:text-white transition-all shadow-md"
                                     title="Elmaradás! Számonkért target hónapja: ${minDataObj.honap}">
                                 ⚠️
