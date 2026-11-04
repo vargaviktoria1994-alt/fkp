@@ -126,7 +126,7 @@
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <div>
                             <h3 class="text-sm font-bold text-white">Havi napi teljesítmény</h3>
-                            <p class="text-[11px] text-slate-400">ACQ, Hűség és FIX napi darabszáma a kiválasztott hónapban</p>
+                            <p class="text-[11px] text-slate-400">ACQ, Hűség, FIX és pontértékek napi teljesítménye a kiválasztott hónapban</p>
                         </div>
                         <div class="flex flex-wrap items-center gap-2">
                             <label for="performanceChartMonth" class="text-[11px] text-slate-400">Hónap</label>
@@ -153,6 +153,18 @@
                         <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
                             <h4 class="text-xs font-bold text-purple-300 uppercase tracking-wider border-b border-slate-700/60 pb-2.5 mb-2">FIX (db)</h4>
                             <div class="relative w-full flex-1 min-h-[250px]"><canvas id="monthlyFixChart"></canvas></div>
+                        </div>
+                        <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
+                            <h4 class="text-xs font-bold text-sky-300 uppercase tracking-wider border-b border-slate-700/60 pb-2.5 mb-2">ACQ pont</h4>
+                            <div class="relative w-full flex-1 min-h-[250px]"><canvas id="monthlyAcqPointsChart"></canvas></div>
+                        </div>
+                        <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
+                            <h4 class="text-xs font-bold text-teal-300 uppercase tracking-wider border-b border-slate-700/60 pb-2.5 mb-2">Retention pont</h4>
+                            <div class="relative w-full flex-1 min-h-[250px]"><canvas id="monthlyRetentionPointsChart"></canvas></div>
+                        </div>
+                        <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
+                            <h4 class="text-xs font-bold text-amber-300 uppercase tracking-wider border-b border-slate-700/60 pb-2.5 mb-2">Összpont</h4>
+                            <div class="relative w-full flex-1 min-h-[250px]"><canvas id="monthlyTotalPointsChart"></canvas></div>
                         </div>
                     </div>
                 </section>
@@ -1327,10 +1339,13 @@
             const storePerformance = new Map();
             monthTransactions.forEach(transaction => {
                 const store = transaction.bolt;
-                const totals = storePerformance.get(store) || { acq_db: 0, huseg_db: 0, fix_db: 0 };
-                totals.acq_db += Number(transaction.acq_db) || 0;
-                totals.huseg_db += Number(transaction.huseg_db) || 0;
-                totals.fix_db += Number(transaction.fix_db) || 0;
+                const totals = storePerformance.get(store) || {
+                    acq_db: 0, huseg_db: 0, fix_db: 0,
+                    acq_pont: 0, ret_pont: 0, osszpont: 0
+                };
+                ['acq_db', 'huseg_db', 'fix_db', 'acq_pont', 'ret_pont', 'osszpont'].forEach(key => {
+                    totals[key] += Number(transaction[key]) || 0;
+                });
                 storePerformance.set(store, totals);
             });
             const stores = [...storePerformance.keys()]
@@ -1365,7 +1380,10 @@
             const metrics = [
                 { key: 'acq_db', canvas: 'monthlyAcqChart', color: '#818cf8' },
                 { key: 'huseg_db', canvas: 'monthlyLoyaltyChart', color: '#34d399' },
-                { key: 'fix_db', canvas: 'monthlyFixChart', color: '#c084fc' }
+                { key: 'fix_db', canvas: 'monthlyFixChart', color: '#c084fc' },
+                { key: 'acq_pont', canvas: 'monthlyAcqPointsChart', color: '#7dd3fc', isInt: false },
+                { key: 'ret_pont', canvas: 'monthlyRetentionPointsChart', color: '#5eead4', isInt: false },
+                { key: 'osszpont', canvas: 'monthlyTotalPointsChart', color: '#fcd34d', isInt: false }
             ];
             const palette = ['#818cf8', '#34d399', '#fbbf24', '#f472b6', '#22d3ee'];
 
@@ -1406,7 +1424,7 @@
                         },
                         scales: {
                             x: { grid: { color: 'rgba(51, 65, 85, 0.25)' }, ticks: { color: '#94a3b8', font: { size: 9 }, maxTicksLimit: 16 } },
-                            y: { beginAtZero: true, grid: { color: 'rgba(51, 65, 85, 0.25)' }, ticks: { color: '#94a3b8', precision: 0, font: { size: 9 } } }
+                            y: { beginAtZero: true, grid: { color: 'rgba(51, 65, 85, 0.25)' }, ticks: { color: '#94a3b8', precision: metric.isInt === false ? 1 : 0, font: { size: 9 } } }
                         }
                     }
                 });
