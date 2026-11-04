@@ -130,7 +130,7 @@
                         </div>
                         <div class="flex flex-wrap items-center gap-2">
                             <label for="performanceChartMonth" class="text-[11px] text-slate-400">Hónap</label>
-                            <select id="performanceChartMonth" onchange="updateMonthlyPerformanceCharts()" class="bg-slate-900 text-slate-200 text-[11px] border border-slate-600 rounded px-2 py-1.5 outline-none"></select>
+                            <select id="performanceChartMonth" onchange="syncPerformanceChartMonth(this.value)" class="bg-slate-900 text-slate-200 text-[11px] border border-slate-600 rounded px-2 py-1.5 outline-none"></select>
                             <label for="performanceChartMode" class="text-[11px] text-slate-400">Üzletnézet</label>
                             <select id="performanceChartMode" onchange="updateMonthlyPerformanceCharts()" class="bg-slate-900 text-slate-200 text-[11px] border border-slate-600 rounded px-2 py-1.5 outline-none">
                                 <option value="network">Összes üzlet együtt</option>
@@ -350,7 +350,57 @@
                 </div>
 
                 <!-- EZ CSAK AZ ÉRTÉKESÍTŐK FÜLÖN FOG MEGJELENNI -->
-                <div id="sectionTable" class="overflow-x-auto mt-4 hidden">
+                <div id="sectionTable" class="space-y-4 mt-4 hidden">
+                    <section class="space-y-3">
+                        <div>
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                <div>
+                                    <h3 class="text-sm font-bold text-white">Értékesítői havi teljesítmény</h3>
+                                    <p class="text-[11px] text-slate-400">Havi összesítés értékesítőnként oszlopdiagramokon</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <label for="sellerPerformanceChartMonth" class="text-[11px] text-slate-400">Hónap</label>
+                                    <select id="sellerPerformanceChartMonth" onchange="syncPerformanceChartMonth(this.value)" class="bg-slate-900 text-slate-200 text-[11px] border border-slate-600 rounded px-2 py-1.5 outline-none"></select>
+                                </div>
+                            </div>
+                        </div>
+                        <p id="sellerPerformanceChartEmpty" class="hidden text-center text-xs text-slate-400 py-8">A kiválasztott hónapban nincs megjeleníthető teljesítési adat.</p>
+                        <div id="sellerPerformanceChartGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                            <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
+                                <h4 class="text-xs font-bold text-indigo-300 uppercase tracking-wider border-b border-slate-700/60 pb-2.5 mb-2">ACQ (db)</h4>
+                                <div class="relative w-full min-h-[250px]"><canvas id="sellerMonthlyAcqChart"></canvas></div>
+                            </div>
+                            <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
+                                <h4 class="text-xs font-bold text-emerald-300 uppercase tracking-wider border-b border-slate-700/60 pb-2.5 mb-2">Hűség (db)</h4>
+                                <div class="relative w-full min-h-[250px]"><canvas id="sellerMonthlyLoyaltyChart"></canvas></div>
+                            </div>
+                            <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
+                                <h4 class="text-xs font-bold text-purple-300 uppercase tracking-wider border-b border-slate-700/60 pb-2.5 mb-2">FIX (db)</h4>
+                                <div class="relative w-full min-h-[250px]"><canvas id="sellerMonthlyFixChart"></canvas></div>
+                            </div>
+                            <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
+                                <h4 class="text-xs font-bold text-sky-300 uppercase tracking-wider border-b border-slate-700/60 pb-2.5 mb-2">ACQ pont</h4>
+                                <div class="relative w-full min-h-[250px]"><canvas id="sellerMonthlyAcqPointsChart"></canvas></div>
+                            </div>
+                            <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
+                                <h4 class="text-xs font-bold text-teal-300 uppercase tracking-wider border-b border-slate-700/60 pb-2.5 mb-2">Retention pont</h4>
+                                <div class="relative w-full min-h-[250px]"><canvas id="sellerMonthlyRetentionPointsChart"></canvas></div>
+                            </div>
+                            <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
+                                <h4 class="text-xs font-bold text-amber-300 uppercase tracking-wider border-b border-slate-700/60 pb-2.5 mb-2">Összpont</h4>
+                                <div class="relative w-full min-h-[250px]"><canvas id="sellerMonthlyTotalPointsChart"></canvas></div>
+                            </div>
+                            <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
+                                <h4 class="text-xs font-bold text-pink-300 uppercase tracking-wider border-b border-slate-700/60 pb-2.5 mb-2">Tartozék összeg (Ft)</h4>
+                                <div class="relative w-full min-h-[250px]"><canvas id="sellerMonthlyAccessoriesAmountChart"></canvas></div>
+                            </div>
+                            <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
+                                <h4 class="text-xs font-bold text-cyan-300 uppercase tracking-wider border-b border-slate-700/60 pb-2.5 mb-2">Tartozék darab (db)</h4>
+                                <div class="relative w-full min-h-[250px]"><canvas id="sellerMonthlyAccessoriesCountChart"></canvas></div>
+                            </div>
+                        </div>
+                    </section>
+                    <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse text-xs md:text-sm select-none">
                         <thead>
                             <tr class="bg-slate-700/60 text-slate-300 border-b border-slate-600 whitespace-nowrap text-xs">
@@ -375,6 +425,7 @@
                             <tr><td colspan="15" class="p-4 text-center text-slate-400">Nincs adat betöltve.</td></tr>
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </section>
         </main>
@@ -690,6 +741,7 @@
         }
 
         function switchTab(tabName) {
+            currentDashboardTab = tabName;
             const tabDash = document.getElementById('tabDashboard');
             const tabUp = document.getElementById('tabUpload');
             const btnStores = document.getElementById('tabBtnStores');
@@ -746,6 +798,7 @@
         let targetChartInstance = null;
         let currentSortColumn = 'pont';
         let currentSortDirection = 'desc';
+        let currentDashboardTab = 'stores';
 
         window.addEventListener('DOMContentLoaded', () => {
             if (SUPABASE_ANON_KEY === "******") {
@@ -881,11 +934,17 @@
             ['box1Store', 'box2Store', 'box3Store', 'box4Store', 'staticTargetStore'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerHTML = storeOptions; });
             const chartStoreSelect = document.getElementById('performanceChartStore');
             if (chartStoreSelect) {
-                const chartMonths = sortMonthsChronological([...new Set(globalTransactions.map(t => t.honap).filter(Boolean))]);
+                const chartMonths = sortMonthsChronological([...new Set([
+                    ...globalTransactions.map(t => t.honap),
+                    ...globalAccessories.map(a => a.honap)
+                ].filter(Boolean))]);
                 const chartMonthSelect = document.getElementById('performanceChartMonth');
+                const sellerChartMonthSelect = document.getElementById('sellerPerformanceChartMonth');
                 const previousChartMonth = chartMonthSelect.value;
                 chartMonthSelect.innerHTML = chartMonths.map(month => `<option value="${month}">${month}</option>`).join('');
                 chartMonthSelect.value = chartMonths.includes(previousChartMonth) ? previousChartMonth : (chartMonths[0] || '');
+                sellerChartMonthSelect.innerHTML = chartMonthSelect.innerHTML;
+                sellerChartMonthSelect.value = chartMonthSelect.value;
             }
 
             if(document.getElementById('minTargetSeller')) document.getElementById('minTargetSeller').innerHTML = sellerOptions;
@@ -1334,8 +1393,19 @@
         }
 
         const monthlyPerformanceCharts = {};
+        const sellerMonthlyPerformanceCharts = {};
+
+        function syncPerformanceChartMonth(month) {
+            document.getElementById('performanceChartMonth').value = month;
+            document.getElementById('sellerPerformanceChartMonth').value = month;
+            updateMonthlyPerformanceCharts();
+        }
 
         function updateMonthlyPerformanceCharts() {
+            if (currentDashboardTab === 'sellers') {
+                updateSellerMonthlyPerformanceCharts();
+                return;
+            }
             const selectedMonth = document.getElementById('performanceChartMonth').value;
             const chartGrid = document.getElementById('performanceChartGrid');
             const emptyMessage = document.getElementById('performanceChartEmpty');
@@ -1466,6 +1536,112 @@
                             }
                         }
                     }
+                    }
+                });
+            });
+        }
+
+        function updateSellerMonthlyPerformanceCharts() {
+            const selectedMonth = document.getElementById('sellerPerformanceChartMonth').value;
+            const selectedStore = document.getElementById('filterStore').value;
+            const selectedSeller = document.getElementById('filterSeller').value;
+            const chartGrid = document.getElementById('sellerPerformanceChartGrid');
+            const emptyMessage = document.getElementById('sellerPerformanceChartEmpty');
+            const sellerTotals = new Map();
+            const metricDefinitions = [
+                { key: 'acq_db', canvas: 'sellerMonthlyAcqChart', label: 'ACQ (db)', color: '#818cf8' },
+                { key: 'huseg_db', canvas: 'sellerMonthlyLoyaltyChart', label: 'Hűség (db)', color: '#34d399' },
+                { key: 'fix_db', canvas: 'sellerMonthlyFixChart', label: 'FIX (db)', color: '#c084fc' },
+                { key: 'acq_pont', canvas: 'sellerMonthlyAcqPointsChart', label: 'ACQ pont', color: '#7dd3fc', isDecimal: true },
+                { key: 'ret_pont', canvas: 'sellerMonthlyRetentionPointsChart', label: 'Retention pont', color: '#5eead4', isDecimal: true },
+                { key: 'osszpont', canvas: 'sellerMonthlyTotalPointsChart', label: 'Összpont', color: '#fcd34d', isDecimal: true },
+                { key: 'brutto_ertek', canvas: 'sellerMonthlyAccessoriesAmountChart', label: 'Tartozék összeg', color: '#f9a8d4', source: 'accessories', isCurrency: true },
+                { key: 'darabszam', canvas: 'sellerMonthlyAccessoriesCountChart', label: 'Tartozék darab', color: '#67e8f9', source: 'accessories' }
+            ];
+            const ensureSeller = name => {
+                if (!sellerTotals.has(name)) {
+                    sellerTotals.set(name, Object.fromEntries(metricDefinitions.map(metric => [metric.key, 0])));
+                }
+                return sellerTotals.get(name);
+            };
+
+            globalTransactions.forEach(transaction => {
+                if (transaction.honap !== selectedMonth || transaction.bolt === 'FPK011' ||
+                    (selectedStore !== 'ALL' && transaction.bolt !== selectedStore)) return;
+                const seller = String(transaction.ertekesito || '').trim().replace(/\s+/g, ' ');
+                if (!seller || (selectedSeller !== 'ALL' && seller !== selectedSeller)) return;
+                const totals = ensureSeller(seller);
+                ['acq_db', 'huseg_db', 'fix_db', 'acq_pont', 'ret_pont', 'osszpont'].forEach(key => {
+                    totals[key] += Number(transaction[key]) || 0;
+                });
+            });
+
+            globalAccessories.forEach(accessory => {
+                if (accessory.honap !== selectedMonth || accessory.bolt === 'FPK011' ||
+                    (selectedStore !== 'ALL' && accessory.bolt !== selectedStore)) return;
+                const seller = String(accessory.ertekesito || '').trim().replace(/\s+/g, ' ');
+                if (!seller || (selectedSeller !== 'ALL' && seller !== selectedSeller)) return;
+                const totals = ensureSeller(seller);
+                totals.brutto_ertek += Number(accessory.brutto_ertek) || 0;
+                totals.darabszam += Number(accessory.darabszam) || 0;
+            });
+
+            const sellers = [...sellerTotals.keys()]
+                .filter(seller => metricDefinitions.some(metric => sellerTotals.get(seller)[metric.key] > 0))
+                .sort((a, b) => a.localeCompare(b, 'hu'));
+            if (!selectedMonth || sellers.length === 0) {
+                chartGrid.classList.add('hidden');
+                emptyMessage.classList.remove('hidden');
+                Object.values(sellerMonthlyPerformanceCharts).forEach(chart => chart.destroy());
+                Object.keys(sellerMonthlyPerformanceCharts).forEach(canvasId => delete sellerMonthlyPerformanceCharts[canvasId]);
+                return;
+            }
+            chartGrid.classList.remove('hidden');
+            emptyMessage.classList.add('hidden');
+
+            metricDefinitions.forEach(metric => {
+                const metricSellers = sellers.filter(seller => sellerTotals.get(seller)[metric.key] > 0);
+                if (sellerMonthlyPerformanceCharts[metric.canvas]) sellerMonthlyPerformanceCharts[metric.canvas].destroy();
+                sellerMonthlyPerformanceCharts[metric.canvas] = new Chart(document.getElementById(metric.canvas), {
+                    type: 'bar',
+                    data: {
+                        labels: metricSellers,
+                        datasets: [{
+                            label: metric.label,
+                            data: metricSellers.map(seller => sellerTotals.get(seller)[metric.key]),
+                            backgroundColor: metric.color,
+                            borderColor: metric.color,
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: context => `${Number(context.parsed.y).toLocaleString('hu-HU')}${metric.isCurrency ? ' Ft' : metric.isDecimal ? '' : ' db'}`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: '#94a3b8', font: { size: 9 }, maxRotation: 55, minRotation: 0 }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(51, 65, 85, 0.25)' },
+                                ticks: {
+                                    color: '#94a3b8',
+                                    precision: metric.isCurrency || metric.isDecimal ? 1 : 0,
+                                    font: { size: 9 },
+                                    callback: value => `${Number(value).toLocaleString('hu-HU')}${metric.isCurrency ? ' Ft' : ''}`
+                                }
+                            }
+                        }
                     }
                 });
             });
@@ -1909,7 +2085,11 @@
             document.getElementById('kpiTartozek').innerText = `${Math.round(summaryList.reduce((acc, s) => acc + s.tartozek, 0)).toLocaleString('hu-HU')} Ft`;
 
             const tbody = document.getElementById('tableBody');
-            if (summaryList.length === 0) { tbody.innerHTML = '<tr><td colspan="15" class="p-4 text-center text-slate-400">Nincs a szűrésnek megfelelő adat.</td></tr>'; return; }
+            if (summaryList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="15" class="p-4 text-center text-slate-400">Nincs a szűrésnek megfelelő adat.</td></tr>';
+                if (currentDashboardTab === 'sellers') updateSellerMonthlyPerformanceCharts();
+                return;
+            }
 
             tbody.innerHTML = summaryList.map(s => {
                 const storeBadgeHtml = (selectedStore === 'ALL' && s.stores) ? Array.from(s.stores).sort().map(b => `<span class="px-1.5 py-0.5 bg-slate-700 text-xs font-semibold rounded mr-1">${b}</span>`).join('') : `<span class="px-2 py-1 bg-slate-700 text-xs font-semibold rounded">${s.bolt}</span>`;
@@ -1959,6 +2139,7 @@
                             <td class="p-3 text-right font-bold text-amber-400 font-mono">${s.pont.toFixed(2)}</td>
                         </tr>`;
             }).join('');
+            if (currentDashboardTab === 'sellers') updateSellerMonthlyPerformanceCharts();
         }
 
         function handleDropFiles(e) { if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) processFileList(Array.from(e.dataTransfer.files)); }
