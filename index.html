@@ -102,15 +102,17 @@
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <nav class="flex bg-slate-900/70 p-1 rounded-xl border border-slate-700/60">
-                    <button id="tabBtnDashboard" onclick="switchTab('dashboard')" class="px-4 py-2 rounded-lg text-xs font-semibold transition bg-indigo-600 text-white shadow">📈 Áttekintés & Targetek</button>
-                    <button id="tabBtnUpload" onclick="switchTab('upload')" class="px-4 py-2 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white">📤 Adatfeltöltés & Target Admin</button>
+                    <button id="tabBtnStores" onclick="switchTab('stores')" class="px-4 py-2 rounded-lg text-xs font-semibold transition bg-indigo-600 text-white shadow">🏢 Üzletek</button>
+                    <button id="tabBtnSellers" onclick="switchTab('sellers')" class="px-4 py-2 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white">👥 Értékesítők</button>
+                    <button id="tabBtnUpload" onclick="switchTab('upload')" class="px-4 py-2 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white">📤 Adatfeltöltés & Admin</button>
                 </nav>
                 <button onclick="logout()" class="bg-slate-700 hover:bg-rose-950/40 hover:text-rose-400 border border-slate-600 text-slate-300 text-xs font-semibold px-3 py-2 rounded-lg transition ml-2">🚪 Kilépés</button>
             </div>
         </header>
 
         <main id="tabDashboard" class="space-y-6">
-            <section class="bg-slate-800/95 p-5 md:p-6 rounded-2xl border border-slate-700 shadow-xl space-y-5">
+            <!-- EZ A RÉSZ CSAK AZ "ÜZLETEK" FÜLÖN JELENIK MEG -->
+            <section id="sectionTop4" class="bg-slate-800/95 p-5 md:p-6 rounded-2xl border border-slate-700 shadow-xl space-y-5">
                 <div class="flex items-center gap-3 border-b border-slate-700/80 pb-4">
                     <span class="text-2xl">🎯</span>
                     <div>
@@ -263,7 +265,7 @@
                 </div>
             </section>
 
-            <!-- ÉRTÉKESÍTŐI RÉSZLETES TÁBLÁZAT -->
+            <!-- EZ A RÉSZ MINDKÉT FÜLÖN LÁTSZIK (A TÁBLÁZAT KIVÉTELÉVEL, AMI CSAK ÉRTÉKESÍTŐK FÜLÖN) -->
             <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-700 pb-4">
                     <div>
@@ -291,7 +293,8 @@
                     <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600"><span class="text-[11px] text-pink-400 uppercase font-semibold">Tartozék</span><p id="kpiTartozek" class="text-lg font-bold text-pink-400 mt-1">0 Ft</p></div>
                 </div>
 
-                <div class="overflow-x-auto mt-4">
+                <!-- EZ CSAK AZ ÉRTÉKESÍTŐK FÜLÖN FOG MEGJELENNI -->
+                <div id="sectionTable" class="overflow-x-auto mt-4 hidden">
                     <table class="w-full text-left border-collapse text-xs md:text-sm select-none">
                         <thead>
                             <tr class="bg-slate-700/60 text-slate-300 border-b border-slate-600 whitespace-nowrap text-xs">
@@ -584,6 +587,7 @@
             if (sessionStorage.getItem('dashboard_authenticated') === 'true') {
                 document.getElementById('loginScreen').classList.add('hidden');
                 document.getElementById('dashboardApp').classList.remove('hidden');
+                switchTab('stores');
                 loadAllData();
             } else {
                 document.getElementById('loginScreen').classList.remove('hidden');
@@ -615,21 +619,44 @@
         function switchTab(tabName) {
             const tabDash = document.getElementById('tabDashboard');
             const tabUp = document.getElementById('tabUpload');
-            const btnDash = document.getElementById('tabBtnDashboard');
+            const btnStores = document.getElementById('tabBtnStores');
+            const btnSellers = document.getElementById('tabBtnSellers');
             const btnUp = document.getElementById('tabBtnUpload');
+            
+            const sectionTop4 = document.getElementById('sectionTop4');
+            const sectionTable = document.getElementById('sectionTable');
 
-            if (tabName === 'dashboard') {
+            const actCls = "px-4 py-2 rounded-lg text-xs font-semibold transition bg-indigo-600 text-white shadow";
+            const inactCls = "px-4 py-2 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white";
+
+            btnStores.className = inactCls;
+            btnSellers.className = inactCls;
+            btnUp.className = inactCls;
+
+            if (tabName === 'stores') {
+                btnStores.className = actCls;
                 tabDash.classList.remove('hidden');
                 tabUp.classList.add('hidden');
-                btnDash.className = "px-4 py-2 rounded-lg text-xs font-semibold transition bg-indigo-600 text-white shadow";
-                btnUp.className = "px-4 py-2 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white";
+                
+                sectionTop4.classList.remove('hidden');
+                sectionTable.classList.add('hidden');
+                
                 updateAllBoxes();
                 renderData();
-            } else {
+            } else if (tabName === 'sellers') {
+                btnSellers.className = actCls;
+                tabDash.classList.remove('hidden');
+                tabUp.classList.add('hidden');
+                
+                sectionTop4.classList.add('hidden');
+                sectionTable.classList.remove('hidden');
+                
+                renderData();
+            } else if (tabName === 'upload') {
+                btnUp.className = actCls;
                 tabDash.classList.add('hidden');
                 tabUp.classList.remove('hidden');
-                btnDash.className = "px-4 py-2 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white";
-                btnUp.className = "px-4 py-2 rounded-lg text-xs font-semibold transition bg-indigo-600 text-white shadow";
+                
                 renderTargetAdminTable();
             }
         }
@@ -978,7 +1005,7 @@
             { key: 'betero_db', label: 'Betérő Ügyfél', isInt: true, color: 'text-cyan-400' }
         ];
 
-        function fetchBoxData(selectedMonth, selectedStore, metricKey, forceStatic = false) {
+function fetchBoxData(selectedMonth, selectedStore, metricKey, forceStatic = false) {
             const filteredCPR = globalTransactions.filter(t => (selectedMonth === 'ALL' || t.honap === selectedMonth) && (selectedStore === 'ALL' || t.bolt === selectedStore));
             const filteredAcc = globalAccessories.filter(a => (selectedMonth === 'ALL' || a.honap === selectedMonth) && (selectedStore === 'ALL' || a.bolt === selectedStore));
             const filteredFootfall = globalFootfall.filter(f => (selectedMonth === 'ALL' || f.honap === selectedMonth) && (selectedStore === 'ALL' || f.bolt === selectedStore));
@@ -1047,11 +1074,44 @@
                         }
                     }
                 });
+                
+                // --- ÚJ RÉSZ: BETÉRŐ ÜGYFELEK TÖRTÉNELME (SÚLYOZÁSHOZ) ---
+                let footfallHistory = globalFootfall.filter(f => f.honap !== selectedMonth);
+                if (storeCode !== 'ALL') footfallHistory = footfallHistory.filter(f => f.bolt === storeCode);
+                if (footfallHistory.length < 10) footfallHistory = globalFootfall.filter(f => storeCode === 'ALL' || f.bolt === storeCode);
 
-                if (storeCode === 'FPK002') { sDowPoints[0] = 0; }
+                const sDowFootfall = [0, 0, 0, 0, 0, 0, 0];
+                const sDomFootfall = Array(32).fill(0);
+                let sTotalFootfall = 0;
 
-                const sDowWeights = sDowPoints.map(p => sTotalPts > 0 ? (p / sTotalPts) * 7 : 0.0);
-                const sDomWeights = sDomPoints.map(p => sTotalPts > 0 ? (p / sTotalPts) * 30.5 : 1.0);
+                footfallHistory.forEach(f => {
+                    if (f.datum) {
+                        const p = String(f.datum).split('-');
+                        if (p.length === 3) {
+                            const dNum = parseInt(p[2], 10);
+                            const dow = new Date(parseInt(p[0], 10), parseInt(p[1], 10)-1, dNum).getDay();
+                            const foot = (f.betero_db || 0);
+                            sDowFootfall[dow] += foot;
+                            if (dNum >= 1 && dNum <= 31) sDomFootfall[dNum] += foot;
+                            sTotalFootfall += foot;
+                        }
+                    }
+                });
+
+                if (storeCode === 'FPK002') { sDowPoints[0] = 0; sDowFootfall[0] = 0; }
+
+                // --- ÚJ RÉSZ: KETTŐS SÚLYOZÁS (Pontok + Betérők 50-50%-ban) ---
+                const sDowWeights = sDowPoints.map((p, idx) => {
+                    const wPts = sTotalPts > 0 ? (p / sTotalPts) : (1/7);
+                    const wFoot = sTotalFootfall > 0 ? (sDowFootfall[idx] / sTotalFootfall) : wPts;
+                    return ((wPts + wFoot) / 2) * 7;
+                });
+                
+                const sDomWeights = sDomPoints.map((p, idx) => {
+                    const wPts = sTotalPts > 0 ? (p / sTotalPts) : (1/30.5);
+                    const wFoot = sTotalFootfall > 0 ? (sDomFootfall[idx] / sTotalFootfall) : wPts;
+                    return ((wPts + wFoot) / 2) * 30.5;
+                });
 
                 const publicHolidays = [
                     '2026-01-01', '2026-03-15', '2026-04-03', '2026-04-06', '2026-05-01', '2026-05-25', '2026-08-20', '2026-10-23', '2026-11-01', '2026-12-25', '2026-12-26',
@@ -1495,6 +1555,7 @@
             document.getElementById('box3TableBody').innerHTML = html;
         }
 
+        // Új, KOMPAKT BOX 4 Frissítő (Nincs lenyíló, egyből mutat mindent!)
         function updateBox4() {
             const m = document.getElementById('box4Month').value;
             const s = document.getElementById('box4Store').value;
@@ -1548,8 +1609,8 @@
                         } else {
                             const diffTxt = diff >= 0 ? `+${formatVal(diff, met.isCurrency, met.isInt)}` : formatVal(diff, met.isCurrency, met.isInt);
                             const diffColor = diff >= 0 ? 'text-emerald-400' : 'text-rose-400';
-                            const targetTxt = formatVal(dailyT, met.isCurrency, met.isInt).replace(' Ft', '').replace(' db', ''); // Rövidítés a perjelhez
-                            const actualTxt = formatVal(dailyA, met.isCurrency, met.isInt).replace(' Ft', '').replace(' db', ''); // Rövidítés a perjelhez
+                            const targetTxt = formatVal(dailyT, met.isCurrency, met.isInt).replace(' Ft', '').replace(' db', '');
+                            const actualTxt = formatVal(dailyA, met.isCurrency, met.isInt).replace(' Ft', '').replace(' db', '');
                             const suffix = met.isCurrency ? ' Ft' : (met.isInt ? ' db' : '');
                             
                             rowHtml += `<td class="py-1.5 px-1 text-center align-middle border-r border-slate-700/30 last:border-0">
@@ -1602,7 +1663,7 @@
                 if (!summaryMap[key]) { summaryMap[key] = { honap: t.honap, bolt: t.bolt, stores: new Set([t.bolt]), ertekesito: cleanSeller, count: 0, acq: 0, acq_hs: 0, acq_tablet: 0, huseg: 0, fix: 0, soho: 0, acq_pont: 0, ret_pont: 0, tartozek: 0, tartozek_db: 0, pont: 0 }; }
                 if (t.bolt) summaryMap[key].stores.add(t.bolt);
                 summaryMap[key].count += 1; summaryMap[key].acq += (t.acq_db || 0); summaryMap[key].acq_hs += (t.acq_hs || 0); summaryMap[key].acq_tablet += (t.acq_tablet || 0); summaryMap[key].huseg += (t.huseg_db || 0); summaryMap[key].fix += (t.fix_db || 0);
-                if (t.szegmens && t.szegmens.toLowerCase() === 'soho' && t.acq_db > 0) { summaryMap[key].soho += (t.acq_db || 1); }
+                if (t.szegmens && t.szegmens.toLowerCase() === 'soho') && t.acq_db > 0) { summaryMap[key].soho += (t.acq_db || 1); }
                 summaryMap[key].acq_pont += (t.acq_pont || 0); summaryMap[key].ret_pont += (t.ret_pont || 0); summaryMap[key].pont += (t.osszpont || 0);
             });
             filteredAcc.forEach(a => {
@@ -1699,7 +1760,6 @@
                 if (isNaN(raw.getTime())) return null;
                 return `${raw.getFullYear()}-${String(raw.getMonth() + 1).padStart(2, '0')}-${String(raw.getDate()).padStart(2, '0')}`;
             }
-            // MÓDOSÍTOTT REGEX a szóközös formátumhoz ("2026. 11. 02.")
             const match = String(raw).trim().match(/(\d{4})[.\/-]\s*(\d{1,2})[.\/-]\s*(\d{1,2})/);
             if (match) return `${match[1]}-${match[2].padStart(2, '0')}-${match[3].padStart(2, '0')}`;
             return null;
