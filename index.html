@@ -22,12 +22,13 @@
             <div class="w-16 h-16 bg-indigo-950/60 border border-indigo-500/40 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-inner">🔒</div>
             <div>
                 <h2 class="text-xl font-bold text-white">Belépés a Dashboardra</h2>
-                <p class="text-xs text-slate-400 mt-1">Add meg a jelszót a statisztikák eléréséhez</p>
+                <p class="text-xs text-slate-400 mt-1">Jelentkezz be a Supabase-fiókoddal</p>
             </div>
             <form onsubmit="handleLogin(event)" class="space-y-4">
-                <div><input type="password" id="passwordInput" placeholder="Jelszó..." autofocus class="w-full bg-slate-800 text-center text-white text-base tracking-widest border border-slate-700 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 transition"></div>
-                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm py-2.5 rounded-xl transition shadow-lg shadow-indigo-600/30">Belépés</button>
-                <p id="loginError" class="text-rose-400 text-xs hidden font-medium">Hibás jelszó! Próbáld újra.</p>
+                <div><input type="email" id="emailInput" placeholder="E-mail-cím" autocomplete="username" required autofocus class="w-full bg-slate-800 text-white text-sm border border-slate-700 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 transition"></div>
+                <div><input type="password" id="passwordInput" placeholder="Jelszó" autocomplete="current-password" required class="w-full bg-slate-800 text-white text-sm border border-slate-700 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 transition"></div>
+                <button id="loginButton" type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm py-2.5 rounded-xl transition shadow-lg shadow-indigo-600/30">Belépés</button>
+                <p id="loginError" role="alert" class="text-rose-400 text-xs hidden font-medium"></p>
             </form>
         </div>
     </div>
@@ -580,39 +581,57 @@
         </main>
     </div>
 
-   const DASHBOARD_PASSWORD = "fpk2026";
+    <script>
+        let currentAuthUserId = null;
 
-        function checkAuth() {
-            if (sessionStorage.getItem('dashboard_authenticated') === 'true') {
-                document.getElementById('loginScreen').classList.add('hidden');
-                document.getElementById('dashboardApp').classList.remove('hidden');
-                switchTab('stores');
-                loadAllData();
-            } else {
-                document.getElementById('loginScreen').classList.remove('hidden');
-                document.getElementById('dashboardApp').classList.add('hidden');
-            }
-        }
-
-        function handleLogin(e) {
-            e.preventDefault();
-            const inputVal = document.getElementById('passwordInput').value;
+        function showLoginError(message) {
             const errorElem = document.getElementById('loginError');
+            errorElem.textContent = message;
+            errorElem.classList.remove('hidden');
+        }
 
-            if (inputVal === DASHBOARD_PASSWORD) {
-                sessionStorage.setItem('dashboard_authenticated', 'true');
-                errorElem.classList.add('hidden');
-                checkAuth();
-            } else {
-                errorElem.classList.remove('hidden');
-                document.getElementById('passwordInput').value = '';
-                document.getElementById('passwordInput').focus();
+        function updateAuthUI(session) {
+            const userId = session?.user?.id || null;
+            document.getElementById('loginScreen').classList.toggle('hidden', Boolean(userId));
+            document.getElementById('dashboardApp').classList.toggle('hidden', !userId);
+            if (!userId) {
+                currentAuthUserId = null;
+                return;
+            }
+            if (userId === currentAuthUserId) return;
+
+            currentAuthUserId = userId;
+            switchTab('stores');
+            loadAllData();
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('emailInput').value.trim();
+            const passwordInput = document.getElementById('passwordInput');
+            const errorElem = document.getElementById('loginError');
+            errorElem.classList.add('hidden');
+
+            try {
+                const { error } = await supabaseClient.auth.signInWithPassword({
+                    email,
+                    password: passwordInput.value
+                });
+                if (error) throw error;
+            } catch (error) {
+                showLoginError(error instanceof Error ? error.message : "Nem sikerült bejelentkezni.");
+                passwordInput.value = '';
+                passwordInput.focus();
             }
         }
 
-        function logout() {
-            sessionStorage.removeItem('dashboard_authenticated');
-            location.reload();
+        async function logout() {
+            try {
+                const { error } = await supabaseClient.auth.signOut();
+                if (error) throw error;
+            } catch (error) {
+                alert("Nem sikerült kijelentkezni: " + (error instanceof Error ? error.message : "Ismeretlen hiba."));
+            }
         }
 
         function switchTab(tabName) {
@@ -661,7 +680,7 @@
         }
 
         const SUPABASE_URL = "https://esbezhdyplpqumgrgmtv.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYmV6aGR5cGxwcXVtZ3JnbXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyMDkyNTUsImV4cCI6MjEwODc4NTI1NX0.l4LH6uC0YRMLr4N-GlQqI_kEp6piV1zLTk2jLG4jBL0";
+        const SUPABASE_ANON_KEY = "sb_publishable_oujEnej8g6Av0mVn2n7Ygw_5G-gMTrF";
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let globalTransactions = [];
@@ -674,7 +693,14 @@
         let currentSortDirection = 'desc';
 
         window.addEventListener('DOMContentLoaded', () => {
-            checkAuth();
+            if (SUPABASE_ANON_KEY === "******") {
+                document.getElementById('loginButton').disabled = true;
+                showLoginError("Állítsd be a Supabase publikus (anon/publishable) kulcsát az index.html fájlban.");
+            } else {
+                supabaseClient.auth.onAuthStateChange((_event, session) => {
+                    queueMicrotask(() => updateAuthUI(session));
+                });
+            }
             document.getElementById('dayModal').addEventListener('click', function(e) { if(e.target === this) closeDayModal(); });
             document.getElementById('sellerMinModal').addEventListener('click', function(e) { if(e.target === this) closeSellerMinModal(); });
         });
@@ -1649,7 +1675,7 @@
                 if (!summaryMap[key]) { summaryMap[key] = { honap: t.honap, bolt: t.bolt, stores: new Set([t.bolt]), ertekesito: cleanSeller, count: 0, acq: 0, acq_hs: 0, acq_tablet: 0, huseg: 0, fix: 0, soho: 0, acq_pont: 0, ret_pont: 0, tartozek: 0, tartozek_db: 0, pont: 0 }; }
                 if (t.bolt) summaryMap[key].stores.add(t.bolt);
                 summaryMap[key].count += 1; summaryMap[key].acq += (t.acq_db || 0); summaryMap[key].acq_hs += (t.acq_hs || 0); summaryMap[key].acq_tablet += (t.acq_tablet || 0); summaryMap[key].huseg += (t.huseg_db || 0); summaryMap[key].fix += (t.fix_db || 0);
-                if (t.szegmens && t.szegmens.toLowerCase() === 'soho') && t.acq_db > 0) { summaryMap[key].soho += (t.acq_db || 1); }
+                if (t.szegmens && t.szegmens.toLowerCase() === 'soho' && t.acq_db > 0) { summaryMap[key].soho += (t.acq_db || 1); }
                 summaryMap[key].acq_pont += (t.acq_pont || 0); summaryMap[key].ret_pont += (t.ret_pont || 0); summaryMap[key].pont += (t.osszpont || 0);
             });
             filteredAcc.forEach(a => {
