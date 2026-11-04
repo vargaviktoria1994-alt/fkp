@@ -166,6 +166,14 @@
                             <h4 class="text-xs font-bold text-amber-300 uppercase tracking-wider border-b border-slate-700/60 pb-2.5 mb-2">Összpont</h4>
                             <div class="relative w-full flex-1 min-h-[250px]"><canvas id="monthlyTotalPointsChart"></canvas></div>
                         </div>
+                        <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
+                            <h4 class="text-xs font-bold text-pink-300 uppercase tracking-wider border-b border-slate-700/60 pb-2.5 mb-2">Tartozék összeg (Ft)</h4>
+                            <div class="relative w-full flex-1 min-h-[250px]"><canvas id="monthlyAccessoriesAmountChart"></canvas></div>
+                        </div>
+                        <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
+                            <h4 class="text-xs font-bold text-cyan-300 uppercase tracking-wider border-b border-slate-700/60 pb-2.5 mb-2">Tartozék darab (db)</h4>
+                            <div class="relative w-full flex-1 min-h-[250px]"><canvas id="monthlyAccessoriesCountChart"></canvas></div>
+                        </div>
                     </div>
                 </section>
 
@@ -1336,16 +1344,31 @@
                 transaction.bolt &&
                 transaction.bolt !== 'FPK011'
             );
+            const monthAccessories = globalAccessories.filter(accessory =>
+                accessory.honap === selectedMonth &&
+                accessory.bolt &&
+                accessory.bolt !== 'FPK011'
+            );
             const storePerformance = new Map();
             monthTransactions.forEach(transaction => {
                 const store = transaction.bolt;
                 const totals = storePerformance.get(store) || {
-                    acq_db: 0, huseg_db: 0, fix_db: 0,
-                    acq_pont: 0, ret_pont: 0, osszpont: 0
+                    acq_db: 0, huseg_db: 0, fix_db: 0, acq_pont: 0, ret_pont: 0, osszpont: 0,
+                    brutto_ertek: 0, darabszam: 0
                 };
                 ['acq_db', 'huseg_db', 'fix_db', 'acq_pont', 'ret_pont', 'osszpont'].forEach(key => {
                     totals[key] += Number(transaction[key]) || 0;
                 });
+                storePerformance.set(store, totals);
+            });
+            monthAccessories.forEach(accessory => {
+                const store = accessory.bolt;
+                const totals = storePerformance.get(store) || {
+                    acq_db: 0, huseg_db: 0, fix_db: 0, acq_pont: 0, ret_pont: 0, osszpont: 0,
+                    brutto_ertek: 0, darabszam: 0
+                };
+                totals.brutto_ertek += Number(accessory.brutto_ertek) || 0;
+                totals.darabszam += Number(accessory.darabszam) || 0;
                 storePerformance.set(store, totals);
             });
             const stores = [...storePerformance.keys()]
@@ -1383,16 +1406,19 @@
                 { key: 'fix_db', canvas: 'monthlyFixChart', color: '#c084fc' },
                 { key: 'acq_pont', canvas: 'monthlyAcqPointsChart', color: '#7dd3fc', isInt: false },
                 { key: 'ret_pont', canvas: 'monthlyRetentionPointsChart', color: '#5eead4', isInt: false },
-                { key: 'osszpont', canvas: 'monthlyTotalPointsChart', color: '#fcd34d', isInt: false }
+                { key: 'osszpont', canvas: 'monthlyTotalPointsChart', color: '#fcd34d', isInt: false },
+                { key: 'brutto_ertek', canvas: 'monthlyAccessoriesAmountChart', color: '#f9a8d4', source: 'accessories', dateField: 'teljesites_datuma', isCurrency: true },
+                { key: 'darabszam', canvas: 'monthlyAccessoriesCountChart', color: '#67e8f9', source: 'accessories', dateField: 'teljesites_datuma' }
             ];
             const palette = ['#818cf8', '#34d399', '#fbbf24', '#f472b6', '#22d3ee'];
 
             metrics.forEach(metric => {
                 const datasets = series.map((item, index) => {
-                    const relevantTransactions = monthTransactions.filter(transaction => !item.store || transaction.bolt === item.store);
+                    const sourceData = metric.source === 'accessories' ? monthAccessories : monthTransactions;
+                    const relevantTransactions = sourceData.filter(transaction => !item.store || transaction.bolt === item.store);
                     const dailyValues = Array(daysInMonth).fill(0);
                     relevantTransactions.forEach(transaction => {
-                        const dateParts = String(transaction.szerzodes_datuma || '').split('-');
+                        const dateParts = String(transaction[metric.dateField || 'szerzodes_datuma'] || '').split('-');
                         const day = Number(dateParts[2]);
                         if (dateParts.length === 3 && Number.isInteger(day) && day >= 1 && day <= daysInMonth) {
                             dailyValues[day - 1] += Number(transaction[metric.key]) || 0;
@@ -1420,12 +1446,26 @@
                         maintainAspectRatio: false,
                         interaction: { mode: 'index', intersect: false },
                         plugins: {
-                            legend: { display: true, labels: { color: '#cbd5e1', font: { size: 9 }, boxWidth: 10 } }
-                        },
-                        scales: {
-                            x: { grid: { color: 'rgba(51, 65, 85, 0.25)' }, ticks: { color: '#94a3b8', font: { size: 9 }, maxTicksLimit: 16 } },
-                            y: { beginAtZero: true, grid: { color: 'rgba(51, 65, 85, 0.25)' }, ticks: { color: '#94a3b8', precision: metric.isInt === false ? 1 : 0, font: { size: 9 } } }
+                        legend: { display: true, labels: { color: '#cbd5e1', font: { size: 9 }, boxWidth: 10 } },
+                        tooltip: {
+                            callbacks: {
+                                label: context => `${context.dataset.label}: ${Number(context.parsed.y).toLocaleString('hu-HU')}${metric.isCurrency ? ' Ft' : metric.isInt === false ? '' : ' db'}`
+                            }
                         }
+                    },
+                    scales: {
+                        x: { grid: { color: 'rgba(51, 65, 85, 0.25)' }, ticks: { color: '#94a3b8', font: { size: 9 }, maxTicksLimit: 16 } },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(51, 65, 85, 0.25)' },
+                            ticks: {
+                                color: '#94a3b8',
+                                precision: metric.isCurrency || metric.isInt === false ? 1 : 0,
+                                font: { size: 9 },
+                                callback: value => `${Number(value).toLocaleString('hu-HU')}${metric.isCurrency ? ' Ft' : ''}`
+                            }
+                        }
+                    }
                     }
                 });
             });
