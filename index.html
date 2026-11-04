@@ -1544,7 +1544,6 @@
         function updateSellerMonthlyPerformanceCharts() {
             const selectedMonth = document.getElementById('sellerPerformanceChartMonth').value;
             const selectedStore = document.getElementById('filterStore').value;
-            const selectedSeller = document.getElementById('filterSeller').value;
             const chartGrid = document.getElementById('sellerPerformanceChartGrid');
             const emptyMessage = document.getElementById('sellerPerformanceChartEmpty');
             const sellerTotals = new Map();
@@ -1569,7 +1568,7 @@
                 if (transaction.honap !== selectedMonth || transaction.bolt === 'FPK011' ||
                     (selectedStore !== 'ALL' && transaction.bolt !== selectedStore)) return;
                 const seller = String(transaction.ertekesito || '').trim().replace(/\s+/g, ' ');
-                if (!seller || (selectedSeller !== 'ALL' && seller !== selectedSeller)) return;
+                if (!seller) return;
                 const totals = ensureSeller(seller);
                 ['acq_db', 'huseg_db', 'fix_db', 'acq_pont', 'ret_pont', 'osszpont'].forEach(key => {
                     totals[key] += Number(transaction[key]) || 0;
@@ -1580,15 +1579,13 @@
                 if (accessory.honap !== selectedMonth || accessory.bolt === 'FPK011' ||
                     (selectedStore !== 'ALL' && accessory.bolt !== selectedStore)) return;
                 const seller = String(accessory.ertekesito || '').trim().replace(/\s+/g, ' ');
-                if (!seller || (selectedSeller !== 'ALL' && seller !== selectedSeller)) return;
+                if (!seller) return;
                 const totals = ensureSeller(seller);
                 totals.brutto_ertek += Number(accessory.brutto_ertek) || 0;
                 totals.darabszam += Number(accessory.darabszam) || 0;
             });
 
-            const sellers = [...sellerTotals.keys()]
-                .filter(seller => metricDefinitions.some(metric => sellerTotals.get(seller)[metric.key] > 0))
-                .sort((a, b) => a.localeCompare(b, 'hu'));
+            const sellers = [...sellerTotals.keys()];
             if (!selectedMonth || sellers.length === 0) {
                 chartGrid.classList.add('hidden');
                 emptyMessage.classList.remove('hidden');
@@ -1600,7 +1597,10 @@
             emptyMessage.classList.add('hidden');
 
             metricDefinitions.forEach(metric => {
-                const metricSellers = sellers.filter(seller => sellerTotals.get(seller)[metric.key] > 0);
+                const metricSellers = [...sellers].sort((a, b) =>
+                    sellerTotals.get(b)[metric.key] - sellerTotals.get(a)[metric.key] ||
+                    a.localeCompare(b, 'hu')
+                );
                 if (sellerMonthlyPerformanceCharts[metric.canvas]) sellerMonthlyPerformanceCharts[metric.canvas].destroy();
                 sellerMonthlyPerformanceCharts[metric.canvas] = new Chart(document.getElementById(metric.canvas), {
                     type: 'bar',
