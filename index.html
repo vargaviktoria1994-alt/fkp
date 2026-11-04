@@ -1005,7 +1005,7 @@
             { key: 'betero_db', label: 'Betérő Ügyfél', isInt: true, color: 'text-cyan-400' }
         ];
 
-function fetchBoxData(selectedMonth, selectedStore, metricKey, forceStatic = false) {
+        function fetchBoxData(selectedMonth, selectedStore, metricKey, forceStatic = false) {
             const filteredCPR = globalTransactions.filter(t => (selectedMonth === 'ALL' || t.honap === selectedMonth) && (selectedStore === 'ALL' || t.bolt === selectedStore));
             const filteredAcc = globalAccessories.filter(a => (selectedMonth === 'ALL' || a.honap === selectedMonth) && (selectedStore === 'ALL' || a.bolt === selectedStore));
             const filteredFootfall = globalFootfall.filter(f => (selectedMonth === 'ALL' || f.honap === selectedMonth) && (selectedStore === 'ALL' || f.bolt === selectedStore));
