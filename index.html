@@ -138,6 +138,10 @@
                                 <option value="single">Egy kiválasztott üzlet</option>
                             </select>
                             <select id="performanceChartStore" onchange="updateMonthlyPerformanceCharts()" class="hidden bg-slate-900 text-indigo-300 text-[11px] border border-indigo-500/50 rounded px-2 py-1.5 outline-none"></select>
+                            <label class="flex items-center gap-1.5 text-[11px] text-slate-300 cursor-pointer">
+                                <input id="showFootfallPerformanceChart" type="checkbox" onchange="updateMonthlyPerformanceCharts()" class="accent-cyan-400">
+                                Betérő ügyfélszám és napi target
+                            </label>
                         </div>
                     </div>
                     <p id="performanceChartEmpty" class="hidden text-center text-xs text-slate-400 py-8">A kiválasztott hónapban nincs megjeleníthető teljesítési adat.</p>
@@ -173,6 +177,10 @@
                         <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-4 flex flex-col shadow-sm">
                             <h4 class="text-xs font-bold text-cyan-300 uppercase tracking-wider border-b border-slate-700/60 pb-2.5 mb-2">Tartozék darab (db)</h4>
                             <div class="relative w-full flex-1 min-h-[250px]"><canvas id="monthlyAccessoriesCountChart"></canvas></div>
+                        </div>
+                        <div id="footfallPerformanceChartCard" class="hidden bg-slate-900/60 rounded-xl border border-cyan-700/40 p-4 flex flex-col shadow-sm lg:col-span-3">
+                            <h4 class="text-xs font-bold text-cyan-300 uppercase tracking-wider border-b border-slate-700/60 pb-2.5 mb-2">Betérő ügyfélszám és napi target (fő)</h4>
+                            <div class="relative w-full min-h-[250px]"><canvas id="monthlyFootfallChart"></canvas></div>
                         </div>
                     </div>
                 </section>
@@ -560,7 +568,8 @@
                 </div>
                 <div class="space-y-2">
                     <label class="text-xs font-semibold text-slate-300 flex items-center gap-1"><span>📋</span> Másold be ide a táblázat soraidat (Ctrl+C & Ctrl+V):</label>
-                    <textarea id="targetPasteArea" rows="4" placeholder="FPK002	192	108	81	18	1500	3800	500000" class="w-full bg-slate-900 text-slate-200 text-xs font-mono p-3 rounded-xl border border-slate-700 outline-none focus:ring-1 focus:ring-indigo-500"></textarea>
+                    <textarea id="targetPasteArea" rows="4" placeholder="FPK002	192	108	81	18	1500	3800	500000	1200" class="w-full bg-slate-900 text-slate-200 text-xs font-mono p-3 rounded-xl border border-slate-700 outline-none focus:ring-1 focus:ring-indigo-500"></textarea>
+                    <p class="text-[10px] text-slate-500">Oszlopsorrend: Bolt, ACQ, Hűség, FIX, SOHO, ACQ Pont, Reti Pont, Tartozék (Ft), Betérő havi target (fő).</p>
                     <button onclick="processPastedTargets()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">Beillesztett Sorok Feldolgozása & Mentése</button>
                 </div>
                 
@@ -570,11 +579,11 @@
                         <table class="w-full text-left border-collapse text-xs">
                             <thead>
                                 <tr class="bg-slate-900/80 text-slate-400 border-b border-slate-700">
-                                    <th class="p-2">Hónap</th><th class="p-2">Bolt</th><th class="p-2 text-center">ACQ</th><th class="p-2 text-center">Hűség</th><th class="p-2 text-center">FIX</th><th class="p-2 text-center">SOHO</th><th class="p-2 text-center">ACQ Pont</th><th class="p-2 text-center">Reti Pont</th><th class="p-2 text-right">Tartozék (Ft)</th>
+                                    <th class="p-2">Hónap</th><th class="p-2">Bolt</th><th class="p-2 text-center">ACQ</th><th class="p-2 text-center">Hűség</th><th class="p-2 text-center">FIX</th><th class="p-2 text-center">SOHO</th><th class="p-2 text-center">ACQ Pont</th><th class="p-2 text-center">Reti Pont</th><th class="p-2 text-right">Tartozék (Ft)</th><th class="p-2 text-right">Betérő target (fő)</th>
                                 </tr>
                             </thead>
                             <tbody id="targetTableBody" class="divide-y divide-slate-800 text-slate-300 font-medium">
-                                <tr><td colspan="9" class="p-4 text-center text-slate-500">Még nincsenek feltöltött bolti targetek.</td></tr>
+                                <tr><td colspan="10" class="p-4 text-center text-slate-500">Még nincsenek feltöltött bolti targetek.</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -1072,7 +1081,7 @@
             }
             
             const tbody = document.getElementById('targetTableBody');
-            if (globalTargets.length === 0) { tbody.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-slate-500">Még nincsenek feltöltött bolti targetek.</td></tr>'; }
+            if (globalTargets.length === 0) { tbody.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-slate-500">Még nincsenek feltöltött bolti targetek.</td></tr>'; }
             else {
                 tbody.innerHTML = globalTargets.map(t => `
                     <tr class="hover:bg-slate-700/20 transition">
@@ -1081,6 +1090,7 @@
                         <td class="p-2.5 text-center text-purple-300">${t.target_fix_db || 0}</td><td class="p-2.5 text-center text-amber-300">${t.target_soho_db || 0}</td>
                         <td class="p-2.5 text-center text-sky-400">${t.target_acq_pont || 0}</td><td class="p-2.5 text-center text-teal-400">${t.target_ret_pont || 0}</td>
                         <td class="p-2.5 text-right font-mono text-pink-300">${(t.target_tartozek_ft || 0).toLocaleString('hu-HU')} Ft</td>
+                        <td class="p-2.5 text-right font-mono text-cyan-300">${Number(t.target_betero_db || 0).toLocaleString('hu-HU')}</td>
                     </tr>
                 `).join('');
             }
@@ -1171,7 +1181,9 @@
                 fix_db: relevantTargets.reduce((a, b) => a + (b.target_fix_db || 0), 0),
                 soho_db: relevantTargets.reduce((a, b) => a + (b.target_soho_db || 0), 0),
                 tartozek_ft: relevantTargets.reduce((a, b) => a + (b.target_tartozek_ft || 0), 0),
-                betero_db: 0
+                betero_db: relevantTargets
+                    .filter(target => target.bolt !== 'FPK011')
+                    .reduce((a, b) => a + (Number(b.target_betero_db) || 0), 0)
             };
 
             let currentYear = 2026; let currentMonthIdx = 9;
@@ -1274,7 +1286,15 @@
                                 if (p.length === 3 && parseInt(p[2], 10) < evalCurrentDay) accSum += (Number(a.brutto_ertek) || 0);
                             }
                         });
-                    } else if (metricKey !== 'betero_db') {
+                    } else if (metricKey === 'betero_db') {
+                        const mFootfall = globalFootfall.filter(f => f.honap === selectedMonth && (storeCode === 'ALL' || f.bolt === storeCode));
+                        mFootfall.forEach(f => {
+                            if (f.datum) {
+                                const p = String(f.datum).split('-');
+                                if (p.length === 3 && parseInt(p[2], 10) < evalCurrentDay) accSum += Number(f.betero_db) || 0;
+                            }
+                        });
+                    } else {
                         const mCpr = globalTransactions.filter(t => t.honap === selectedMonth && (storeCode === 'ALL' || t.bolt === storeCode));
                         mCpr.forEach(t => {
                             if (t.szerzodes_datuma) {
@@ -1329,7 +1349,8 @@
                 if (selectedStore !== 'ALL') {
                     storeDailyTargetMap = getStoreDailyTargets(selectedStore, currentMetricTarget);
                 } else {
-                    const allStoreCodes = [...new Set(globalTargets.filter(t => selectedMonth === 'ALL' || t.honap === selectedMonth).map(t => t.bolt))].filter(b => b !== 'ALL');
+                    const allStoreCodes = [...new Set(globalTargets.filter(t => selectedMonth === 'ALL' || t.honap === selectedMonth).map(t => t.bolt))]
+                        .filter(b => b !== 'ALL' && (metricKey !== 'betero_db' || b !== 'FPK011'));
                     for (let d = 1; d <= daysInMonth; d++) storeDailyTargetMap[d] = 0;
                     allStoreCodes.forEach(bCode => {
                         const bObj = globalTargets.find(t => (selectedMonth === 'ALL' || t.honap === selectedMonth) && t.bolt === bCode);
@@ -1429,23 +1450,49 @@
                 accessory.bolt &&
                 accessory.bolt !== 'FPK011'
             );
+            const showFootfallChart = document.getElementById('showFootfallPerformanceChart').checked;
+            const monthFootfall = showFootfallChart ? globalFootfall.filter(record =>
+                record.honap === selectedMonth &&
+                record.bolt &&
+                record.bolt !== 'FPK011'
+            ) : [];
             const storePerformance = new Map();
             monthTransactions.forEach(transaction => {
                 const store = transaction.bolt;
                 const totals = storePerformance.get(store) || {
                     acq_db: 0, huseg_db: 0, fix_db: 0, acq_pont: 0, ret_pont: 0, osszpont: 0,
-                    brutto_ertek: 0, darabszam: 0
+                    brutto_ertek: 0, darabszam: 0, betero_db: 0, betero_target: 0
                 };
                 ['acq_db', 'huseg_db', 'fix_db', 'acq_pont', 'ret_pont', 'osszpont'].forEach(key => {
                     totals[key] += Number(transaction[key]) || 0;
                 });
                 storePerformance.set(store, totals);
             });
+            monthFootfall.forEach(record => {
+                const totals = storePerformance.get(record.bolt) || {
+                    acq_db: 0, huseg_db: 0, fix_db: 0, acq_pont: 0, ret_pont: 0, osszpont: 0,
+                    brutto_ertek: 0, darabszam: 0, betero_db: 0, betero_target: 0
+                };
+                totals.betero_db += Number(record.betero_db) || 0;
+                storePerformance.set(record.bolt, totals);
+            });
+            if (showFootfallChart) {
+                globalTargets
+                    .filter(target => target.honap === selectedMonth && target.bolt !== 'FPK011' && Number(target.target_betero_db) > 0)
+                    .forEach(target => {
+                        const totals = storePerformance.get(target.bolt) || {
+                            acq_db: 0, huseg_db: 0, fix_db: 0, acq_pont: 0, ret_pont: 0, osszpont: 0,
+                            brutto_ertek: 0, darabszam: 0, betero_db: 0, betero_target: 0
+                        };
+                        totals.betero_target += Number(target.target_betero_db) || 0;
+                        storePerformance.set(target.bolt, totals);
+                    });
+            }
             monthAccessories.forEach(accessory => {
                 const store = accessory.bolt;
                 const totals = storePerformance.get(store) || {
                     acq_db: 0, huseg_db: 0, fix_db: 0, acq_pont: 0, ret_pont: 0, osszpont: 0,
-                    brutto_ertek: 0, darabszam: 0
+                    brutto_ertek: 0, darabszam: 0, betero_db: 0, betero_target: 0
                 };
                 totals.brutto_ertek += Number(accessory.brutto_ertek) || 0;
                 totals.darabszam += Number(accessory.darabszam) || 0;
@@ -1460,6 +1507,7 @@
                 emptyMessage.classList.remove('hidden');
                 Object.values(monthlyPerformanceCharts).forEach(chart => chart.destroy());
                 Object.keys(monthlyPerformanceCharts).forEach(canvasId => delete monthlyPerformanceCharts[canvasId]);
+                document.getElementById('footfallPerformanceChartCard').classList.add('hidden');
                 return;
             }
             chartGrid.classList.remove('hidden');
@@ -1496,6 +1544,8 @@
                 { key: 'darabszam', canvas: 'monthlyAccessoriesCountChart', color: '#67e8f9', source: 'accessories', dateField: 'teljesites_datuma' }
             ];
             const palette = ['#818cf8', '#34d399', '#fbbf24', '#f472b6', '#22d3ee'];
+            const footfallChartCard = document.getElementById('footfallPerformanceChartCard');
+            footfallChartCard.classList.toggle('hidden', !showFootfallChart);
 
             metrics.forEach(metric => {
                 const datasets = series.map((item, index) => {
@@ -1561,6 +1611,88 @@
                     }
                 });
             });
+
+            if (showFootfallChart) {
+                const footfallDatasets = [];
+                series.forEach((item, index) => {
+                    const storeCode = item.store || 'ALL';
+                    const footfallData = monthFootfall.filter(record => !item.store || record.bolt === item.store);
+                    const dailyActuals = Array(daysInMonth).fill(0);
+                    let hasCurrentDayData = false;
+                    footfallData.forEach(record => {
+                        const recordDate = String(record.datum || '');
+                        const dateParts = recordDate.split('-');
+                        const day = Number(dateParts[2]);
+                        if (dateParts.length === 3 && Number.isInteger(day) && day >= 1 && day <= daysInMonth) {
+                            dailyActuals[day - 1] += Number(record.betero_db) || 0;
+                            if (recordDate === todayDate) hasCurrentDayData = true;
+                        }
+                    });
+                    if (isCurrentMonth) {
+                        dailyActuals.fill(null, chartMonthData.currentDay);
+                        if (!hasCurrentDayData) dailyActuals[chartMonthData.currentDay - 1] = null;
+                    }
+
+                    const dailyTargets = fetchBoxData(selectedMonth, storeCode, 'betero_db', true).storeDailyTargetMap;
+                    const targetValues = Array.from({ length: daysInMonth }, (_, dayIndex) =>
+                        dailyTargets[dayIndex + 1] || 0
+                    );
+                    const color = mode === 'network' ? '#22d3ee' : palette[index % palette.length];
+                    footfallDatasets.push(
+                        {
+                            label: `${item.label} - Betérő ügyfélszám`,
+                            data: dailyActuals,
+                            borderColor: color,
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            pointRadius: 2,
+                            pointHoverRadius: 4,
+                            tension: 0.25
+                        },
+                        {
+                            label: `${item.label} - Napi target`,
+                            data: targetValues,
+                            borderColor: color,
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            borderDash: [5, 4],
+                            pointRadius: 0,
+                            pointHoverRadius: 3,
+                            tension: 0.25
+                        }
+                    );
+                });
+
+                if (monthlyPerformanceCharts.monthlyFootfallChart) monthlyPerformanceCharts.monthlyFootfallChart.destroy();
+                monthlyPerformanceCharts.monthlyFootfallChart = new Chart(document.getElementById('monthlyFootfallChart'), {
+                    type: 'line',
+                    data: { labels, datasets: footfallDatasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { display: true, labels: { color: '#cbd5e1', font: { size: 9 }, boxWidth: 10 } },
+                            tooltip: {
+                                callbacks: {
+                                    label: context => `${context.dataset.label}: ${Number(context.parsed.y).toLocaleString('hu-HU', { maximumFractionDigits: context.dataset.label.endsWith('Napi target') ? 1 : 0 })} fő`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { grid: { color: 'rgba(51, 65, 85, 0.25)' }, ticks: { color: '#94a3b8', font: { size: 9 }, maxTicksLimit: 16 } },
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(51, 65, 85, 0.25)' },
+                                ticks: { color: '#94a3b8', precision: 0, font: { size: 9 } }
+                            }
+                        }
+                    }
+                });
+            } else if (monthlyPerformanceCharts.monthlyFootfallChart) {
+                monthlyPerformanceCharts.monthlyFootfallChart.destroy();
+                delete monthlyPerformanceCharts.monthlyFootfallChart;
+            }
         }
 
         function updateSellerMonthlyPerformanceCharts() {
@@ -2534,6 +2666,9 @@
 
                     const targetMonth = document.getElementById('targetUploadMonth').value;
                     const cleanNum = (val) => parseFloat(String(val || 0).replace(/\s+/g, '').replace(',', '.')) || 0;
+                    const beteroTargetColumn = Object.keys(colMap).find(name =>
+                        name.includes('betérő') || name.includes('betero')
+                    );
                     const targetPayloads = [];
 
                     for (let i = headerIndex + 1; i < rows.length; i++) {
@@ -2545,10 +2680,14 @@
                         targetPayloads.push({
                             honap: targetMonth, bolt: bolt, target_acq_db: cleanNum(r[colMap['acq']]), target_huseg_db: cleanNum(r[colMap['hűség']] || r[colMap['huseg']]),
                             target_fix_db: cleanNum(r[colMap['fix']]), target_soho_db: cleanNum(r[colMap['soho']]), target_acq_pont: acq_pont, target_ret_pont: ret_pont,
-                            target_pont: acq_pont + ret_pont, target_tartozek_ft: cleanNum(r[colMap['tartozék']] || r[colMap['tartozek']])
+                            target_pont: acq_pont + ret_pont, target_tartozek_ft: cleanNum(r[colMap['tartozék']] || r[colMap['tartozek']]),
+                            ...(beteroTargetColumn ? { target_betero_db: cleanNum(r[colMap[beteroTargetColumn]]) } : {})
                         });
                     }
-                    for (const t of targetPayloads) await supabaseClient.from('havi_targetek').upsert(t, { onConflict: 'honap,bolt' });
+                    for (const t of targetPayloads) {
+                        const { error } = await supabaseClient.from('havi_targetek').upsert(t, { onConflict: 'honap,bolt' });
+                        if (error) throw error;
+                    }
                     await loadTargetsFromSupabase(); updateAllBoxes();
                     alert(`Sikeresen rögzítve ${targetPayloads.length} bolt targetje!`);
                 } catch (err) { alert("Hiba a target Excel feldolgozásakor: " + err.message); }
@@ -2571,13 +2710,22 @@
                     const acq_pont = cleanNum(parts[5]); const ret_pont = cleanNum(parts[6]);
                     targetPayloads.push({
                         honap: targetMonth, bolt: parts[0], target_acq_db: cleanNum(parts[1]), target_huseg_db: cleanNum(parts[2]), target_fix_db: cleanNum(parts[3]),
-                        target_soho_db: cleanNum(parts[4]), target_acq_pont: acq_pont, target_ret_pont: ret_pont, target_pont: acq_pont + ret_pont, target_tartozek_ft: parts[7] ? cleanNum(parts[7]) : 0
+                        target_soho_db: cleanNum(parts[4]), target_acq_pont: acq_pont, target_ret_pont: ret_pont, target_pont: acq_pont + ret_pont, target_tartozek_ft: parts[7] ? cleanNum(parts[7]) : 0,
+                        ...(parts[8] ? { target_betero_db: cleanNum(parts[8]) } : {})
                     });
                 }
             });
 
             if (targetPayloads.length === 0) { alert("Nem sikerült értelmezni a beillesztett sorokat."); return; }
-            for (const t of targetPayloads) await supabaseClient.from('havi_targetek').upsert(t, { onConflict: 'honap,bolt' });
+            try {
+                for (const t of targetPayloads) {
+                    const { error } = await supabaseClient.from('havi_targetek').upsert(t, { onConflict: 'honap,bolt' });
+                    if (error) throw error;
+                }
+            } catch (error) {
+                alert(`Hiba a targetek mentésekor: ${error.message || JSON.stringify(error)}`);
+                return;
+            }
             await loadTargetsFromSupabase(); updateAllBoxes();
             document.getElementById('targetPasteArea').value = '';
             alert(`Sikeresen elmentve ${targetPayloads.length} bolt targetje!`);
