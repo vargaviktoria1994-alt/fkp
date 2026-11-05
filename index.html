@@ -362,6 +362,35 @@
                     <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-600"><span class="text-[11px] text-pink-400 uppercase font-semibold">Tartozék</span><p id="kpiTartozek" class="text-lg font-bold text-pink-400 mt-1">0 Ft</p></div>
                 </div>
 
+                <section class="space-y-3">
+                    <div>
+                        <h3 class="text-sm font-bold text-white">Bolti havi targetek</h3>
+                        <p class="text-[11px] text-slate-400">A teljes havi bolti targetek láthatók; az ünnepnapok és a nyitvatartás nem arányosítják az értékeket. Az értékesítő szűrő a bolti targeteket nem módosítja.</p>
+                    </div>
+                    <div class="overflow-x-auto border border-slate-700/60 rounded-lg">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead class="bg-slate-900/80">
+                                <tr class="text-slate-400 border-b border-slate-700">
+                                    <th class="p-2.5">Hónap</th>
+                                    <th class="p-2.5">Bolt</th>
+                                    <th class="p-2.5 text-right text-indigo-300">ACQ</th>
+                                    <th class="p-2.5 text-right text-emerald-300">Hűség</th>
+                                    <th class="p-2.5 text-right text-purple-300">FIX</th>
+                                    <th class="p-2.5 text-right text-amber-300">SOHO</th>
+                                    <th class="p-2.5 text-right text-sky-300">ACQ pont</th>
+                                    <th class="p-2.5 text-right text-teal-300">RET pont</th>
+                                    <th class="p-2.5 text-right text-amber-300">Összpont</th>
+                                    <th class="p-2.5 text-right text-pink-300">Tartozék</th>
+                                    <th class="p-2.5 text-right text-cyan-300">Betérő</th>
+                                </tr>
+                            </thead>
+                            <tbody id="storeTargetResultsBody" class="divide-y divide-slate-800/80 text-slate-300">
+                                <tr><td colspan="11" class="p-4 text-center text-slate-500">Nincs megjeleníthető havi target.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
                 <!-- EZ CSAK AZ ÉRTÉKESÍTŐK FÜLÖN FOG MEGJELENNI -->
                 <div id="sectionTable" class="space-y-4 mt-4 hidden">
                     <section class="space-y-3">
@@ -938,7 +967,7 @@
             const allMonthsList = [...globalTransactions.map(t => t.honap), ...globalAccessories.map(a => a.honap), ...globalFootfall.map(f => f.honap), ...globalTargets.map(t => t.honap)];
             const rawMonths = [...new Set(allMonthsList)].filter(Boolean);
             const months = sortMonthsChronological(rawMonths);
-            const allStoresList = [...globalTransactions.map(t => t.bolt), ...globalAccessories.map(a => a.bolt)];
+            const allStoresList = [...globalTransactions.map(t => t.bolt), ...globalAccessories.map(a => a.bolt), ...globalTargets.map(t => t.bolt)];
             const stores = [...new Set(allStoresList)].filter(Boolean).sort();
             const allSellersList = [...globalTransactions.map(t => t.ertekesito), ...globalAccessories.map(a => a.ertekesito)];
             const sellers = [...new Set(allSellersList.map(s => String(s || '').trim().replace(/\s+/g, ' ')))].filter(Boolean).sort();
@@ -2299,10 +2328,58 @@
             });
         }
 
+        function renderStoreMonthlyTargets(selectedMonth, selectedStore) {
+            const tbody = document.getElementById('storeTargetResultsBody');
+            const months = sortMonthsChronological([...new Set(
+                globalTargets
+                    .filter(target => (selectedMonth === 'ALL' || target.honap === selectedMonth) &&
+                        (selectedStore === 'ALL' || target.bolt === selectedStore))
+                    .map(target => target.honap)
+            )]);
+            const monthOrder = new Map(months.map((month, index) => [month, index]));
+            const targets = globalTargets
+                .filter(target => (selectedMonth === 'ALL' || target.honap === selectedMonth) &&
+                    (selectedStore === 'ALL' || target.bolt === selectedStore))
+                .sort((a, b) => {
+                    const monthDifference = monthOrder.get(a.honap) - monthOrder.get(b.honap);
+                    return monthDifference || String(a.bolt || '').localeCompare(String(b.bolt || ''), 'hu');
+                });
+
+            if (targets.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="11" class="p-4 text-center text-slate-500">Nincs target a kiválasztott hónaphoz és üzlethez.</td></tr>';
+                return;
+            }
+
+            const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[char]);
+            const number = value => Number(value || 0);
+            const integer = value => Math.round(number(value)).toLocaleString('hu-HU');
+            const points = value => number(value).toLocaleString('hu-HU', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+            tbody.innerHTML = targets.map(target => {
+                const totalPoints = target.target_pont ?? (number(target.target_acq_pont) + number(target.target_ret_pont));
+                return `<tr class="hover:bg-slate-700/20 transition">
+                    <td class="p-2.5 text-slate-400">${escapeHtml(target.honap)}</td>
+                    <td class="p-2.5"><span class="px-2 py-0.5 bg-slate-800 text-indigo-300 font-bold rounded">${escapeHtml(target.bolt)}</span></td>
+                    <td class="p-2.5 text-right font-mono text-indigo-300">${integer(target.target_acq_db)}</td>
+                    <td class="p-2.5 text-right font-mono text-emerald-300">${integer(target.target_huseg_db)}</td>
+                    <td class="p-2.5 text-right font-mono text-purple-300">${integer(target.target_fix_db)}</td>
+                    <td class="p-2.5 text-right font-mono text-amber-300">${integer(target.target_soho_db)}</td>
+                    <td class="p-2.5 text-right font-mono text-sky-300">${points(target.target_acq_pont)}</td>
+                    <td class="p-2.5 text-right font-mono text-teal-300">${points(target.target_ret_pont)}</td>
+                    <td class="p-2.5 text-right font-mono text-amber-300">${points(totalPoints)}</td>
+                    <td class="p-2.5 text-right font-mono text-pink-300">${integer(target.target_tartozek_ft)} Ft</td>
+                    <td class="p-2.5 text-right font-mono text-cyan-300">${integer(target.target_betero_db)}</td>
+                </tr>`;
+            }).join('');
+        }
+
         function renderData() {
             const selectedMonth = document.getElementById('filterMonth').value;
             const selectedStore = document.getElementById('filterStore').value;
             const selectedSeller = document.getElementById('filterSeller').value;
+            renderStoreMonthlyTargets(selectedMonth, selectedStore);
 
             const filteredCPR = globalTransactions.filter(t => (selectedMonth === 'ALL' || t.honap === selectedMonth) && (selectedStore === 'ALL' || t.bolt === selectedStore) && (selectedSeller === 'ALL' || t.ertekesito === selectedSeller));
             const filteredAcc = globalAccessories.filter(a => (selectedMonth === 'ALL' || a.honap === selectedMonth) && (selectedStore === 'ALL' || a.bolt === selectedStore) && (selectedSeller === 'ALL' || a.ertekesito === selectedSeller));
