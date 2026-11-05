@@ -211,6 +211,7 @@
                                             <th class="py-2 px-2 text-right text-amber-300 font-semibold">Target</th>
                                             <th class="py-2 px-2 text-right text-cyan-300 font-semibold">Tény</th>
                                             <th class="py-2 px-2 text-right">Teljesülés</th>
+                                            <th class="py-2 px-2 text-right">Eltelt idő</th>
                                             <th class="py-2 px-2.5 text-right">Hátra</th>
                                         </tr>
                                     </thead>
@@ -1837,6 +1838,26 @@
             const m = document.getElementById('box1Month').value;
             const s = document.getElementById('box1Store').value;
             const data = fetchBoxData(m, s, null);
+            const now = new Date();
+            const monthNames = ['január', 'február', 'március', 'április', 'május', 'június', 'július', 'augusztus', 'szeptember', 'október', 'november', 'december'];
+            let monthElapsedPct = null;
+            if (m !== 'ALL') {
+                const [yearText, monthName] = m.split(' ');
+                const selectedYear = parseInt(yearText, 10);
+                const selectedMonth = monthNames.indexOf((monthName || '').toLowerCase());
+                if (selectedMonth !== -1 && Number.isFinite(selectedYear)) {
+                    const selectedMonthStart = new Date(selectedYear, selectedMonth, 1);
+                    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                    if (selectedMonthStart < currentMonthStart) {
+                        monthElapsedPct = 100;
+                    } else if (selectedMonthStart.getTime() === currentMonthStart.getTime()) {
+                        const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+                        monthElapsedPct = (now.getDate() / daysInMonth) * 100;
+                    } else {
+                        monthElapsedPct = 0;
+                    }
+                }
+            }
             
             document.getElementById('box1TableBody').innerHTML = metricRows.filter(mr => mr.key !== 'betero_db').map(metric => {
                 const targetVal = data.targets[metric.key] || 0;
@@ -1850,6 +1871,7 @@
                             <td class="py-2 px-2 text-right font-bold text-amber-300 font-mono">${formatVal(targetVal, metric.isCurrency, metric.isInt)}</td>
                             <td class="py-2 px-2 text-right font-bold text-cyan-300 font-mono">${formatVal(actualVal, metric.isCurrency, metric.isInt)}</td>
                             <td class="py-2 px-2 text-right"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold border ${bc}">${pct.toFixed(1)}%</span></td>
+                            <td class="py-2 px-2 text-right text-slate-400 font-mono">${monthElapsedPct === null ? '—' : `${monthElapsedPct.toFixed(1)}%`}</td>
                             <td class="py-2 px-2.5 text-right text-slate-400 font-mono">${formatVal(remVal, metric.isCurrency, metric.isInt)}</td>
                         </tr>`;
             }).join('');
