@@ -1446,7 +1446,7 @@
             updateMonthlyPerformanceCharts();
         }
 
-        function updateMonthlyPerformanceCharts() {
+       function updateMonthlyPerformanceCharts() {
             if (currentDashboardTab === 'sellers') {
                 updateSellerMonthlyPerformanceCharts();
                 return;
@@ -1454,31 +1454,26 @@
             const selectedMonth = document.getElementById('performanceChartMonth').value;
             const chartGrid = document.getElementById('performanceChartGrid');
             const emptyMessage = document.getElementById('performanceChartEmpty');
+            
             const monthTransactions = globalTransactions.filter(transaction =>
-                transaction.honap === selectedMonth &&
-                transaction.bolt &&
-                transaction.bolt !== 'FPK011'
+                transaction.honap === selectedMonth && transaction.bolt && transaction.bolt !== 'FPK011'
             );
             const monthAccessories = globalAccessories.filter(accessory =>
-                accessory.honap === selectedMonth &&
-                accessory.bolt &&
-                accessory.bolt !== 'FPK011'
+                accessory.honap === selectedMonth && accessory.bolt && accessory.bolt !== 'FPK011'
             );
+            
             const showFootfallChart = document.getElementById('showFootfallPerformanceChart').checked;
             const showDailyTargetChart = document.getElementById('showDailyTargetPerformanceChart').checked;
             const showFootfallPerformanceChart = showFootfallChart || showDailyTargetChart;
+            
             const monthFootfall = showFootfallChart ? globalFootfall.filter(record =>
-                record.honap === selectedMonth &&
-                record.bolt &&
-                record.bolt !== 'FPK011'
+                record.honap === selectedMonth && record.bolt && record.bolt !== 'FPK011'
             ) : [];
+            
             const storePerformance = new Map();
             monthTransactions.forEach(transaction => {
                 const store = transaction.bolt;
-                const totals = storePerformance.get(store) || {
-                    acq_db: 0, huseg_db: 0, fix_db: 0, acq_pont: 0, ret_pont: 0, osszpont: 0,
-                    brutto_ertek: 0, darabszam: 0
-                };
+                const totals = storePerformance.get(store) || { acq_db: 0, huseg_db: 0, fix_db: 0, acq_pont: 0, ret_pont: 0, osszpont: 0, brutto_ertek: 0, darabszam: 0 };
                 ['acq_db', 'huseg_db', 'fix_db', 'acq_pont', 'ret_pont', 'osszpont'].forEach(key => {
                     totals[key] += Number(transaction[key]) || 0;
                 });
@@ -1486,17 +1481,16 @@
             });
             monthAccessories.forEach(accessory => {
                 const store = accessory.bolt;
-                const totals = storePerformance.get(store) || {
-                    acq_db: 0, huseg_db: 0, fix_db: 0, acq_pont: 0, ret_pont: 0, osszpont: 0,
-                    brutto_ertek: 0, darabszam: 0
-                };
+                const totals = storePerformance.get(store) || { acq_db: 0, huseg_db: 0, fix_db: 0, acq_pont: 0, ret_pont: 0, osszpont: 0, brutto_ertek: 0, darabszam: 0 };
                 totals.brutto_ertek += Number(accessory.brutto_ertek) || 0;
                 totals.darabszam += Number(accessory.darabszam) || 0;
                 storePerformance.set(store, totals);
             });
+            
             const stores = [...storePerformance.keys()]
                 .filter(store => Object.values(storePerformance.get(store)).some(value => value > 0))
                 .sort();
+                
             const footfallStores = new Set([
                 ...(showFootfallChart ? monthFootfall.map(record => record.bolt) : []),
                 ...(showDailyTargetChart
@@ -1505,7 +1499,6 @@
                         .map(target => target.bolt)
                     : [])
             ]);
-            const chartStores = [...new Set([...stores, ...footfallStores])].sort();
 
             if (!selectedMonth || (stores.length === 0 && (!showFootfallPerformanceChart || footfallStores.size === 0))) {
                 chartGrid.classList.add('hidden');
@@ -1515,6 +1508,7 @@
                 document.getElementById('footfallPerformanceChartCard').classList.add('hidden');
                 return;
             }
+            
             chartGrid.classList.remove('hidden');
             emptyMessage.classList.add('hidden');
 
@@ -1523,26 +1517,29 @@
             storeSelect.classList.toggle('hidden', mode !== 'single');
 
             const previousStore = storeSelect.value;
-            storeSelect.innerHTML = chartStores.map(store => `<option value="${store}">${store}</option>`).join('');
-            storeSelect.value = chartStores.includes(previousStore) ? previousStore : (chartStores[0] || '');
+            storeSelect.innerHTML = stores.map(store => `<option value="${store}">${store}</option>`).join('');
+            storeSelect.value = stores.includes(previousStore) ? previousStore : (stores[0] || '');
             const selectedStore = storeSelect.value;
+            
             const chartMonthData = fetchBoxData(selectedMonth, 'ALL', null, true);
             const daysInMonth = chartMonthData.daysInMonth;
             const today = new Date();
-            const isCurrentMonth = chartMonthData.currentYear === today.getFullYear() &&
-                chartMonthData.currentMonthIdx === today.getMonth();
+            const isCurrentMonth = chartMonthData.currentYear === today.getFullYear() && chartMonthData.currentMonthIdx === today.getMonth();
             const todayDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
             const labels = Array.from({ length: daysInMonth }, (_, index) => `${index + 1}.`);
+            
             const series = mode === 'network'
                 ? [{ label: 'Összes üzlet', store: null }]
                 : mode === 'single'
-                    ? (selectedStore && stores.includes(selectedStore) ? [{ label: selectedStore, store: selectedStore }] : [])
+                    ? (selectedStore ? [{ label: selectedStore, store: selectedStore }] : [])
                     : stores.map(store => ({ label: store, store }));
+                    
             const footfallSeries = mode === 'separate'
-                ? chartStores.map(store => ({ label: store, store }))
-                : mode === 'single'
-                    ? (selectedStore ? [{ label: selectedStore, store: selectedStore }] : [...footfallStores].sort().map(store => ({ label: store, store })))
+                ? [...new Set([...stores, ...footfallStores])].sort().map(store => ({ label: store, store }))
+                : mode === 'single' && !selectedStore
+                    ? [...footfallStores].sort().map(store => ({ label: store, store }))
                     : series;
+                    
             const metrics = [
                 { key: 'acq_db', canvas: 'monthlyAcqChart', color: '#818cf8' },
                 { key: 'huseg_db', canvas: 'monthlyLoyaltyChart', color: '#34d399' },
@@ -1553,10 +1550,12 @@
                 { key: 'brutto_ertek', canvas: 'monthlyAccessoriesAmountChart', color: '#f9a8d4', source: 'accessories', dateField: 'teljesites_datuma', isCurrency: true },
                 { key: 'darabszam', canvas: 'monthlyAccessoriesCountChart', color: '#67e8f9', source: 'accessories', dateField: 'teljesites_datuma' }
             ];
-            const palette = ['#818cf8', '#34d399', '#fbbf24', '#f472b6', '#22d3ee'];
+            
+            const palette = ['#818cf8', '#34d399', '#fbbf24', '#f472b6', '#22d3ee', '#a78bfa', '#f87171', '#38bdf8'];
             const footfallChartCard = document.getElementById('footfallPerformanceChartCard');
             footfallChartCard.classList.toggle('hidden', !showFootfallPerformanceChart);
 
+            // FŐ DIAGRAMOK GENERÁLÁSA (ACQ, Hűség stb.)
             metrics.forEach(metric => {
                 const datasets = series.map((item, index) => {
                     const sourceData = metric.source === 'accessories' ? monthAccessories : monthTransactions;
@@ -1577,6 +1576,7 @@
                         if (!hasCurrentDayData) dailyValues[chartMonthData.currentDay - 1] = null;
                     }
                     if (mode === 'separate' && !dailyValues.some(value => value > 0)) return null;
+                    
                     return {
                         label: item.label,
                         data: dailyValues,
@@ -1589,6 +1589,42 @@
                     };
                 }).filter(Boolean);
 
+                // ÚJ: NAPI TARGET VONALAK HOZZÁADÁSA A FŐ DIAGRAMOKHOZ
+                if (showDailyTargetChart) {
+                    series.forEach((item, index) => {
+                        // Kulcsok fordítása a target adatbázishoz
+                        const targetKey = metric.key === 'osszpont' ? 'pont' : (metric.key === 'brutto_ertek' ? 'tartozek_ft' : metric.key);
+                        
+                        // Darabszámra nincs target, azt kihagyjuk
+                        if (targetKey === 'darabszam') return;
+
+                        const storeCode = item.store || 'ALL';
+                        const boxData = fetchBoxData(selectedMonth, storeCode, targetKey, true);
+                        const dailyTargets = boxData.storeDailyTargetMap;
+                        
+                        if (dailyTargets) {
+                            const targetValues = Array.from({ length: daysInMonth }, (_, dayIndex) => dailyTargets[dayIndex + 1] || 0);
+                            
+                            // Ne rajzoljon 0-s vonalat az üres üzletekhez separate módban
+                            if (mode === 'separate' && !targetValues.some(value => value > 0)) return;
+
+                            datasets.push({
+                                label: `${item.label} - Target`,
+                                data: targetValues,
+                                borderColor: mode !== 'separate' ? '#ef4444' : palette[index % palette.length],
+                                backgroundColor: 'transparent',
+                                borderWidth: 1.5,
+                                borderDash: [5, 4],
+                                pointBackgroundColor: mode !== 'separate' ? '#ef4444' : palette[index % palette.length],
+                                pointBorderColor: mode !== 'separate' ? '#ef4444' : palette[index % palette.length],
+                                pointRadius: 0,
+                                pointHoverRadius: 3,
+                                tension: 0.25
+                            });
+                        }
+                    });
+                }
+
                 if (monthlyPerformanceCharts[metric.canvas]) monthlyPerformanceCharts[metric.canvas].destroy();
                 monthlyPerformanceCharts[metric.canvas] = new Chart(document.getElementById(metric.canvas), {
                     type: 'line',
@@ -1598,35 +1634,37 @@
                         maintainAspectRatio: false,
                         interaction: { mode: 'index', intersect: false },
                         plugins: {
-                        legend: { display: true, labels: { color: '#cbd5e1', font: { size: 9 }, boxWidth: 10 } },
-                        tooltip: {
-                            callbacks: {
-                                label: context => `${context.dataset.label}: ${Number(context.parsed.y).toLocaleString('hu-HU')}${metric.isCurrency ? ' Ft' : metric.isInt === false ? '' : ' db'}`
+                            legend: { display: true, labels: { color: '#cbd5e1', font: { size: 9 }, boxWidth: 10 } },
+                            tooltip: {
+                                callbacks: {
+                                    label: context => `${context.dataset.label}: ${Number(context.parsed.y).toLocaleString('hu-HU')}${metric.isCurrency ? ' Ft' : metric.isInt === false ? '' : ' db'}`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { grid: { color: 'rgba(51, 65, 85, 0.25)' }, ticks: { color: '#94a3b8', font: { size: 9 }, maxTicksLimit: 16 } },
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(51, 65, 85, 0.25)' },
+                                ticks: {
+                                    color: '#94a3b8',
+                                    precision: metric.isCurrency || metric.isInt === false ? 1 : 0,
+                                    font: { size: 9 },
+                                    callback: value => `${Number(value).toLocaleString('hu-HU')}${metric.isCurrency ? ' Ft' : ''}`
+                                }
                             }
                         }
-                    },
-                    scales: {
-                        x: { grid: { color: 'rgba(51, 65, 85, 0.25)' }, ticks: { color: '#94a3b8', font: { size: 9 }, maxTicksLimit: 16 } },
-                        y: {
-                            beginAtZero: true,
-                            grid: { color: 'rgba(51, 65, 85, 0.25)' },
-                            ticks: {
-                                color: '#94a3b8',
-                                precision: metric.isCurrency || metric.isInt === false ? 1 : 0,
-                                font: { size: 9 },
-                                callback: value => `${Number(value).toLocaleString('hu-HU')}${metric.isCurrency ? ' Ft' : ''}`
-                            }
-                        }
-                    }
                     }
                 });
             });
 
+            // BETÉRŐ ÉS ANNAK TARGET DIAGRAMJA
             if (showFootfallPerformanceChart) {
                 const footfallDatasets = [];
                 footfallSeries.forEach((item, index) => {
                     const storeCode = item.store || 'ALL';
                     const datasets = [];
+
                     if (showFootfallChart) {
                         const footfallData = monthFootfall.filter(record => !item.store || record.bolt === item.store);
                         const dailyActuals = Array(daysInMonth).fill(0);
@@ -1644,37 +1682,42 @@
                             dailyActuals.fill(null, chartMonthData.currentDay);
                             if (!hasCurrentDayData) dailyActuals[chartMonthData.currentDay - 1] = null;
                         }
-                        datasets.push({
-                            label: `${item.label} - Betérő ügyfélszám`,
-                            data: dailyActuals,
-                            borderColor: '#ffffff',
-                            backgroundColor: 'transparent',
-                            borderWidth: 2,
-                            pointBackgroundColor: '#ffffff',
-                            pointBorderColor: '#ffffff',
-                            pointRadius: 2,
-                            pointHoverRadius: 4,
-                            tension: 0.25
-                        });
+                        
+                        if (mode !== 'separate' || dailyActuals.some(value => value > 0)) {
+                            datasets.push({
+                                label: `${item.label} - Betérő ügyfélszám`,
+                                data: dailyActuals,
+                                borderColor: mode !== 'separate' ? '#ffffff' : palette[index % palette.length],
+                                backgroundColor: 'transparent',
+                                borderWidth: 2,
+                                pointBackgroundColor: mode !== 'separate' ? '#ffffff' : palette[index % palette.length],
+                                pointBorderColor: mode !== 'separate' ? '#ffffff' : palette[index % palette.length],
+                                pointRadius: 2,
+                                pointHoverRadius: 4,
+                                tension: 0.25
+                            });
+                        }
                     }
+
                     if (showDailyTargetChart) {
                         const dailyTargets = fetchBoxData(selectedMonth, storeCode, 'betero_db', true).storeDailyTargetMap;
-                        const targetValues = Array.from({ length: daysInMonth }, (_, dayIndex) =>
-                            dailyTargets[dayIndex + 1] || 0
-                        );
-                        datasets.push({
-                            label: `${item.label} - Napi target`,
-                            data: targetValues,
-                            borderColor: '#ef4444',
-                            backgroundColor: 'transparent',
-                            borderWidth: 2,
-                            borderDash: [5, 4],
-                            pointBackgroundColor: '#ef4444',
-                            pointBorderColor: '#ef4444',
-                            pointRadius: 0,
-                            pointHoverRadius: 3,
-                            tension: 0.25
-                        });
+                        const targetValues = Array.from({ length: daysInMonth }, (_, dayIndex) => dailyTargets[dayIndex + 1] || 0);
+
+                        if (mode !== 'separate' || targetValues.some(value => value > 0)) {
+                            datasets.push({
+                                label: `${item.label} - Napi target`,
+                                data: targetValues,
+                                borderColor: mode !== 'separate' ? '#ef4444' : palette[index % palette.length],
+                                backgroundColor: 'transparent',
+                                borderWidth: 1.5,
+                                borderDash: [5, 4],
+                                pointBackgroundColor: mode !== 'separate' ? '#ef4444' : palette[index % palette.length],
+                                pointBorderColor: mode !== 'separate' ? '#ef4444' : palette[index % palette.length],
+                                pointRadius: 0,
+                                pointHoverRadius: 3,
+                                tension: 0.25
+                            });
+                        }
                     }
                     footfallDatasets.push(...datasets);
                 });
