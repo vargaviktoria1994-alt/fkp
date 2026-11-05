@@ -1624,8 +1624,10 @@
                                 callbacks: {
                                     label: context => `${Number(context.parsed.y).toLocaleString('hu-HU')}${metric.isCurrency ? ' Ft' : metric.isDecimal ? '' : ' db'}`
                                 }
-                            }
+                            },
+                            sellerBarValueLabels: {}
                         },
+                        layout: { padding: { top: 8 } },
                         scales: {
                             x: {
                                 grid: { display: false },
@@ -1633,6 +1635,7 @@
                             },
                             y: {
                                 beginAtZero: true,
+                                grace: '15%',
                                 grid: { color: 'rgba(51, 65, 85, 0.25)' },
                                 ticks: {
                                     color: '#94a3b8',
@@ -1642,7 +1645,27 @@
                                 }
                             }
                         }
-                    }
+                    },
+                    plugins: [{
+                        id: 'sellerBarValueLabels',
+                        afterDatasetsDraw(chart) {
+                            const { ctx } = chart;
+                            const dataset = chart.data.datasets[0];
+                            const bars = chart.getDatasetMeta(0).data;
+                            ctx.save();
+                            ctx.fillStyle = '#e2e8f0';
+                            ctx.font = '10px sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'bottom';
+                            bars.forEach((bar, index) => {
+                                const value = dataset.data[index];
+                                if (value === null || value === undefined) return;
+                                const suffix = metric.isCurrency ? ' Ft' : metric.isDecimal ? '' : ' db';
+                                ctx.fillText(`${Number(value).toLocaleString('hu-HU')}${suffix}`, bar.x, bar.y - 5);
+                            });
+                            ctx.restore();
+                        }
+                    }]
                 });
             });
         }
