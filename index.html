@@ -1341,19 +1341,28 @@
             }
 
             const dailyActualMap = Array(daysInMonth + 1).fill(0);
+            const dailyActualDataMap = Array(daysInMonth + 1).fill(false);
             if (!forceStatic && metricKey) {
                 if (metricKey === 'tartozek_ft') {
                     filteredAcc.forEach(a => {
                         if (a.teljesites_datuma) {
                             const p = String(a.teljesites_datuma).split('-');
-                            if (p.length === 3 && parseInt(p[2], 10) >= 1 && parseInt(p[2], 10) <= daysInMonth) dailyActualMap[parseInt(p[2], 10)] += (Number(a.brutto_ertek) || 0);
+                            if (p.length === 3 && parseInt(p[2], 10) >= 1 && parseInt(p[2], 10) <= daysInMonth) {
+                                const day = parseInt(p[2], 10);
+                                dailyActualMap[day] += Number(a.brutto_ertek) || 0;
+                                dailyActualDataMap[day] = true;
+                            }
                         }
                     });
                 } else if (metricKey === 'betero_db') {
                     filteredFootfall.forEach(f => {
                         if (f.datum) {
                             const p = String(f.datum).split('-');
-                            if (p.length === 3 && parseInt(p[2], 10) >= 1 && parseInt(p[2], 10) <= daysInMonth) dailyActualMap[parseInt(p[2], 10)] += (f.betero_db || 0);
+                            if (p.length === 3 && parseInt(p[2], 10) >= 1 && parseInt(p[2], 10) <= daysInMonth) {
+                                const day = parseInt(p[2], 10);
+                                dailyActualMap[day] += f.betero_db || 0;
+                                dailyActualDataMap[day] = true;
+                            }
                         }
                     });
                 } else {
@@ -1362,6 +1371,7 @@
                             const p = String(t.szerzodes_datuma).split('-');
                             if (p.length === 3 && parseInt(p[2], 10) >= 1 && parseInt(p[2], 10) <= daysInMonth) {
                                 const dNum = parseInt(p[2], 10);
+                                dailyActualDataMap[dNum] = true;
                                 if (metricKey === 'pont') dailyActualMap[dNum] += (t.osszpont || 0);
                                 else if (metricKey === 'acq_pont') dailyActualMap[dNum] += (t.acq_pont || 0);
                                 else if (metricKey === 'ret_pont') dailyActualMap[dNum] += (t.ret_pont || 0);
@@ -1375,7 +1385,7 @@
                 }
             }
 
-            return { targets, actuals, daysInMonth, currentDay, currentYear, currentMonthIdx, storeDailyTargetMap, dailyActualMap };
+            return { targets, actuals, daysInMonth, currentDay, currentYear, currentMonthIdx, storeDailyTargetMap, dailyActualMap, dailyActualDataMap };
         }
 
         const formatVal = (v, isCurrency, isInt) => {
@@ -1463,7 +1473,12 @@
             storeSelect.innerHTML = stores.map(store => `<option value="${store}">${store}</option>`).join('');
             storeSelect.value = stores.includes(previousStore) ? previousStore : (stores[0] || '');
             const selectedStore = storeSelect.value;
-            const daysInMonth = fetchBoxData(selectedMonth, 'ALL', null, true).daysInMonth;
+            const chartMonthData = fetchBoxData(selectedMonth, 'ALL', null, true);
+            const daysInMonth = chartMonthData.daysInMonth;
+            const today = new Date();
+            const isCurrentMonth = chartMonthData.currentYear === today.getFullYear() &&
+                chartMonthData.currentMonthIdx === today.getMonth();
+            const todayDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
             const labels = Array.from({ length: daysInMonth }, (_, index) => `${index + 1}.`);
             const series = mode === 'network'
                 ? [{ label: 'Összes üzlet', store: null }]
@@ -1487,13 +1502,20 @@
                     const sourceData = metric.source === 'accessories' ? monthAccessories : monthTransactions;
                     const relevantTransactions = sourceData.filter(transaction => !item.store || transaction.bolt === item.store);
                     const dailyValues = Array(daysInMonth).fill(0);
+                    let hasCurrentDayData = false;
                     relevantTransactions.forEach(transaction => {
-                        const dateParts = String(transaction[metric.dateField || 'szerzodes_datuma'] || '').split('-');
+                        const transactionDate = String(transaction[metric.dateField || 'szerzodes_datuma'] || '');
+                        const dateParts = transactionDate.split('-');
                         const day = Number(dateParts[2]);
                         if (dateParts.length === 3 && Number.isInteger(day) && day >= 1 && day <= daysInMonth) {
                             dailyValues[day - 1] += Number(transaction[metric.key]) || 0;
+                            if (transactionDate === todayDate) hasCurrentDayData = true;
                         }
                     });
+                    if (isCurrentMonth) {
+                        dailyValues.fill(null, chartMonthData.currentDay);
+                        if (!hasCurrentDayData) dailyValues[chartMonthData.currentDay - 1] = null;
+                    }
                     if (mode === 'separate' && !dailyValues.some(value => value > 0)) return null;
                     return {
                         label: item.label,
@@ -1708,6 +1730,9 @@
             const data1 = fetchBoxData(m, s, m1);
             let data2 = null;
             if (m2 !== 'none') data2 = fetchBoxData(m, s, m2);
+            const now = new Date();
+            const isCurrentMonth = data1.currentYear === now.getFullYear() &&
+                data1.currentMonthIdx === now.getMonth();
 
             const labels = [];
             const act1 = []; const tar1 = []; const act2 = [];
@@ -1715,12 +1740,13 @@
             for (let d = 1; d <= data1.daysInMonth; d++) {
                 labels.push(`${d}.`);
                 tar1.push(Number((data1.storeDailyTargetMap[d] || 0).toFixed(1)));
-                if (d <= data1.currentDay) {
-                    act1.push(Number((data1.dailyActualMap[d] || 0).toFixed(1)));
-                    if (data2) act2.push(Number((data2.dailyActualMap[d] || 0).toFixed(1)));
-                } else {
-                    act1.push(null);
-                    if (data2) act2.push(null);
+                const hasActual1 = d < data1.currentDay ||
+                    (d === data1.currentDay && (!isCurrentMonth || data1.dailyActualDataMap[d]));
+                act1.push(hasActual1 ? Number((data1.dailyActualMap[d] || 0).toFixed(1)) : null);
+                if (data2) {
+                    const hasActual2 = d < data2.currentDay ||
+                        (d === data2.currentDay && (!isCurrentMonth || data2.dailyActualDataMap[d]));
+                    act2.push(hasActual2 ? Number((data2.dailyActualMap[d] || 0).toFixed(1)) : null);
                 }
             }
 
