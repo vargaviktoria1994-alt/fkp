@@ -140,7 +140,11 @@
                             <select id="performanceChartStore" onchange="updateMonthlyPerformanceCharts()" class="hidden bg-slate-900 text-indigo-300 text-[11px] border border-indigo-500/50 rounded px-2 py-1.5 outline-none"></select>
                             <label class="flex items-center gap-1.5 text-[11px] text-slate-300 cursor-pointer">
                                 <input id="showFootfallPerformanceChart" type="checkbox" onchange="updateMonthlyPerformanceCharts()" class="accent-cyan-400">
-                                Betérő ügyfélszám és napi target
+                                Betérő ügyfélszám
+                            </label>
+                            <label class="flex items-center gap-1.5 text-[11px] text-slate-300 cursor-pointer">
+                                <input id="showDailyTargetPerformanceChart" type="checkbox" onchange="updateMonthlyPerformanceCharts()" class="accent-cyan-400">
+                                Napi target
                             </label>
                         </div>
                     </div>
@@ -1451,6 +1455,8 @@
                 accessory.bolt !== 'FPK011'
             );
             const showFootfallChart = document.getElementById('showFootfallPerformanceChart').checked;
+            const showDailyTargetChart = document.getElementById('showDailyTargetPerformanceChart').checked;
+            const showFootfallPerformanceChart = showFootfallChart || showDailyTargetChart;
             const monthFootfall = showFootfallChart ? globalFootfall.filter(record =>
                 record.honap === selectedMonth &&
                 record.bolt &&
@@ -1476,7 +1482,7 @@
                 totals.betero_db += Number(record.betero_db) || 0;
                 storePerformance.set(record.bolt, totals);
             });
-            if (showFootfallChart) {
+            if (showDailyTargetChart) {
                 globalTargets
                     .filter(target => target.honap === selectedMonth && target.bolt !== 'FPK011' && Number(target.target_betero_db) > 0)
                     .forEach(target => {
@@ -1545,7 +1551,7 @@
             ];
             const palette = ['#818cf8', '#34d399', '#fbbf24', '#f472b6', '#22d3ee'];
             const footfallChartCard = document.getElementById('footfallPerformanceChartCard');
-            footfallChartCard.classList.toggle('hidden', !showFootfallChart);
+            footfallChartCard.classList.toggle('hidden', !showFootfallPerformanceChart);
 
             metrics.forEach(metric => {
                 const datasets = series.map((item, index) => {
@@ -1612,34 +1618,30 @@
                 });
             });
 
-            if (showFootfallChart) {
+            if (showFootfallPerformanceChart) {
                 const footfallDatasets = [];
                 series.forEach((item, index) => {
                     const storeCode = item.store || 'ALL';
-                    const footfallData = monthFootfall.filter(record => !item.store || record.bolt === item.store);
-                    const dailyActuals = Array(daysInMonth).fill(0);
-                    let hasCurrentDayData = false;
-                    footfallData.forEach(record => {
-                        const recordDate = String(record.datum || '');
-                        const dateParts = recordDate.split('-');
-                        const day = Number(dateParts[2]);
-                        if (dateParts.length === 3 && Number.isInteger(day) && day >= 1 && day <= daysInMonth) {
-                            dailyActuals[day - 1] += Number(record.betero_db) || 0;
-                            if (recordDate === todayDate) hasCurrentDayData = true;
-                        }
-                    });
-                    if (isCurrentMonth) {
-                        dailyActuals.fill(null, chartMonthData.currentDay);
-                        if (!hasCurrentDayData) dailyActuals[chartMonthData.currentDay - 1] = null;
-                    }
-
-                    const dailyTargets = fetchBoxData(selectedMonth, storeCode, 'betero_db', true).storeDailyTargetMap;
-                    const targetValues = Array.from({ length: daysInMonth }, (_, dayIndex) =>
-                        dailyTargets[dayIndex + 1] || 0
-                    );
+                    const datasets = [];
                     const color = mode === 'network' ? '#22d3ee' : palette[index % palette.length];
-                    footfallDatasets.push(
-                        {
+                    if (showFootfallChart) {
+                        const footfallData = monthFootfall.filter(record => !item.store || record.bolt === item.store);
+                        const dailyActuals = Array(daysInMonth).fill(0);
+                        let hasCurrentDayData = false;
+                        footfallData.forEach(record => {
+                            const recordDate = String(record.datum || '');
+                            const dateParts = recordDate.split('-');
+                            const day = Number(dateParts[2]);
+                            if (dateParts.length === 3 && Number.isInteger(day) && day >= 1 && day <= daysInMonth) {
+                                dailyActuals[day - 1] += Number(record.betero_db) || 0;
+                                if (recordDate === todayDate) hasCurrentDayData = true;
+                            }
+                        });
+                        if (isCurrentMonth) {
+                            dailyActuals.fill(null, chartMonthData.currentDay);
+                            if (!hasCurrentDayData) dailyActuals[chartMonthData.currentDay - 1] = null;
+                        }
+                        datasets.push({
                             label: `${item.label} - Betérő ügyfélszám`,
                             data: dailyActuals,
                             borderColor: color,
@@ -1648,8 +1650,14 @@
                             pointRadius: 2,
                             pointHoverRadius: 4,
                             tension: 0.25
-                        },
-                        {
+                        });
+                    }
+                    if (showDailyTargetChart) {
+                        const dailyTargets = fetchBoxData(selectedMonth, storeCode, 'betero_db', true).storeDailyTargetMap;
+                        const targetValues = Array.from({ length: daysInMonth }, (_, dayIndex) =>
+                            dailyTargets[dayIndex + 1] || 0
+                        );
+                        datasets.push({
                             label: `${item.label} - Napi target`,
                             data: targetValues,
                             borderColor: color,
@@ -1659,8 +1667,9 @@
                             pointRadius: 0,
                             pointHoverRadius: 3,
                             tension: 0.25
-                        }
-                    );
+                        });
+                    }
+                    footfallDatasets.push(...datasets);
                 });
 
                 if (monthlyPerformanceCharts.monthlyFootfallChart) monthlyPerformanceCharts.monthlyFootfallChart.destroy();
