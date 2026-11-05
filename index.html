@@ -33,6 +33,15 @@
         </div>
     </div>
 
+    <div id="accessDeniedScreen" class="fixed inset-0 bg-slate-950 hidden items-center justify-center p-4 z-40">
+        <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl max-w-md w-full text-center shadow-2xl space-y-4">
+            <div class="text-4xl">🔒</div>
+            <h2 class="text-xl font-bold text-white">Nincs dashboard-hozzáférés</h2>
+            <p id="accessDeniedMessage" role="alert" class="text-sm text-slate-400">Kérd meg az adminisztrátort, hogy állítsa be a jogosultságodat.</p>
+            <button onclick="logout()" class="bg-slate-700 hover:bg-rose-950/40 hover:text-rose-400 border border-slate-600 text-slate-200 text-sm font-semibold px-4 py-2 rounded-lg transition">Kilépés</button>
+        </div>
+    </div>
+
     <!-- FELUGRÓ ABLAK: NAPI TARGETEK (BOLT) -->
     <div id="dayModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50 transition-opacity opacity-0 pointer-events-none" style="transition: opacity 0.2s;">
         <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform scale-95 transition-transform" id="dayModalContent" style="transition: transform 0.2s;">
@@ -106,6 +115,7 @@
                     <button id="tabBtnStores" onclick="switchTab('stores')" class="px-4 py-2 rounded-lg text-xs font-semibold transition bg-indigo-600 text-white shadow">🏢 Üzletek</button>
                     <button id="tabBtnSellers" onclick="switchTab('sellers')" class="px-4 py-2 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white">👥 Értékesítők</button>
                     <button id="tabBtnUpload" onclick="switchTab('upload')" class="px-4 py-2 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white">📤 Adatfeltöltés & Admin</button>
+                    <button id="tabBtnAccess" onclick="switchTab('access')" class="hidden px-4 py-2 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white">🔐 Jogosultságok</button>
                 </nav>
                 <button onclick="logout()" class="bg-slate-700 hover:bg-rose-950/40 hover:text-rose-400 border border-slate-600 text-slate-300 text-xs font-semibold px-3 py-2 rounded-lg transition ml-2">🚪 Kilépés</button>
             </div>
@@ -339,7 +349,7 @@
                 <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-700 pb-4">
                     <div>
                         <h2 class="text-lg font-semibold text-white flex items-center gap-2"><span>👥</span> Értékesítési Eredmények</h2>
-                        <p class="text-xs text-slate-400 mt-0.5">Kattints a fejléc oszlopaira a rendezéshez. A ⚠️ ikon jelzi a minimum target elmaradást.</p>
+                        <p class="text-xs text-slate-400 mt-0.5">/p>
                     </div>
                     <div class="flex flex-wrap items-center gap-3">
                         <select id="filterMonth" onchange="renderData()" class="bg-slate-700 text-white text-sm border border-slate-600 rounded-lg px-3 py-2"></select>
@@ -728,10 +738,49 @@
                 </div>
             </section>
         </main>
+        <main id="tabAccess" class="hidden space-y-6">
+            <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-5">
+                <div class="border-b border-slate-700 pb-3">
+                    <h2 class="text-lg font-semibold text-white">Üzletvezetői hozzáférések</h2>
+                    <p class="text-xs text-slate-400 mt-1">Az új fiók meghívó e-mailt kap. A hozzáférés a kiválasztott üzletekre és az Üzletek, illetve Értékesítők fülekre korlátozódik.</p>
+                </div>
+                <form onsubmit="inviteStoreManager(event)" class="grid grid-cols-1 md:grid-cols-[1fr_2fr_auto] gap-3 items-end">
+                    <label class="text-xs text-slate-300 space-y-1">
+                        <span>Új üzletvezető e-mail-címe</span>
+                        <input id="inviteManagerEmail" type="email" required autocomplete="off" class="w-full bg-slate-900 text-white border border-slate-700 rounded-lg px-3 py-2">
+                    </label>
+                    <label class="text-xs text-slate-300 space-y-1">
+                        <span>Látható üzletek (több is választható)</span>
+                        <select id="inviteManagerStores" multiple required size="4" class="w-full bg-slate-900 text-white border border-slate-700 rounded-lg px-3 py-2"></select>
+                    </label>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-lg">Meghívó küldése</button>
+                </form>
+                <p id="accessManagementStatus" role="status" class="text-sm text-slate-300"></p>
+                <div class="overflow-x-auto border border-slate-700/70 rounded-lg">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-900 text-slate-400">
+                            <tr>
+                                <th class="p-3">Fiók</th>
+                                <th class="p-3">Szerepkör</th>
+                                <th class="p-3">Látható üzletek</th>
+                                <th class="p-3"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="accessUsersTableBody" class="divide-y divide-slate-700/80">
+                            <tr><td colspan="4" class="p-4 text-center text-slate-500">A felhasználók betöltése folyamatban.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
     </div>
 
     <script>
         let currentAuthUserId = null;
+        let currentUserAccess = null;
+        let authRequestSequence = 0;
+        let accessCheckInProgress = false;
+        let dashboardUsers = [];
 
         function showLoginError(message) {
             const errorElem = document.getElementById('loginError');
@@ -739,19 +788,85 @@
             errorElem.classList.remove('hidden');
         }
 
-        function updateAuthUI(session) {
+        async function updateAuthUI(session) {
             const userId = session?.user?.id || null;
-            document.getElementById('loginScreen').classList.toggle('hidden', Boolean(userId));
-            document.getElementById('dashboardApp').classList.toggle('hidden', !userId);
+            const loginScreen = document.getElementById('loginScreen');
+            const dashboardApp = document.getElementById('dashboardApp');
+            const deniedScreen = document.getElementById('accessDeniedScreen');
             if (!userId) {
+                authRequestSequence++;
                 currentAuthUserId = null;
+                currentUserAccess = null;
+                accessCheckInProgress = false;
+                globalTransactions = [];
+                globalAccessories = [];
+                globalFootfall = [];
+                globalTargets = [];
+                globalMinTargets = [];
+                dashboardUsers = [];
+                loginScreen.classList.remove('hidden');
+                dashboardApp.classList.add('hidden');
+                deniedScreen.classList.add('hidden');
+                deniedScreen.classList.remove('flex');
                 return;
             }
-            if (userId === currentAuthUserId) return;
+            if (userId === currentAuthUserId && (currentUserAccess || accessCheckInProgress)) return;
 
             currentAuthUserId = userId;
+            currentUserAccess = null;
+            globalTransactions = [];
+            globalAccessories = [];
+            globalFootfall = [];
+            globalTargets = [];
+            globalMinTargets = [];
+            dashboardUsers = [];
+            accessCheckInProgress = true;
+            const requestSequence = ++authRequestSequence;
+            loginScreen.classList.add('hidden');
+            dashboardApp.classList.add('hidden');
+            deniedScreen.classList.add('hidden');
+
+            let accessResult;
+            try {
+                accessResult = await supabaseClient
+                    .from('dashboard_user_access')
+                    .select('role, store_codes')
+                    .eq('user_id', userId)
+                    .maybeSingle();
+            } catch (error) {
+                if (requestSequence !== authRequestSequence) return;
+                accessCheckInProgress = false;
+                document.getElementById('accessDeniedMessage').textContent =
+                    `Nem sikerült betölteni a jogosultságot: ${error instanceof Error ? error.message : 'Ismeretlen hiba.'}`;
+                deniedScreen.classList.remove('hidden');
+                deniedScreen.classList.add('flex');
+                return;
+            }
+            if (requestSequence !== authRequestSequence) return;
+            accessCheckInProgress = false;
+            const { data: access, error } = accessResult;
+            if (error || !access || !['admin', 'store_manager'].includes(access.role) ||
+                (access.role === 'store_manager' && (!Array.isArray(access.store_codes) || access.store_codes.length === 0))) {
+                document.getElementById('accessDeniedMessage').textContent = error
+                    ? `Nem sikerült betölteni a jogosultságot: ${error.message}`
+                    : 'Kérd meg az adminisztrátort, hogy állítsa be a jogosultságodat és a látható üzleteket.';
+                deniedScreen.classList.remove('hidden');
+                deniedScreen.classList.add('flex');
+                return;
+            }
+
+            currentUserAccess = {
+                role: access.role,
+                storeCodes: access.role === 'admin' ? [] : access.store_codes
+            };
+            loginScreen.classList.add('hidden');
+            deniedScreen.classList.add('hidden');
+            deniedScreen.classList.remove('flex');
+            dashboardApp.classList.remove('hidden');
+            document.getElementById('tabBtnUpload').classList.toggle('hidden', access.role !== 'admin');
+            document.getElementById('tabBtnAccess').classList.toggle('hidden', access.role !== 'admin');
             switchTab('stores');
-            loadAllData();
+            await loadAllData();
         }
 
         async function handleLogin(e) {
@@ -784,12 +899,20 @@
         }
 
         function switchTab(tabName) {
+            const isAdmin = currentUserAccess?.role === 'admin';
+            if (!currentUserAccess ||
+                (!isAdmin && !['stores', 'sellers'].includes(tabName)) ||
+                (isAdmin && !['stores', 'sellers', 'upload', 'access'].includes(tabName))) {
+                return;
+            }
             currentDashboardTab = tabName;
             const tabDash = document.getElementById('tabDashboard');
             const tabUp = document.getElementById('tabUpload');
+            const tabAccess = document.getElementById('tabAccess');
             const btnStores = document.getElementById('tabBtnStores');
             const btnSellers = document.getElementById('tabBtnSellers');
             const btnUp = document.getElementById('tabBtnUpload');
+            const btnAccess = document.getElementById('tabBtnAccess');
             
             const sectionTop4 = document.getElementById('sectionTop4');
             const sectionTable = document.getElementById('sectionTable');
@@ -800,6 +923,10 @@
             btnStores.className = inactCls;
             btnSellers.className = inactCls;
             btnUp.className = inactCls;
+            btnAccess.className = inactCls;
+            tabDash.classList.add('hidden');
+            tabUp.classList.add('hidden');
+            tabAccess.classList.add('hidden');
 
             if (tabName === 'stores') {
                 btnStores.className = actCls;
@@ -822,10 +949,13 @@
                 renderData();
             } else if (tabName === 'upload') {
                 btnUp.className = actCls;
-                tabDash.classList.add('hidden');
                 tabUp.classList.remove('hidden');
                 
                 renderTargetAdminTable();
+            } else if (tabName === 'access') {
+                btnAccess.className = actCls;
+                tabAccess.classList.remove('hidden');
+                loadDashboardUsers();
             }
         }
 
@@ -876,7 +1006,136 @@
                 updateAllBoxes();
                 renderData();
                 renderTargetAdminTable();
+                if (currentDashboardTab === 'access' && currentUserAccess?.role === 'admin') renderDashboardUsers();
             } catch(e) { console.error("Hiba az adatok letöltésekor", e); }
+        }
+
+        function escapeAccessHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, char => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[char]);
+        }
+
+        function getAvailableStoreCodes() {
+            return [...new Set([
+                ...globalTransactions.map(row => row.bolt),
+                ...globalAccessories.map(row => row.bolt),
+                ...globalFootfall.map(row => row.bolt),
+                ...globalTargets.map(row => row.bolt),
+                ...(currentUserAccess?.role === 'admin' ? dashboardUsers.flatMap(user => user.store_codes || []) : currentUserAccess?.storeCodes || [])
+            ].map(store => String(store || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'hu'));
+        }
+
+        async function loadDashboardUsers() {
+            if (currentUserAccess?.role !== 'admin') return;
+            const tbody = document.getElementById('accessUsersTableBody');
+            tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-400">Felhasználók betöltése…</td></tr>';
+            try {
+                const { data, error } = await supabaseClient.rpc('list_dashboard_users');
+                if (error) throw error;
+                dashboardUsers = data || [];
+                renderDashboardUsers();
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-rose-400">${escapeAccessHtml(error.message || 'Nem sikerült betölteni a felhasználókat.')}</td></tr>`;
+            }
+        }
+
+        function renderDashboardUsers() {
+            if (currentUserAccess?.role !== 'admin') return;
+            const stores = getAvailableStoreCodes();
+            const storeOptions = stores.map(store => `<option value="${escapeAccessHtml(store)}">${escapeAccessHtml(store)}</option>`).join('');
+            document.getElementById('inviteManagerStores').innerHTML = storeOptions;
+            const tbody = document.getElementById('accessUsersTableBody');
+            if (dashboardUsers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">Nincs megjeleníthető Supabase Auth-fiók.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = dashboardUsers.map(user => {
+                const userId = escapeAccessHtml(user.user_id);
+                const isCurrentAdmin = user.user_id === currentAuthUserId;
+                const role = user.role || '';
+                const selectedStores = new Set(user.store_codes || []);
+                const assignedStoreOptions = stores.map(store =>
+                    `<option value="${escapeAccessHtml(store)}" ${selectedStores.has(store) ? 'selected' : ''}>${escapeAccessHtml(store)}</option>`
+                ).join('');
+                return `<tr>
+                    <td class="p-3 text-slate-200">${escapeAccessHtml(user.email || user.user_id)}</td>
+                    <td class="p-3">
+                        <select id="accessRole-${userId}" onchange="toggleAccessStoreSelect('${userId}')" ${isCurrentAdmin ? 'disabled' : ''} class="bg-slate-900 text-white border border-slate-700 rounded px-2 py-1">
+                            <option value="" ${!role ? 'selected' : ''}>Nincs hozzáférés</option>
+                            <option value="store_manager" ${role === 'store_manager' ? 'selected' : ''}>Üzletvezető</option>
+                            <option value="admin" ${role === 'admin' ? 'selected' : ''}>Admin</option>
+                        </select>
+                    </td>
+                    <td class="p-3">
+                        <select id="accessStores-${userId}" multiple size="3" ${isCurrentAdmin || role === 'admin' ? 'disabled' : ''} class="min-w-40 bg-slate-900 text-white border border-slate-700 rounded px-2 py-1">${assignedStoreOptions}</select>
+                    </td>
+                    <td class="p-3 text-right">
+                        <button type="button" onclick="saveDashboardUserAccess('${userId}')" ${isCurrentAdmin ? 'disabled title="A saját admin hozzáférésed itt nem módosítható."' : ''} class="bg-indigo-700 hover:bg-indigo-600 disabled:opacity-40 text-white px-3 py-1.5 rounded">Mentés</button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function toggleAccessStoreSelect(userId) {
+            const role = document.getElementById(`accessRole-${userId}`).value;
+            document.getElementById(`accessStores-${userId}`).disabled = role !== 'store_manager';
+        }
+
+        async function saveDashboardUserAccess(userId) {
+            if (currentUserAccess?.role !== 'admin' || userId === currentAuthUserId) return;
+            const role = document.getElementById(`accessRole-${userId}`).value;
+            const storeSelect = document.getElementById(`accessStores-${userId}`);
+            const storeCodes = Array.from(storeSelect.selectedOptions, option => option.value);
+            const status = document.getElementById('accessManagementStatus');
+            status.className = 'text-sm text-slate-300';
+            try {
+                if (role === 'store_manager' && storeCodes.length === 0) {
+                    throw new Error('Az üzletvezetőhöz válassz legalább egy üzletet.');
+                }
+                if (!role) {
+                    const { error } = await supabaseClient.from('dashboard_user_access').delete().eq('user_id', userId);
+                    if (error) throw error;
+                } else {
+                    const { error } = await supabaseClient.from('dashboard_user_access').upsert({
+                        user_id: userId,
+                        role,
+                        store_codes: role === 'admin' ? [] : storeCodes
+                    }, { onConflict: 'user_id' });
+                    if (error) throw error;
+                }
+                status.textContent = 'A jogosultság mentése sikerült.';
+                status.classList.add('text-emerald-400');
+                await loadDashboardUsers();
+            } catch (error) {
+                status.textContent = error.message || 'Nem sikerült elmenteni a jogosultságot.';
+                status.classList.add('text-rose-400');
+            }
+        }
+
+        async function inviteStoreManager(event) {
+            event.preventDefault();
+            if (currentUserAccess?.role !== 'admin') return;
+            const emailInput = document.getElementById('inviteManagerEmail');
+            const storeCodes = Array.from(document.getElementById('inviteManagerStores').selectedOptions, option => option.value);
+            const status = document.getElementById('accessManagementStatus');
+            status.className = 'text-sm text-slate-300';
+            try {
+                if (storeCodes.length === 0) throw new Error('Válassz legalább egy üzletet.');
+                const { error } = await supabaseClient.functions.invoke('invite-store-manager', {
+                    body: { email: emailInput.value.trim(), store_codes: storeCodes }
+                });
+                if (error) throw error;
+                status.textContent = `A meghívót elküldtük erre a címre: ${emailInput.value.trim()}`;
+                status.classList.add('text-emerald-400');
+                emailInput.value = '';
+                document.getElementById('inviteManagerStores').selectedIndex = -1;
+                await loadDashboardUsers();
+            } catch (error) {
+                status.textContent = error.message || 'Nem sikerült meghívni az üzletvezetőt.';
+                status.classList.add('text-rose-400');
+            }
         }
 
         async function loadFromSupabase() {
@@ -968,12 +1227,16 @@
             const rawMonths = [...new Set(allMonthsList)].filter(Boolean);
             const months = sortMonthsChronological(rawMonths);
             const allStoresList = [...globalTransactions.map(t => t.bolt), ...globalAccessories.map(a => a.bolt), ...globalTargets.map(t => t.bolt)];
-            const stores = [...new Set(allStoresList)].filter(Boolean).sort();
+            const availableStores = [...new Set([...allStoresList, ...(currentUserAccess?.role === 'store_manager' ? currentUserAccess.storeCodes : [])])].filter(Boolean).sort();
+            const stores = currentUserAccess?.role === 'store_manager'
+                ? availableStores.filter(store => currentUserAccess.storeCodes.includes(store))
+                : availableStores;
             const allSellersList = [...globalTransactions.map(t => t.ertekesito), ...globalAccessories.map(a => a.ertekesito)];
             const sellers = [...new Set(allSellersList.map(s => String(s || '').trim().replace(/\s+/g, ' ')))].filter(Boolean).sort();
 
             const monthOptions = months.map(m => `<option value="${m}">${m}</option>`).join('') + '<option value="ALL">Összes Hónap</option>';
-            const storeOptions = '<option value="ALL">Összes Üzlet (Hálózat)</option>' + stores.map(s => `<option value="${s}">${s}</option>`).join('');
+            const allStoresLabel = currentUserAccess?.role === 'store_manager' ? 'Összes hozzárendelt üzlet' : 'Összes Üzlet (Hálózat)';
+            const storeOptions = `<option value="ALL">${allStoresLabel}</option>` + stores.map(s => `<option value="${s}">${s}</option>`).join('');
             const sellerOptions = '<option value="ALL">Összes Értékesítő</option>' + sellers.map(s => `<option value="${s}">${s}</option>`).join('');
 
             document.getElementById('filterMonth').innerHTML = monthOptions;
