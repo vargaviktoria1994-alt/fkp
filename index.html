@@ -1467,38 +1467,18 @@
                 const store = transaction.bolt;
                 const totals = storePerformance.get(store) || {
                     acq_db: 0, huseg_db: 0, fix_db: 0, acq_pont: 0, ret_pont: 0, osszpont: 0,
-                    brutto_ertek: 0, darabszam: 0, betero_db: 0, betero_target: 0
+                    brutto_ertek: 0, darabszam: 0
                 };
                 ['acq_db', 'huseg_db', 'fix_db', 'acq_pont', 'ret_pont', 'osszpont'].forEach(key => {
                     totals[key] += Number(transaction[key]) || 0;
                 });
                 storePerformance.set(store, totals);
             });
-            monthFootfall.forEach(record => {
-                const totals = storePerformance.get(record.bolt) || {
-                    acq_db: 0, huseg_db: 0, fix_db: 0, acq_pont: 0, ret_pont: 0, osszpont: 0,
-                    brutto_ertek: 0, darabszam: 0, betero_db: 0, betero_target: 0
-                };
-                totals.betero_db += Number(record.betero_db) || 0;
-                storePerformance.set(record.bolt, totals);
-            });
-            if (showDailyTargetChart) {
-                globalTargets
-                    .filter(target => target.honap === selectedMonth && target.bolt !== 'FPK011' && Number(target.target_betero_db) > 0)
-                    .forEach(target => {
-                        const totals = storePerformance.get(target.bolt) || {
-                            acq_db: 0, huseg_db: 0, fix_db: 0, acq_pont: 0, ret_pont: 0, osszpont: 0,
-                            brutto_ertek: 0, darabszam: 0, betero_db: 0, betero_target: 0
-                        };
-                        totals.betero_target += Number(target.target_betero_db) || 0;
-                        storePerformance.set(target.bolt, totals);
-                    });
-            }
             monthAccessories.forEach(accessory => {
                 const store = accessory.bolt;
                 const totals = storePerformance.get(store) || {
                     acq_db: 0, huseg_db: 0, fix_db: 0, acq_pont: 0, ret_pont: 0, osszpont: 0,
-                    brutto_ertek: 0, darabszam: 0, betero_db: 0, betero_target: 0
+                    brutto_ertek: 0, darabszam: 0
                 };
                 totals.brutto_ertek += Number(accessory.brutto_ertek) || 0;
                 totals.darabszam += Number(accessory.darabszam) || 0;
@@ -1507,8 +1487,16 @@
             const stores = [...storePerformance.keys()]
                 .filter(store => Object.values(storePerformance.get(store)).some(value => value > 0))
                 .sort();
+            const footfallStores = new Set([
+                ...(showFootfallChart ? monthFootfall.map(record => record.bolt) : []),
+                ...(showDailyTargetChart
+                    ? globalTargets
+                        .filter(target => target.honap === selectedMonth && target.bolt && target.bolt !== 'FPK011' && Number(target.target_betero_db) > 0)
+                        .map(target => target.bolt)
+                    : [])
+            ]);
 
-            if (!selectedMonth || stores.length === 0) {
+            if (!selectedMonth || (stores.length === 0 && (!showFootfallPerformanceChart || footfallStores.size === 0))) {
                 chartGrid.classList.add('hidden');
                 emptyMessage.classList.remove('hidden');
                 Object.values(monthlyPerformanceCharts).forEach(chart => chart.destroy());
@@ -1539,6 +1527,11 @@
                 : mode === 'single'
                     ? (selectedStore ? [{ label: selectedStore, store: selectedStore }] : [])
                     : stores.map(store => ({ label: store, store }));
+            const footfallSeries = mode === 'separate'
+                ? [...new Set([...stores, ...footfallStores])].sort().map(store => ({ label: store, store }))
+                : mode === 'single' && !selectedStore
+                    ? [...footfallStores].sort().map(store => ({ label: store, store }))
+                    : series;
             const metrics = [
                 { key: 'acq_db', canvas: 'monthlyAcqChart', color: '#818cf8' },
                 { key: 'huseg_db', canvas: 'monthlyLoyaltyChart', color: '#34d399' },
@@ -1620,7 +1613,7 @@
 
             if (showFootfallPerformanceChart) {
                 const footfallDatasets = [];
-                series.forEach((item, index) => {
+                footfallSeries.forEach((item, index) => {
                     const storeCode = item.store || 'ALL';
                     const datasets = [];
                     const color = mode === 'network' ? '#22d3ee' : palette[index % palette.length];
