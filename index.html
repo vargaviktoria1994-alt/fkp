@@ -824,6 +824,13 @@
             }
             document.getElementById('dayModal').addEventListener('click', function(e) { if(e.target === this) closeDayModal(); });
             document.getElementById('sellerMinModal').addEventListener('click', function(e) { if(e.target === this) closeSellerMinModal(); });
+            document.getElementById('tableBody').addEventListener('click', function(e) {
+                const button = e.target.closest('[data-seller-min-modal]');
+                if (!button) return;
+
+                const { sellerName, monthStr, passJson } = JSON.parse(decodeURIComponent(button.dataset.sellerMinModal));
+                openSellerMinModal(sellerName, monthStr, passJson);
+            });
         });
 
         async function loadAllData() {
@@ -2113,7 +2120,7 @@
                                 <td colspan="8" class="py-1.5 px-2 text-center text-slate-500 font-bold tracking-widest">Z Á R V A</td>
                             </tr>`;
                 } else {
-                    html += `<tr class="${rowBg} transition text-[10px] cursor-pointer" onclick="openDayModal(d)">
+                    html += `<tr class="${rowBg} transition text-[10px] cursor-pointer" onclick="openDayModal(${d})">
                                 <td class="py-1.5 px-2"><span class="${isToday ? 'text-amber-300 font-bold' : (dow===0 ? 'text-rose-400/80 font-semibold' : 'text-slate-300')}">${d}. ${dayNamesShort[dow]}</span></td>
                                 <td class="py-1.5 px-2 text-right text-amber-300 font-bold font-mono">${pt.toFixed(1)}</td>
                                 <td class="py-1.5 px-2 text-right text-sky-400 font-mono">${(mAcqP.storeDailyTargetMap[d]||0).toFixed(1)}</td>
@@ -2293,10 +2300,14 @@
                             min: minDataObj,
                             act: { acq_hs: s.acq_hs, fix: s.fix, ret_pont: s.ret_pont, acq_pont: s.acq_pont, acq_tablet: s.acq_tablet, soho: s.soho, tartozek: s.tartozek }
                         };
-                        const passJson = JSON.stringify(passObj).replace(/"/g, '&quot;');
+                        const modalData = encodeURIComponent(JSON.stringify({
+                            sellerName: s.ertekesito,
+                            monthStr: `${s.honap} (Elvárás alapja: ${minDataObj.honap})`,
+                            passJson: passObj
+                        }));
                         
                         minTargetWarningHtml = `
-                            <button onclick="openSellerMinModal('${s.ertekesito}', '${s.honap} (Elvárás alapja: ${minDataObj.honap})', $passJson)" 
+                            <button type="button" data-seller-min-modal="${modalData}"
                                     class="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full bg-rose-900/60 border border-rose-500/50 text-rose-400 hover:scale-110 hover:bg-rose-600 hover:text-white transition-all shadow-md"
                                     title="Elmaradás! Számonkért target hónapja: ${minDataObj.honap}">
                                 ⚠️
