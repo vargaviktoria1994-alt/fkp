@@ -1475,7 +1475,7 @@
             updateMonthlyPerformanceCharts();
         }
 
-       function updateMonthlyPerformanceCharts() {
+      function updateMonthlyPerformanceCharts() {
             if (currentDashboardTab === 'sellers') {
                 updateSellerMonthlyPerformanceCharts();
                 return;
@@ -1483,6 +1483,14 @@
             const selectedMonth = document.getElementById('performanceChartMonth').value;
             const chartGrid = document.getElementById('performanceChartGrid');
             const emptyMessage = document.getElementById('performanceChartEmpty');
+            
+            // Elrejtjük az alsó nagy betérős diagramot, mert már nem lesz rá szükség
+            const footfallChartCard = document.getElementById('footfallPerformanceChartCard');
+            if (footfallChartCard) footfallChartCard.classList.add('hidden');
+            if (monthlyPerformanceCharts.monthlyFootfallChart) {
+                monthlyPerformanceCharts.monthlyFootfallChart.destroy();
+                delete monthlyPerformanceCharts.monthlyFootfallChart;
+            }
             
             const monthTransactions = globalTransactions.filter(transaction =>
                 transaction.honap === selectedMonth && transaction.bolt && transaction.bolt !== 'FPK011'
@@ -1493,7 +1501,6 @@
             
             const showFootfallChart = document.getElementById('showFootfallPerformanceChart').checked;
             const showDailyTargetChart = document.getElementById('showDailyTargetPerformanceChart').checked;
-            const showFootfallPerformanceChart = showFootfallChart || showDailyTargetChart;
             
             const monthFootfall = showFootfallChart ? globalFootfall.filter(record =>
                 record.honap === selectedMonth && record.bolt && record.bolt !== 'FPK011'
@@ -1529,12 +1536,11 @@
                     : [])
             ]);
 
-            if (!selectedMonth || (stores.length === 0 && (!showFootfallPerformanceChart || footfallStores.size === 0))) {
+            if (!selectedMonth || (stores.length === 0 && (!showFootfallChart || footfallStores.size === 0))) {
                 chartGrid.classList.add('hidden');
                 emptyMessage.classList.remove('hidden');
                 Object.values(monthlyPerformanceCharts).forEach(chart => chart.destroy());
                 Object.keys(monthlyPerformanceCharts).forEach(canvasId => delete monthlyPerformanceCharts[canvasId]);
-                document.getElementById('footfallPerformanceChartCard').classList.add('hidden');
                 return;
             }
             
@@ -1581,10 +1587,8 @@
             ];
             
             const palette = ['#818cf8', '#34d399', '#fbbf24', '#f472b6', '#22d3ee', '#a78bfa', '#f87171', '#38bdf8'];
-            const footfallChartCard = document.getElementById('footfallPerformanceChartCard');
-            footfallChartCard.classList.toggle('hidden', !showFootfallPerformanceChart);
 
-            // FŐ DIAGRAMOK GENERÁLÁSA (ACQ, Hűség stb.)
+            // FŐ DIAGRAMOK GENERÁLÁSA
             metrics.forEach(metric => {
                 const datasets = series.map((item, index) => {
                     const sourceData = metric.source === 'accessories' ? monthAccessories : monthTransactions;
@@ -1614,17 +1618,15 @@
                         borderWidth: 2,
                         pointRadius: 2,
                         pointHoverRadius: 4,
-                        tension: 0.25
+                        tension: 0.25,
+                        yAxisID: 'y' // Fő adat mindig a bal tengelyen van
                     };
                 }).filter(Boolean);
 
-                // ÚJ: NAPI TARGET VONALAK HOZZÁADÁSA A FŐ DIAGRAMOKHOZ
+                // NAPI TARGET VONALAK (ugyanazon az y tengelyen)
                 if (showDailyTargetChart) {
                     series.forEach((item, index) => {
-                        // Kulcsok fordítása a target adatbázishoz
                         const targetKey = metric.key === 'osszpont' ? 'pont' : (metric.key === 'brutto_ertek' ? 'tartozek_ft' : metric.key);
-                        
-                        // Darabszámra nincs target, azt kihagyjuk
                         if (targetKey === 'darabszam') return;
 
                         const storeCode = item.store || 'ALL';
@@ -1633,8 +1635,6 @@
                         
                         if (dailyTargets) {
                             const targetValues = Array.from({ length: daysInMonth }, (_, dayIndex) => dailyTargets[dayIndex + 1] || 0);
-                            
-                            // Ne rajzoljon 0-s vonalat az üres üzletekhez separate módban
                             if (mode === 'separate' && !targetValues.some(value => value > 0)) return;
 
                             datasets.push({
@@ -1644,11 +1644,49 @@
                                 backgroundColor: 'transparent',
                                 borderWidth: 1.5,
                                 borderDash: [5, 4],
-                                pointBackgroundColor: mode !== 'separate' ? '#ef4444' : palette[index % palette.length],
-                                pointBorderColor: mode !== 'separate' ? '#ef4444' : palette[index % palette.length],
                                 pointRadius: 0,
                                 pointHoverRadius: 3,
-                                tension: 0.25
+                                tension: 0.25,
+                                yAxisID: 'y'
+                            });
+                        }
+                    });
+                }
+
+                // BETÉRŐ ÜGYFELEK HOZZÁADÁSA A KIS DIAGRAMOKHOZ (y1, jobb oldali tengelyre)
+                if (showFootfallChart) {
+                    footfallSeries.forEach((item, index) => {
+                        const footfallData = monthFootfall.filter(record => !item.store || record.bolt === item.store);
+                        const dailyActuals = Array(daysInMonth).fill(0);
+                        let hasCurrentDayData = false;
+                        
+                        footfallData.forEach(record => {
+                            const recordDate = String(record.datum || '');
+                            const dateParts = recordDate.split('-');
+                            const day = Number(dateParts[2]);
+                            if (dateParts.length === 3 && Number.isInteger(day) && day >= 1 && day <= daysInMonth) {
+                                dailyActuals[day - 1] += Number(record.betero_db) || 0;
+                                if (recordDate === todayDate) hasCurrentDayData = true;
+                            }
+                        });
+                        
+                        if (isCurrentMonth) {
+                            dailyActuals.fill(null, chartMonthData.currentDay);
+                            if (!hasCurrentDayData) dailyActuals[chartMonthData.currentDay - 1] = null;
+                        }
+                        
+                        if (mode !== 'separate' || dailyActuals.some(value => value > 0)) {
+                            datasets.push({
+                                label: `${item.label} (Betérő)`,
+                                data: dailyActuals,
+                                borderColor: mode === 'separate' ? palette[index % palette.length] : 'rgba(255, 255, 255, 0.4)',
+                                backgroundColor: 'transparent',
+                                borderWidth: 1.5,
+                                borderDash: [3, 3], // Sűrűbben szaggatott, hogy elkülönüljön
+                                pointRadius: 0,
+                                pointHoverRadius: 3,
+                                tension: 0.25,
+                                yAxisID: 'y1' // Második, jobb oldali tengely
                             });
                         }
                     });
@@ -1666,13 +1704,23 @@
                             legend: { display: true, labels: { color: '#cbd5e1', font: { size: 9 }, boxWidth: 10 } },
                             tooltip: {
                                 callbacks: {
-                                    label: context => `${context.dataset.label}: ${Number(context.parsed.y).toLocaleString('hu-HU')}${metric.isCurrency ? ' Ft' : metric.isInt === false ? '' : ' db'}`
+                                    label: context => {
+                                        // Ha a jobb tengelyes (betérő) adatról van szó:
+                                        if (context.dataset.yAxisID === 'y1') {
+                                            return `${context.dataset.label}: ${Number(context.parsed.y).toLocaleString('hu-HU')} fő`;
+                                        }
+                                        // Fő adat/target:
+                                        return `${context.dataset.label}: ${Number(context.parsed.y).toLocaleString('hu-HU')}${metric.isCurrency ? ' Ft' : metric.isInt === false ? '' : ' db'}`;
+                                    }
                                 }
                             }
                         },
                         scales: {
                             x: { grid: { color: 'rgba(51, 65, 85, 0.25)' }, ticks: { color: '#94a3b8', font: { size: 9 }, maxTicksLimit: 16 } },
                             y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
                                 beginAtZero: true,
                                 grid: { color: 'rgba(51, 65, 85, 0.25)' },
                                 ticks: {
@@ -1680,6 +1728,20 @@
                                     precision: metric.isCurrency || metric.isInt === false ? 1 : 0,
                                     font: { size: 9 },
                                     callback: value => `${Number(value).toLocaleString('hu-HU')}${metric.isCurrency ? ' Ft' : ''}`
+                                }
+                            },
+                            // Másodlagos jobb tengely a betérők számára
+                            y1: {
+                                type: 'linear',
+                                display: showFootfallChart, // Csak akkor jelenik meg, ha a betérők be vannak kapcsolva
+                                position: 'right',
+                                beginAtZero: true,
+                                grid: { drawOnChartArea: false }, // Ne rácsozza tele keresztbe-kasul a diagramot
+                                ticks: {
+                                    color: 'rgba(255, 255, 255, 0.5)', // Halványabb szín
+                                    precision: 0,
+                                    font: { size: 9 },
+                                    callback: value => `${value} fő`
                                 }
                             }
                         }
