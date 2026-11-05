@@ -957,7 +957,9 @@
             if (chartStoreSelect) {
                 const chartMonths = sortMonthsChronological([...new Set([
                     ...globalTransactions.map(t => t.honap),
-                    ...globalAccessories.map(a => a.honap)
+                    ...globalAccessories.map(a => a.honap),
+                    ...globalFootfall.map(f => f.honap),
+                    ...globalTargets.map(t => t.honap)
                 ].filter(Boolean))]);
                 const chartMonthSelect = document.getElementById('performanceChartMonth');
                 const sellerChartMonthSelect = document.getElementById('sellerPerformanceChartMonth');
@@ -1503,6 +1505,7 @@
                         .map(target => target.bolt)
                     : [])
             ]);
+            const chartStores = [...new Set([...stores, ...footfallStores])].sort();
 
             if (!selectedMonth || (stores.length === 0 && (!showFootfallPerformanceChart || footfallStores.size === 0))) {
                 chartGrid.classList.add('hidden');
@@ -1520,8 +1523,8 @@
             storeSelect.classList.toggle('hidden', mode !== 'single');
 
             const previousStore = storeSelect.value;
-            storeSelect.innerHTML = stores.map(store => `<option value="${store}">${store}</option>`).join('');
-            storeSelect.value = stores.includes(previousStore) ? previousStore : (stores[0] || '');
+            storeSelect.innerHTML = chartStores.map(store => `<option value="${store}">${store}</option>`).join('');
+            storeSelect.value = chartStores.includes(previousStore) ? previousStore : (chartStores[0] || '');
             const selectedStore = storeSelect.value;
             const chartMonthData = fetchBoxData(selectedMonth, 'ALL', null, true);
             const daysInMonth = chartMonthData.daysInMonth;
@@ -1533,12 +1536,12 @@
             const series = mode === 'network'
                 ? [{ label: 'Összes üzlet', store: null }]
                 : mode === 'single'
-                    ? (selectedStore ? [{ label: selectedStore, store: selectedStore }] : [])
+                    ? (selectedStore && stores.includes(selectedStore) ? [{ label: selectedStore, store: selectedStore }] : [])
                     : stores.map(store => ({ label: store, store }));
             const footfallSeries = mode === 'separate'
-                ? [...new Set([...stores, ...footfallStores])].sort().map(store => ({ label: store, store }))
-                : mode === 'single' && !selectedStore
-                    ? [...footfallStores].sort().map(store => ({ label: store, store }))
+                ? chartStores.map(store => ({ label: store, store }))
+                : mode === 'single'
+                    ? (selectedStore ? [{ label: selectedStore, store: selectedStore }] : [...footfallStores].sort().map(store => ({ label: store, store })))
                     : series;
             const metrics = [
                 { key: 'acq_db', canvas: 'monthlyAcqChart', color: '#818cf8' },
