@@ -364,27 +364,27 @@
 
                 <section class="space-y-3">
                     <div>
-                        <h3 class="text-sm font-bold text-white">Bolti havi targetek</h3>
-                        <p class="text-[11px] text-slate-400">A teljes havi bolti targetek láthatók; az ünnepnapok és a nyitvatartás nem arányosítják az értékeket. Az értékesítő szűrő a bolti targeteket nem módosítja.</p>
+                        <h3 class="text-sm font-bold text-white">Bolti havi targetek (Tény vs. Kifutás)</h3>
+                        <p class="text-[11px] text-slate-400">Az összesített bolti célkitűzések, az aktuális tényadatok, valamint az időarányos kifutás (várható hó végi eredmény) darabban/pontban/forintban és százalékosan.</p>
                     </div>
                     <div class="overflow-x-auto border border-slate-700/60 rounded-lg">
                         <table class="w-full text-left border-collapse text-xs">
                             <thead class="bg-slate-900/80">
-                                <tr class="text-slate-400 border-b border-slate-700">
-                                    <th class="p-2.5">Hónap</th>
-                                    <th class="p-2.5">Bolt</th>
+                                <tr class="text-slate-400 border-b border-slate-700 text-[11px] uppercase tracking-wider">
+                                    <th class="p-2.5 w-28">Bolt / Hónap</th>
+                                    <th class="p-2.5 w-28">Mutató</th>
                                     <th class="p-2.5 text-right text-indigo-300">ACQ</th>
                                     <th class="p-2.5 text-right text-emerald-300">Hűség</th>
                                     <th class="p-2.5 text-right text-purple-300">FIX</th>
                                     <th class="p-2.5 text-right text-amber-300">SOHO</th>
                                     <th class="p-2.5 text-right text-sky-300">ACQ pont</th>
                                     <th class="p-2.5 text-right text-teal-300">RET pont</th>
-                                    <th class="p-2.5 text-right text-amber-300">Összpont</th>
+                                    <th class="p-2.5 text-right text-amber-400">Összpont</th>
                                     <th class="p-2.5 text-right text-pink-300">Tartozék</th>
                                     <th class="p-2.5 text-right text-cyan-300">Betérő</th>
                                 </tr>
                             </thead>
-                            <tbody id="storeTargetResultsBody" class="divide-y divide-slate-800/80 text-slate-300">
+                            <tbody id="storeTargetResultsBody" class="text-slate-300">
                                 <tr><td colspan="11" class="p-4 text-center text-slate-500">Nincs megjeleníthető havi target.</td></tr>
                             </tbody>
                         </table>
@@ -2392,49 +2392,164 @@
 
         function renderStoreMonthlyTargets(selectedMonth, selectedStore) {
             const tbody = document.getElementById('storeTargetResultsBody');
-            const months = sortMonthsChronological([...new Set(
-                globalTargets
-                    .filter(target => (selectedMonth === 'ALL' || target.honap === selectedMonth) &&
-                        (selectedStore === 'ALL' || target.bolt === selectedStore))
-                    .map(target => target.honap)
-            )]);
-            const monthOrder = new Map(months.map((month, index) => [month, index]));
-            const targets = globalTargets
+            const relevantTargets = globalTargets
                 .filter(target => (selectedMonth === 'ALL' || target.honap === selectedMonth) &&
-                    (selectedStore === 'ALL' || target.bolt === selectedStore))
-                .sort((a, b) => {
-                    const monthDifference = monthOrder.get(a.honap) - monthOrder.get(b.honap);
-                    return monthDifference || String(a.bolt || '').localeCompare(String(b.bolt || ''), 'hu');
-                });
+                    (selectedStore === 'ALL' || target.bolt === selectedStore));
 
-            if (targets.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="11" class="p-4 text-center text-slate-500">Nincs target a kiválasztott hónaphoz és üzlethez.</td></tr>';
+            if (relevantTargets.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="11" class="p-4 text-center text-slate-500">Nincs célkitűzés (target) a kiválasztott szűréshez.</td></tr>';
                 return;
             }
 
+            const actualsByStoreMonth = {};
+            const getOrCreateActual = (honap, bolt) => {
+                const key = `${honap}_${bolt}`;
+                if (!actualsByStoreMonth[key]) {
+                    actualsByStoreMonth[key] = {
+                        acq: 0, huseg: 0, fix: 0, soho: 0,
+                        acq_pont: 0, ret_pont: 0, pont: 0,
+                        tartozek: 0, betero: 0
+                    };
+                }
+                return actualsByStoreMonth[key];
+            };
+
+            globalTransactions.forEach(transaction => {
+                if ((selectedMonth === 'ALL' || transaction.honap === selectedMonth) &&
+                    (selectedStore === 'ALL' || transaction.bolt === selectedStore)) {
+                    const actual = getOrCreateActual(transaction.honap, transaction.bolt);
+                    actual.acq += Number(transaction.acq_db) || 0;
+                    actual.huseg += Number(transaction.huseg_db) || 0;
+                    actual.fix += Number(transaction.fix_db) || 0;
+                    if (transaction.szegmens && String(transaction.szegmens).toLowerCase() === 'soho' && Number(transaction.acq_db) > 0) {
+                        actual.soho += Number(transaction.acq_db) || 1;
+                    }
+                    actual.acq_pont += Number(transaction.acq_pont) || 0;
+                    actual.ret_pont += Number(transaction.ret_pont) || 0;
+                    actual.pont += Number(transaction.osszpont) || 0;
+                }
+            });
+
+            globalAccessories.forEach(accessory => {
+                if ((selectedMonth === 'ALL' || accessory.honap === selectedMonth) &&
+                    (selectedStore === 'ALL' || accessory.bolt === selectedStore)) {
+                    getOrCreateActual(accessory.honap, accessory.bolt).tartozek += Number(accessory.brutto_ertek) || 0;
+                }
+            });
+
+            globalFootfall.forEach(record => {
+                if ((selectedMonth === 'ALL' || record.honap === selectedMonth) &&
+                    (selectedStore === 'ALL' || record.bolt === selectedStore)) {
+                    getOrCreateActual(record.honap, record.bolt).betero += Number(record.betero_db) || 0;
+                }
+            });
+
+            let html = '';
+            const formatInt = value => Math.round(Number(value) || 0).toLocaleString('hu-HU');
+            const formatFloat = value => (Number(value) || 0).toLocaleString('hu-HU', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+            const formatCurrency = value => `${formatInt(value)} Ft`;
             const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
             })[char]);
-            const number = value => Number(value || 0);
-            const integer = value => Math.round(number(value)).toLocaleString('hu-HU');
-            const points = value => number(value).toLocaleString('hu-HU', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+            const now = new Date();
+            const monthNames = ['január', 'február', 'március', 'április', 'május', 'június', 'július', 'augusztus', 'szeptember', 'október', 'november', 'december'];
+            const publicHolidays = [
+                '2026-01-01', '2026-03-15', '2026-04-03', '2026-04-06', '2026-05-01', '2026-05-25', '2026-08-20', '2026-10-23', '2026-11-01', '2026-12-25', '2026-12-26',
+                '2027-01-01', '2027-03-15', '2027-03-26', '2027-03-29', '2027-05-01', '2027-05-17', '2027-08-20', '2027-10-23', '2027-11-01', '2027-12-25', '2027-12-26'
+            ];
+            const monthOrder = new Map(sortMonthsChronological([...new Set(relevantTargets.map(target => target.honap))])
+                .map((month, index) => [month, index]));
 
-            tbody.innerHTML = targets.map(target => {
-                const totalPoints = target.target_pont ?? (number(target.target_acq_pont) + number(target.target_ret_pont));
-                return `<tr class="hover:bg-slate-700/20 transition">
-                    <td class="p-2.5 text-slate-400">${escapeHtml(target.honap)}</td>
-                    <td class="p-2.5"><span class="px-2 py-0.5 bg-slate-800 text-indigo-300 font-bold rounded">${escapeHtml(target.bolt)}</span></td>
-                    <td class="p-2.5 text-right font-mono text-indigo-300">${integer(target.target_acq_db)}</td>
-                    <td class="p-2.5 text-right font-mono text-emerald-300">${integer(target.target_huseg_db)}</td>
-                    <td class="p-2.5 text-right font-mono text-purple-300">${integer(target.target_fix_db)}</td>
-                    <td class="p-2.5 text-right font-mono text-amber-300">${integer(target.target_soho_db)}</td>
-                    <td class="p-2.5 text-right font-mono text-sky-300">${points(target.target_acq_pont)}</td>
-                    <td class="p-2.5 text-right font-mono text-teal-300">${points(target.target_ret_pont)}</td>
-                    <td class="p-2.5 text-right font-mono text-amber-300">${points(totalPoints)}</td>
-                    <td class="p-2.5 text-right font-mono text-pink-300">${integer(target.target_tartozek_ft)} Ft</td>
-                    <td class="p-2.5 text-right font-mono text-cyan-300">${integer(target.target_betero_db)}</td>
-                </tr>`;
-            }).join('');
+            relevantTargets.sort((a, b) =>
+                (monthOrder.get(a.honap) - monthOrder.get(b.honap)) ||
+                String(a.bolt || '').localeCompare(String(b.bolt || ''), 'hu')
+            ).forEach(target => {
+                const actual = actualsByStoreMonth[`${target.honap}_${target.bolt}`] ||
+                    { acq: 0, huseg: 0, fix: 0, soho: 0, acq_pont: 0, ret_pont: 0, pont: 0, tartozek: 0, betero: 0 };
+                const targetValues = {
+                    acq: Number(target.target_acq_db) || 0,
+                    huseg: Number(target.target_huseg_db) || 0,
+                    fix: Number(target.target_fix_db) || 0,
+                    soho: Number(target.target_soho_db) || 0,
+                    acq_pont: Number(target.target_acq_pont) || 0,
+                    ret_pont: Number(target.target_ret_pont) || 0,
+                    pont: Number(target.target_pont) || (Number(target.target_acq_pont) || 0) + (Number(target.target_ret_pont) || 0),
+                    tartozek: Number(target.target_tartozek_ft) || 0,
+                    betero: Number(target.target_betero_db) || 0
+                };
+
+                const [yearText, monthName] = String(target.honap || '').split(' ');
+                const selectedYear = parseInt(yearText, 10);
+                const selectedMonthIdx = monthNames.indexOf((monthName || '').toLowerCase());
+                if (!Number.isInteger(selectedYear) || selectedMonthIdx < 0) {
+                    throw new Error(`Érvénytelen target hónap: ${target.honap}`);
+                }
+                const daysInMonth = new Date(selectedYear, selectedMonthIdx + 1, 0).getDate();
+                let totalWorkingDays = 0;
+                let passedWorkingDays = 0;
+                const isSundayClosedStore = target.bolt === 'FPK002';
+                const monthHasPassed = selectedYear < now.getFullYear() ||
+                    (selectedYear === now.getFullYear() && selectedMonthIdx < now.getMonth());
+                const isCurrentMonth = selectedYear === now.getFullYear() && selectedMonthIdx === now.getMonth();
+
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dateStr = `${selectedYear}-${String(selectedMonthIdx + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const dayOfWeek = new Date(selectedYear, selectedMonthIdx, day).getDay();
+                    if (publicHolidays.includes(dateStr) || (dayOfWeek === 0 && isSundayClosedStore)) continue;
+
+                    totalWorkingDays++;
+                    if (monthHasPassed || (isCurrentMonth && day <= now.getDate())) passedWorkingDays++;
+                }
+
+                const elapsedRatio = totalWorkingDays > 0 ? passedWorkingDays / totalWorkingDays : 1;
+                const calcKif = value => elapsedRatio > 0 ? value / elapsedRatio : 0;
+                const calcKifPct = (forecast, targetValue) => targetValue > 0 ? (forecast / targetValue) * 100 : (forecast > 0 ? 100 : 0);
+                const kifColor = percentage => {
+                    if (percentage >= 100) return 'text-emerald-400 font-bold';
+                    if (percentage >= 80) return 'text-indigo-400';
+                    if (percentage >= 50) return 'text-amber-400';
+                    return 'text-rose-400';
+                };
+                const formatKifPct = percentage => `${percentage.toFixed(1)}%`;
+                const metrics = [
+                    { key: 'acq', target: targetValues.acq, actual: actual.acq, format: formatInt, suffix: ' db', color: 'text-indigo-300/60' },
+                    { key: 'huseg', target: targetValues.huseg, actual: actual.huseg, format: formatInt, suffix: ' db', color: 'text-emerald-300/60' },
+                    { key: 'fix', target: targetValues.fix, actual: actual.fix, format: formatInt, suffix: ' db', color: 'text-purple-300/60' },
+                    { key: 'soho', target: targetValues.soho, actual: actual.soho, format: formatInt, suffix: ' db', color: 'text-amber-300/60' },
+                    { key: 'acq_pont', target: targetValues.acq_pont, actual: actual.acq_pont, format: formatFloat, suffix: '', color: 'text-sky-300/60' },
+                    { key: 'ret_pont', target: targetValues.ret_pont, actual: actual.ret_pont, format: formatFloat, suffix: '', color: 'text-teal-300/60' },
+                    { key: 'pont', target: targetValues.pont, actual: actual.pont, format: formatFloat, suffix: '', color: 'text-amber-400/60' },
+                    { key: 'tartozek', target: targetValues.tartozek, actual: actual.tartozek, format: formatCurrency, suffix: '', color: 'text-pink-300/60' },
+                    { key: 'betero', target: targetValues.betero, actual: actual.betero, format: formatInt, suffix: ' fő', color: 'text-cyan-300/60' }
+                ];
+
+                html += `
+                    <tr class="bg-slate-800/40 border-t-4 border-slate-700">
+                        <td rowspan="4" class="p-2.5 border-r border-slate-700/50 align-top">
+                            <div class="font-bold text-indigo-300 text-sm mb-1">${escapeHtml(target.bolt)}</div>
+                            <div class="text-[10px] text-slate-500">${escapeHtml(target.honap)}</div>
+                        </td>
+                        <td class="p-2.5 text-xs font-bold text-slate-400">Target 🎯</td>
+                        ${metrics.map(metric => `<td class="p-2.5 text-right font-mono ${metric.color}">${metric.format(metric.target)}${metric.suffix}</td>`).join('')}
+                    </tr>
+                    <tr class="bg-slate-800/80">
+                        <td class="p-2.5 text-xs font-bold text-white">Tény 📊</td>
+                        ${metrics.map(metric => `<td class="p-2.5 text-right font-mono font-bold text-slate-200">${metric.format(metric.actual)}${metric.suffix}</td>`).join('')}
+                    </tr>
+                    <tr class="bg-slate-900/60">
+                        <td class="p-2.5 text-[11px] font-semibold text-slate-300">Kifutás 🚀</td>
+                        ${metrics.map(metric => `<td class="p-2.5 text-right font-mono text-[11px] text-slate-300">${elapsedRatio > 0 ? `${metric.format(calcKif(metric.actual))}${metric.suffix}` : '–'}</td>`).join('')}
+                    </tr>
+                    <tr class="bg-slate-900/90">
+                        <td class="p-2.5 text-[11px] font-semibold text-slate-400">Kifutás %</td>
+                        ${metrics.map(metric => {
+                            const percentage = elapsedRatio > 0 ? calcKifPct(calcKif(metric.actual), metric.target) : 0;
+                            return `<td class="p-2.5 text-right font-mono text-[11px] ${kifColor(percentage)}">${elapsedRatio > 0 ? formatKifPct(percentage) : '–'}</td>`;
+                        }).join('')}
+                    </tr>`;
+            });
+
+            tbody.innerHTML = html;
         }
 
         function renderData() {
