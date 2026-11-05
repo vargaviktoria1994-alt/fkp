@@ -139,11 +139,11 @@
                             </select>
                             <select id="performanceChartStore" onchange="updateMonthlyPerformanceCharts()" class="hidden bg-slate-900 text-indigo-300 text-[11px] border border-indigo-500/50 rounded px-2 py-1.5 outline-none"></select>
                             <label class="flex items-center gap-1.5 text-[11px] text-slate-300 cursor-pointer">
-                                <input id="showFootfallPerformanceChart" type="checkbox" onchange="updateMonthlyPerformanceCharts()" class="accent-cyan-400">
+                                <input id="showFootfallPerformanceChart" type="checkbox" onchange="updateMonthlyPerformanceCharts()" class="accent-white">
                                 Betérő ügyfélszám
                             </label>
                             <label class="flex items-center gap-1.5 text-[11px] text-slate-300 cursor-pointer">
-                                <input id="showDailyTargetPerformanceChart" type="checkbox" onchange="updateMonthlyPerformanceCharts()" class="accent-cyan-400">
+                                <input id="showDailyTargetPerformanceChart" type="checkbox" onchange="updateMonthlyPerformanceCharts()" class="accent-red-500">
                                 Napi target
                             </label>
                         </div>
@@ -1624,7 +1624,6 @@
                 footfallSeries.forEach((item, index) => {
                     const storeCode = item.store || 'ALL';
                     const datasets = [];
-                    const color = mode === 'network' ? '#22d3ee' : palette[index % palette.length];
                     if (showFootfallChart) {
                         const footfallData = monthFootfall.filter(record => !item.store || record.bolt === item.store);
                         const dailyActuals = Array(daysInMonth).fill(0);
@@ -1645,9 +1644,11 @@
                         datasets.push({
                             label: `${item.label} - Betérő ügyfélszám`,
                             data: dailyActuals,
-                            borderColor: color,
+                            borderColor: '#ffffff',
                             backgroundColor: 'transparent',
                             borderWidth: 2,
+                            pointBackgroundColor: '#ffffff',
+                            pointBorderColor: '#ffffff',
                             pointRadius: 2,
                             pointHoverRadius: 4,
                             tension: 0.25
@@ -1661,10 +1662,12 @@
                         datasets.push({
                             label: `${item.label} - Napi target`,
                             data: targetValues,
-                            borderColor: color,
+                            borderColor: '#ef4444',
                             backgroundColor: 'transparent',
                             borderWidth: 2,
                             borderDash: [5, 4],
+                            pointBackgroundColor: '#ef4444',
+                            pointBorderColor: '#ef4444',
                             pointRadius: 0,
                             pointHoverRadius: 3,
                             tension: 0.25
