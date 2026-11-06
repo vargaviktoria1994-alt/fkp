@@ -3193,7 +3193,7 @@
                 itemsDataRaw.forEach(item => {
                     const sz_col = item.colMap['számlaszám'] !== undefined ? item.colMap['számlaszám'] : item.colMap['szamlaszam'];
                     const qty_col = item.colMap['mennyiség'] !== undefined ? item.colMap['mennyiség'] : item.colMap['mennyiseg'];
-                    const invNum = String(item.row[sz_col] || '').trim();
+                    const invNum = String(item.row[sz_col] || '').trim().toUpperCase().replace(/[-.\s]/g, '');
                     const qty = parseFloat(String(item.row[qty_col] || '0').replace(',', '.')) || 0;
                     if (invNum) {
                         if(!invoiceItemCounts[invNum]) invoiceItemCounts[invNum] = 0;
@@ -3206,6 +3206,7 @@
                 const touchedDates = new Set();
                 
                 if (salesDataRaw.length > 0) {
+                    const tempRecords = [];
                     salesDataRaw.forEach(sale => {
                         const r = sale.row; const cmap = sale.colMap;
                         const boltVal = String(r[cmap['bolt']] || '').trim();
@@ -3219,27 +3220,52 @@
                         const honapNev = `${dParts[0]} ${monthMapHu[dParts[1]] || dParts[1]}`;
                         touchedDates.add(parsedDate);
                         
-                        const bizSzam = String(r[cmap['biz.szám']] || r[cmap['biz.szam']] || '').trim();
+                        const bizSzam = String(r[cmap['biz.szám']] || r[cmap['biz.szam']] || '').trim().toUpperCase().replace(/[-.\s]/g, '');
                         const parseNumLocal = (val) => parseFloat(String(val || '0').replace(/\s+/g, '').replace(',', '.')) || 0;
-                        
-                        let darabszam = 0;
-                        if (bizSzam && invoiceItemCounts[bizSzam]) {
-                            darabszam = invoiceItemCounts[bizSzam];
-                        }
 
-                        parsedRecords.push({
+                        tempRecords.push({
                             honap: honapNev, bolt: boltVal, ertekesito: ertekesitoVal, biz_szam: bizSzam || null,
                             teljesites_datuma: parsedDate, netto_ertek: parseNumLocal(r[cmap['nettó érték']] || r[cmap['netto ertek']]),
                             afa_osszeg: parseNumLocal(r[cmap['áfa összeg']] || r[cmap['afa osszeg']]), brutto_ertek: parseNumLocal(r[cmap['bruttó érték']] || r[cmap['brutto ertek']]),
-                            fizetesi_mod: String(r[cmap['fizetési mód']] || r[cmap['fizetesi mod']] || '').trim() || null,
-                            darabszam: darabszam
+                            fizetesi_mod: String(r[cmap['fizetési mód']] || r[cmap['fizetesi mod']] || '').trim() || null
                         });
                     });
 
-                    if (parsedRecords.length > 0) {
+                    if (tempRecords.length > 0) {
+                        statusDiv.innerText = `Létező párosítások ellenőrzése a felhőben...`;
+                        const dateArray = Array.from(touchedDates);
+
+                        const existingDarabMap = {};
+                        for (let ch = 0; ch < dateArray.length; ch += 50) {
+                            const { data: existingData, error } = await supabaseClient
+                                .from('bolti_tartozekok')
+                                .select('biz_szam, darabszam')
+                                .in('teljesites_datuma', dateArray.slice(ch, ch + 50));
+                            if (error) throw error;
+
+                            if (existingData) {
+                                existingData.forEach(row => {
+                                    if (row.biz_szam && row.darabszam > 0) {
+                                        const normalizedBizSzam = String(row.biz_szam).trim().toUpperCase().replace(/[-.\s]/g, '');
+                                        existingDarabMap[normalizedBizSzam] = row.darabszam;
+                                    }
+                                });
+                            }
+                        }
+
+                        tempRecords.forEach(rec => {
+                            let veglegesDarabszam = 0;
+                            if (rec.biz_szam && invoiceItemCounts[rec.biz_szam]) {
+                                veglegesDarabszam = invoiceItemCounts[rec.biz_szam];
+                            } else if (rec.biz_szam && existingDarabMap[rec.biz_szam]) {
+                                veglegesDarabszam = existingDarabMap[rec.biz_szam];
+                            }
+                            rec.darabszam = veglegesDarabszam;
+                            parsedRecords.push(rec);
+                        });
+
                         statusDiv.innerText = `Tartozékok mentése a felhőbe (${parsedRecords.length} tétel, érintett napok felülírása)...`;
                         
-                        const dateArray = Array.from(touchedDates);
                         for (let ch = 0; ch < dateArray.length; ch += 50) {
                             const { error: delErr } = await supabaseClient.from('bolti_tartozekok').delete().in('teljesites_datuma', dateArray.slice(ch, ch + 50));
                             if (delErr) throw delErr;
@@ -3250,7 +3276,7 @@
                             if (insErr) throw insErr;
                         }
                         statusDiv.className = "text-sm font-medium text-emerald-400";
-                        statusDiv.innerText = `Sikeres mentés! Csak az érintett napok felülírva (${parsedRecords.length} tétel).`;
+                        statusDiv.innerText = `Sikeres mentés! Csak az érintett napok lettek felülírva, a meglévő párosítások megmaradtak (${parsedRecords.length} tétel).`;
                         await loadAllData();
                     } else {
                         statusDiv.className = "text-sm font-medium text-amber-400";
