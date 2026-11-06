@@ -766,7 +766,7 @@
             <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-5">
                 <div class="border-b border-slate-700 pb-3">
                     <h2 class="text-lg font-semibold text-white">Dolgozói adatok</h2>
-                    <p class="text-xs text-slate-400 mt-1">Az értékesítési adatokból ismert dolgozók automatikusan megjelennek. Az allergia- és vészhelyzeti adatokat minden jogosult dashboard-felhasználó látja.</p>
+                    <p class="text-xs text-slate-400 mt-1">A dolgozókat itt lehet felvenni és kezelni. Az allergia- és vészhelyzeti adatokat minden jogosult dashboard-felhasználó látja.</p>
                 </div>
                 <form onsubmit="addEmployee(event)" class="flex flex-col sm:flex-row gap-2">
                     <label class="sr-only" for="newEmployeeName">Új dolgozó neve</label>
@@ -1045,23 +1045,6 @@
         }
 
         async function loadEmployeeData() {
-            const employeeNames = [...new Set([
-                ...globalTransactions.map(row => row.ertekesito),
-                ...globalAccessories.map(row => row.ertekesito),
-                ...globalMinTargets.map(row => row.ertekesito)
-            ].map(name => String(name || '').trim().replace(/\s+/g, ' ')).filter(Boolean))]
-                .sort((a, b) => a.localeCompare(b, 'hu'));
-
-            if (employeeNames.length > 0) {
-                const { error } = await supabaseClient
-                    .from('dolgozoi_adatok')
-                    .upsert(employeeNames.map(dolgozo_nev => ({ dolgozo_nev })), {
-                        onConflict: 'dolgozo_nev',
-                        ignoreDuplicates: true
-                    });
-                if (error) throw error;
-            }
-
             const { data, error } = await supabaseClient
                 .from('dolgozoi_adatok')
                 .select('dolgozo_nev, allergia, veszhelyzeti_kapcsolat_nev, veszhelyzeti_kapcsolat_telefon')
@@ -1078,7 +1061,7 @@
                 return;
             }
             if (globalEmployeeRecords.length === 0) {
-                employeeList.innerHTML = '<p class="text-sm text-slate-400">Még nincs dolgozó a listában. Az értékesítési adatok betöltése után automatikusan megjelennek, vagy vegyél fel valakit fent.</p>';
+                employeeList.innerHTML = '<p class="text-sm text-slate-400">Még nincs dolgozó a listában. Vegyél fel valakit a fenti mezővel.</p>';
                 return;
             }
 
@@ -1086,7 +1069,10 @@
                 <section data-employee-card data-employee-name="${escapeAccessHtml(employee.dolgozo_nev)}" class="bg-slate-900/70 border border-slate-700 rounded-xl p-4 space-y-4">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <h3 class="font-semibold text-white">${escapeAccessHtml(employee.dolgozo_nev)}</h3>
-                        <button type="button" onclick="saveEmployeeData(this)" class="self-start sm:self-auto bg-slate-700 hover:bg-indigo-600 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">Adatok mentése</button>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="deleteEmployee(this.closest('[data-employee-card]').dataset.employeeName)" class="bg-rose-900/50 hover:bg-rose-700 text-rose-300 text-xs font-semibold px-3 py-2 rounded-lg transition border border-rose-700">Törlés</button>
+                            <button type="button" onclick="saveEmployeeData(this)" class="self-start sm:self-auto bg-slate-700 hover:bg-indigo-600 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">Adatok mentése</button>
+                        </div>
                     </div>
                     <div class="grid md:grid-cols-3 gap-3">
                         <label class="block text-xs text-slate-400">Allergia
@@ -1152,6 +1138,19 @@
                 status.className = 'text-xs text-rose-400';
             } finally {
                 button.disabled = false;
+            }
+        }
+
+        async function deleteEmployee(employeeName) {
+            if (!confirm(`Biztosan törölni szeretnéd a(z) ${employeeName} nevű dolgozót?`)) return;
+            try {
+                const { error } = await supabaseClient.from('dolgozoi_adatok').delete().eq('dolgozo_nev', employeeName);
+                if (error) throw error;
+                await loadEmployeeData();
+                employeeDataError = '';
+                renderEmployeeData();
+            } catch (error) {
+                alert(`Nem sikerült törölni vagy frissíteni a dolgozói adatokat: ${error instanceof Error ? error.message : 'Ismeretlen hiba.'}`);
             }
         }
 
