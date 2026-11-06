@@ -1090,7 +1090,7 @@
                     </div>
                     <div class="grid md:grid-cols-3 gap-3">
                         <label class="block text-xs text-slate-400">Allergia
-                            <textarea data-field="allergia" rows="2" maxlength="2000" class="mt-1 w-full bg-slate-800 text-white text-sm border border-slate-700 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Allergia">${escapeAccessHtml(employee.allergia)}</textarea>
+                            <input data-field="allergia" type="text" maxlength="2000" value="${escapeAccessHtml(employee.allergia)}" class="mt-1 w-full bg-slate-800 text-white text-sm border border-slate-700 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Allergia">
                         </label>
                         <label class="block text-xs text-slate-400">Vész esetén értesítendő neve
                             <input data-field="veszhelyzeti_kapcsolat_nev" type="text" maxlength="200" value="${escapeAccessHtml(employee.veszhelyzeti_kapcsolat_nev)}" class="mt-1 w-full bg-slate-800 text-white text-sm border border-slate-700 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Név">
