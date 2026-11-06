@@ -111,11 +111,12 @@
                 <p class="text-xs text-slate-400 mt-1">CPR tranzakció-feldolgozó, tartozék forgalom és súlyozott target követő</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                <nav class="flex bg-slate-900/70 p-1 rounded-xl border border-slate-700/60">
+                <nav class="flex flex-wrap bg-slate-900/70 p-1 rounded-xl border border-slate-700/60">
                     <button id="tabBtnStores" onclick="switchTab('stores')" class="px-4 py-2 rounded-lg text-xs font-semibold transition bg-indigo-600 text-white shadow">🏢 Üzletek</button>
-                    <button id="tabBtnSellers" onclick="switchTab('sellers')" class="px-4 py-2 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white">👥 Értékesítők</button>
                     <button id="tabBtnUpload" onclick="switchTab('upload')" class="px-4 py-2 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white">📤 Adatfeltöltés & Admin</button>
                     <button id="tabBtnAccess" onclick="switchTab('access')" class="hidden px-4 py-2 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white">🔐 Jogosultságok</button>
+                    <button id="tabBtnEmployees" onclick="switchTab('employees')" class="px-4 py-2 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white">🩺 Dolgozói adatok</button>
+                    <button id="tabBtnSellers" onclick="switchTab('sellers')" class="px-4 py-2 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white">👥 Értékesítők</button>
                 </nav>
                 <button onclick="logout()" class="bg-slate-700 hover:bg-rose-950/40 hover:text-rose-400 border border-slate-600 text-slate-300 text-xs font-semibold px-3 py-2 rounded-lg transition ml-2">🚪 Kilépés</button>
             </div>
@@ -761,6 +762,23 @@
                 </div>
             </section>
         </main>
+        <main id="tabEmployees" class="hidden space-y-6">
+            <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg space-y-5">
+                <div class="border-b border-slate-700 pb-3">
+                    <h2 class="text-lg font-semibold text-white">Dolgozói adatok</h2>
+                    <p class="text-xs text-slate-400 mt-1">Az értékesítési adatokból ismert dolgozók automatikusan megjelennek. Az allergia- és vészhelyzeti adatokat minden jogosult dashboard-felhasználó látja.</p>
+                </div>
+                <form onsubmit="addEmployee(event)" class="flex flex-col sm:flex-row gap-2">
+                    <label class="sr-only" for="newEmployeeName">Új dolgozó neve</label>
+                    <input id="newEmployeeName" type="text" required maxlength="200" placeholder="Új dolgozó neve" class="flex-1 bg-slate-900 text-white text-sm border border-slate-700 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500">
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">Dolgozó felvétele</button>
+                </form>
+                <p id="employeeAddStatus" role="status" class="text-xs"></p>
+                <div id="employeeList" class="space-y-4">
+                    <p class="text-sm text-slate-400">Dolgozói adatok betöltése…</p>
+                </div>
+            </section>
+        </main>
     </div>
 
     <script>
@@ -769,6 +787,8 @@
         let authRequestSequence = 0;
         let accessCheckInProgress = false;
         let dashboardUsers = [];
+        let globalEmployeeRecords = [];
+        let employeeDataError = '';
 
         function showLoginError(message) {
             const errorElem = document.getElementById('loginError');
@@ -792,6 +812,8 @@
                 globalTargets = [];
                 globalMinTargets = [];
                 dashboardUsers = [];
+                globalEmployeeRecords = [];
+                employeeDataError = '';
                 loginScreen.classList.remove('hidden');
                 dashboardApp.classList.add('hidden');
                 deniedScreen.classList.add('hidden');
@@ -808,6 +830,8 @@
             globalTargets = [];
             globalMinTargets = [];
             dashboardUsers = [];
+            globalEmployeeRecords = [];
+            employeeDataError = '';
             accessCheckInProgress = true;
             const requestSequence = ++authRequestSequence;
             loginScreen.classList.add('hidden');
@@ -889,18 +913,20 @@
         function switchTab(tabName) {
             const isAdmin = currentUserAccess?.role === 'admin';
             if (!currentUserAccess ||
-                (!isAdmin && !['stores', 'sellers'].includes(tabName)) ||
-                (isAdmin && !['stores', 'sellers', 'upload', 'access'].includes(tabName))) {
+                (!isAdmin && !['stores', 'sellers', 'employees'].includes(tabName)) ||
+                (isAdmin && !['stores', 'sellers', 'employees', 'upload', 'access'].includes(tabName))) {
                 return;
             }
             currentDashboardTab = tabName;
             const tabDash = document.getElementById('tabDashboard');
             const tabUp = document.getElementById('tabUpload');
             const tabAccess = document.getElementById('tabAccess');
+            const tabEmployees = document.getElementById('tabEmployees');
             const btnStores = document.getElementById('tabBtnStores');
             const btnSellers = document.getElementById('tabBtnSellers');
             const btnUp = document.getElementById('tabBtnUpload');
             const btnAccess = document.getElementById('tabBtnAccess');
+            const btnEmployees = document.getElementById('tabBtnEmployees');
             
             const sectionTop4 = document.getElementById('sectionTop4');
             const sectionTable = document.getElementById('sectionTable');
@@ -912,9 +938,11 @@
             btnSellers.className = inactCls;
             btnUp.className = inactCls;
             btnAccess.className = inactCls;
+            btnEmployees.className = inactCls;
             tabDash.classList.add('hidden');
             tabUp.classList.add('hidden');
             tabAccess.classList.add('hidden');
+            tabEmployees.classList.add('hidden');
 
             if (tabName === 'stores') {
                 btnStores.className = actCls;
@@ -944,6 +972,10 @@
                 btnAccess.className = actCls;
                 tabAccess.classList.remove('hidden');
                 loadDashboardUsers();
+            } else if (tabName === 'employees') {
+                btnEmployees.className = actCls;
+                tabEmployees.classList.remove('hidden');
+                renderEmployeeData();
             }
         }
 
@@ -990,10 +1022,18 @@
                     loadTargetsFromSupabase(),
                     loadMinTargetsFromSupabase()
                 ]);
+                try {
+                    await loadEmployeeData();
+                    employeeDataError = '';
+                } catch (error) {
+                    employeeDataError = error instanceof Error ? error.message : 'Ismeretlen hiba.';
+                    console.error("Hiba a dolgozói adatok betöltésekor", error);
+                }
                 populateFilters();
                 updateAllBoxes();
                 renderData();
                 renderTargetAdminTable();
+                renderEmployeeData();
                 if (currentDashboardTab === 'access' && currentUserAccess?.role === 'admin') renderDashboardUsers();
             } catch(e) { console.error("Hiba az adatok letöltésekor", e); }
         }
@@ -1002,6 +1042,117 @@
             return String(value ?? '').replace(/[&<>"']/g, char => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
             })[char]);
+        }
+
+        async function loadEmployeeData() {
+            const employeeNames = [...new Set([
+                ...globalTransactions.map(row => row.ertekesito),
+                ...globalAccessories.map(row => row.ertekesito),
+                ...globalMinTargets.map(row => row.ertekesito)
+            ].map(name => String(name || '').trim().replace(/\s+/g, ' ')).filter(Boolean))]
+                .sort((a, b) => a.localeCompare(b, 'hu'));
+
+            if (employeeNames.length > 0) {
+                const { error } = await supabaseClient
+                    .from('dolgozoi_adatok')
+                    .upsert(employeeNames.map(dolgozo_nev => ({ dolgozo_nev })), {
+                        onConflict: 'dolgozo_nev',
+                        ignoreDuplicates: true
+                    });
+                if (error) throw error;
+            }
+
+            const { data, error } = await supabaseClient
+                .from('dolgozoi_adatok')
+                .select('dolgozo_nev, allergia, veszhelyzeti_kapcsolat_nev, veszhelyzeti_kapcsolat_telefon')
+                .order('dolgozo_nev', { ascending: true });
+            if (error) throw error;
+            globalEmployeeRecords = data || [];
+        }
+
+        function renderEmployeeData() {
+            const employeeList = document.getElementById('employeeList');
+            if (!employeeList) return;
+            if (employeeDataError) {
+                employeeList.innerHTML = `<p class="text-sm text-rose-400">Nem sikerült betölteni a dolgozói adatokat: ${escapeAccessHtml(employeeDataError)}. Ellenőrizd, hogy lefutott-e a supabase-employee-data.sql.</p>`;
+                return;
+            }
+            if (globalEmployeeRecords.length === 0) {
+                employeeList.innerHTML = '<p class="text-sm text-slate-400">Még nincs dolgozó a listában. Az értékesítési adatok betöltése után automatikusan megjelennek, vagy vegyél fel valakit fent.</p>';
+                return;
+            }
+
+            employeeList.innerHTML = globalEmployeeRecords.map(employee => `
+                <section data-employee-card data-employee-name="${escapeAccessHtml(employee.dolgozo_nev)}" class="bg-slate-900/70 border border-slate-700 rounded-xl p-4 space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <h3 class="font-semibold text-white">${escapeAccessHtml(employee.dolgozo_nev)}</h3>
+                        <button type="button" onclick="saveEmployeeData(this)" class="self-start sm:self-auto bg-slate-700 hover:bg-indigo-600 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">Adatok mentése</button>
+                    </div>
+                    <div class="grid md:grid-cols-3 gap-3">
+                        <label class="block text-xs text-slate-400">Allergia
+                            <textarea data-field="allergia" rows="2" maxlength="2000" class="mt-1 w-full bg-slate-800 text-white text-sm border border-slate-700 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Allergia">${escapeAccessHtml(employee.allergia)}</textarea>
+                        </label>
+                        <label class="block text-xs text-slate-400">Vész esetén értesítendő neve
+                            <input data-field="veszhelyzeti_kapcsolat_nev" type="text" maxlength="200" value="${escapeAccessHtml(employee.veszhelyzeti_kapcsolat_nev)}" class="mt-1 w-full bg-slate-800 text-white text-sm border border-slate-700 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Név">
+                        </label>
+                        <label class="block text-xs text-slate-400">Telefonszáma
+                            <input data-field="veszhelyzeti_kapcsolat_telefon" type="tel" maxlength="50" value="${escapeAccessHtml(employee.veszhelyzeti_kapcsolat_telefon)}" class="mt-1 w-full bg-slate-800 text-white text-sm border border-slate-700 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Telefonszám">
+                        </label>
+                    </div>
+                    <p data-employee-status role="status" class="text-xs"></p>
+                </section>
+            `).join('');
+        }
+
+        async function addEmployee(event) {
+            event.preventDefault();
+            const nameInput = document.getElementById('newEmployeeName');
+            const status = document.getElementById('employeeAddStatus');
+            const employeeName = nameInput.value.trim().replace(/\s+/g, ' ');
+            if (!employeeName) return;
+            status.textContent = '';
+            try {
+                const { error } = await supabaseClient
+                    .from('dolgozoi_adatok')
+                    .upsert({ dolgozo_nev: employeeName }, { onConflict: 'dolgozo_nev', ignoreDuplicates: true });
+                if (error) throw error;
+                nameInput.value = '';
+                await loadEmployeeData();
+                employeeDataError = '';
+                renderEmployeeData();
+                status.textContent = 'A dolgozó felvétele sikerült.';
+                status.className = 'text-xs text-emerald-400';
+            } catch (error) {
+                status.textContent = `Nem sikerült felvenni a dolgozót: ${error instanceof Error ? error.message : 'Ismeretlen hiba.'}`;
+                status.className = 'text-xs text-rose-400';
+            }
+        }
+
+        async function saveEmployeeData(button) {
+            const card = button.closest('[data-employee-card]');
+            const status = card.querySelector('[data-employee-status]');
+            button.disabled = true;
+            status.textContent = 'Mentés…';
+            status.className = 'text-xs text-slate-400';
+            try {
+                const employee = {
+                    allergia: card.querySelector('[data-field="allergia"]').value.trim(),
+                    veszhelyzeti_kapcsolat_nev: card.querySelector('[data-field="veszhelyzeti_kapcsolat_nev"]').value.trim(),
+                    veszhelyzeti_kapcsolat_telefon: card.querySelector('[data-field="veszhelyzeti_kapcsolat_telefon"]').value.trim()
+                };
+                const { error } = await supabaseClient
+                    .from('dolgozoi_adatok')
+                    .update(employee)
+                    .eq('dolgozo_nev', card.dataset.employeeName);
+                if (error) throw error;
+                status.textContent = 'A dolgozói adatok mentése sikerült.';
+                status.className = 'text-xs text-emerald-400';
+            } catch (error) {
+                status.textContent = `Nem sikerült elmenteni az adatokat: ${error instanceof Error ? error.message : 'Ismeretlen hiba.'}`;
+                status.className = 'text-xs text-rose-400';
+            } finally {
+                button.disabled = false;
+            }
         }
 
         function getAvailableStoreCodes() {
