@@ -3109,26 +3109,34 @@
                         const realPont = parseNum(r[colMap['Jutalék pont']]);
                         const excelAcqPont = parseNum(r[colMap['ACQ pont']]);
 
-                        // Szorzó ürességének vizsgálata
+                        // SZORZÓ VIZSGÁLAT - Szigorított, "golyóálló" verzió
                         const szorzoErtekRaw = r[colMap['Szorzó']] !== undefined ? r[colMap['Szorzó']] : r[colMap['Szorzo']];
                         const szorzoErtekStr = String(szorzoErtekRaw || '').trim().toLowerCase();
+                        
+                        // Megnézzük, hogy számként 0-e (kezeli a '0', '0.0', '0,0' formátumokat is)
+                        const szorzoNum = parseFloat(szorzoErtekStr.replace(',', '.'));
+                        const isNumericZero = !isNaN(szorzoNum) && szorzoNum === 0;
+
                         const isEmptySzorzo = (
-                            szorzoErtekRaw === null || 
-                            szorzoErtekRaw === undefined || 
+                            !szorzoErtekRaw || // null, undefined, false, 0, ''
                             szorzoErtekStr === '' || 
-                            szorzoErtekStr === '0' || 
                             szorzoErtekStr === '-' || 
-                            szorzoErtekStr === 'null'
+                            szorzoErtekStr === 'null' ||
+                            szorzoErtekStr === 'nan' ||
+                            szorzoErtekStr.includes('#') || // pl. #N/A, #HIÁNYZIK
+                            isNumericZero // pl. 0, 0.0, 0,0
                         );
 
-                        // Az általad meghatározott új logika
+                        // A te tökéletes logikád:
                         let finalAcqPont = 0;
                         let finalRetPont = 0;
 
                         if (isEmptySzorzo) {
+                            // Ha a szorzó üres, az egészet ACQ-ba tesszük (A 49. sor esete!)
                             finalAcqPont = realPont;
                             finalRetPont = 0;
                         } else {
+                            // Ha van szorzó, az ACQ az "ACQ pont" oszlop, a többi RET
                             finalAcqPont = excelAcqPont;
                             finalRetPont = realPont - excelAcqPont;
                         }
