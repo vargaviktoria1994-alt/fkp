@@ -3107,7 +3107,16 @@
                         const isSoho = (szegmens.toLowerCase() === 'soho') || (cegnev.length > 0 && szegmens.toLowerCase() !== 'flotta');
                         const parsedDate = parseExcelDateClean(r[colMap['Szerződés dátuma']]);
                         const realPont = parseNum(r[colMap['Jutalék pont']]);
-                        const acqPont = parseNum(r[colMap['ACQ pont']]);
+                        const szorzoErtek = String(r[colMap['Szorzó']] || r[colMap['Szorzo']] || '').trim(); // Szorzó oszlop ellenőrzése
+
+                        // Új logika: Ha üres a szorzó -> ACQ, ha van benne valami -> RET
+                        let acqPont = 0;
+                        let retPont = 0;
+                        if (szorzoErtek === '') {
+                            acqPont = realPont;
+                        } else {
+                            retPont = realPont;
+                        }
 
                         if (parsedDate) touchedDates.add(parsedDate);
 
@@ -3118,7 +3127,7 @@
                             telefonszam: isSoho ? (String(r[colMap['Telefonszám']] || '').trim() || null) : null,
                             acq_db: parseNum(r[colMap['ACQ']]), acq_hs: parseNum(r[colMap['ACQ Készülék']] || r[colMap['ACQ HS']] || r[colMap['Készüléket vásárolt']]),
                             acq_tablet: parseNum(r[colMap['ACQ Tablet']] || r[colMap['Táblagépet vásárolt']]), huseg_db: parseNum(r[colMap['Hűség']]), fix_db: parseNum(r[colMap['FIX']]),
-                            acq_pont: acqPont, ret_pont: Math.max(0, realPont - acqPont), osszpont: realPont
+                            acq_pont: acqPont, ret_pont: retPont, osszpont: realPont
                         });
                     }
 
