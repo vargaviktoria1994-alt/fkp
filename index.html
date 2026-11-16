@@ -3107,11 +3107,11 @@
                         const isSoho = (szegmens.toLowerCase() === 'soho') || (cegnev.length > 0 && szegmens.toLowerCase() !== 'flotta');
                         const parsedDate = parseExcelDateClean(r[colMap['Szerződés dátuma']]);
                         const realPont = parseNum(r[colMap['Jutalék pont']]);
+                        const excelAcqPont = parseNum(r[colMap['ACQ pont']]);
+
+                        // Szorzó ürességének vizsgálata
                         const szorzoErtekRaw = r[colMap['Szorzó']] !== undefined ? r[colMap['Szorzó']] : r[colMap['Szorzo']];
                         const szorzoErtekStr = String(szorzoErtekRaw || '').trim().toLowerCase();
-
-                        // Szigorúbb vizsgálat: megnézzük, hogy tényleg van-e benne érdemi számérték vagy szöveg
-                        // Az Excel a formázások miatt betehet '0', '-', 'null', 'undefined' értékeket is
                         const isEmptySzorzo = (
                             szorzoErtekRaw === null || 
                             szorzoErtekRaw === undefined || 
@@ -3121,13 +3121,18 @@
                             szorzoErtekStr === 'null'
                         );
 
-                        let acqPont = 0;
-                        let retPont = 0;
+                        // Az általad meghatározott új logika
+                        let finalAcqPont = 0;
+                        let finalRetPont = 0;
+
                         if (isEmptySzorzo) {
-                            acqPont = realPont; // Ha tényleg nincs benne szorzó -> ACQ
+                            finalAcqPont = realPont;
+                            finalRetPont = 0;
                         } else {
-                            retPont = realPont; // Ha van benne valós szorzó -> RET
+                            finalAcqPont = excelAcqPont;
+                            finalRetPont = realPont - excelAcqPont;
                         }
+
                         if (parsedDate) touchedDates.add(parsedDate);
 
                         parsed.push({
@@ -3137,7 +3142,7 @@
                             telefonszam: isSoho ? (String(r[colMap['Telefonszám']] || '').trim() || null) : null,
                             acq_db: parseNum(r[colMap['ACQ']]), acq_hs: parseNum(r[colMap['ACQ Készülék']] || r[colMap['ACQ HS']] || r[colMap['Készüléket vásárolt']]),
                             acq_tablet: parseNum(r[colMap['ACQ Tablet']] || r[colMap['Táblagépet vásárolt']]), huseg_db: parseNum(r[colMap['Hűség']]), fix_db: parseNum(r[colMap['FIX']]),
-                            acq_pont: acqPont, ret_pont: retPont, osszpont: realPont
+                            acq_pont: finalAcqPont, ret_pont: finalRetPont, osszpont: realPont
                         });
                     }
 
