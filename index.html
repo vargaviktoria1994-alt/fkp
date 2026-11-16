@@ -3107,17 +3107,27 @@
                         const isSoho = (szegmens.toLowerCase() === 'soho') || (cegnev.length > 0 && szegmens.toLowerCase() !== 'flotta');
                         const parsedDate = parseExcelDateClean(r[colMap['Szerződés dátuma']]);
                         const realPont = parseNum(r[colMap['Jutalék pont']]);
-                        const szorzoErtek = String(r[colMap['Szorzó']] || r[colMap['Szorzo']] || '').trim(); // Szorzó oszlop ellenőrzése
+                        const szorzoErtekRaw = r[colMap['Szorzó']] !== undefined ? r[colMap['Szorzó']] : r[colMap['Szorzo']];
+                        const szorzoErtekStr = String(szorzoErtekRaw || '').trim().toLowerCase();
 
-                        // Új logika: Ha üres a szorzó -> ACQ, ha van benne valami -> RET
+                        // Szigorúbb vizsgálat: megnézzük, hogy tényleg van-e benne érdemi számérték vagy szöveg
+                        // Az Excel a formázások miatt betehet '0', '-', 'null', 'undefined' értékeket is
+                        const isEmptySzorzo = (
+                            szorzoErtekRaw === null || 
+                            szorzoErtekRaw === undefined || 
+                            szorzoErtekStr === '' || 
+                            szorzoErtekStr === '0' || 
+                            szorzoErtekStr === '-' || 
+                            szorzoErtekStr === 'null'
+                        );
+
                         let acqPont = 0;
                         let retPont = 0;
-                        if (szorzoErtek === '') {
-                            acqPont = realPont;
+                        if (isEmptySzorzo) {
+                            acqPont = realPont; // Ha tényleg nincs benne szorzó -> ACQ
                         } else {
-                            retPont = realPont;
+                            retPont = realPont; // Ha van benne valós szorzó -> RET
                         }
-
                         if (parsedDate) touchedDates.add(parsedDate);
 
                         parsed.push({
